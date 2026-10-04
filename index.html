@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory Yard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one plate, as in ai-iso-skill. Caption row, the live map, caption row. */
+  :root {
+    color-scheme: dark;
+    --bg:#0c0d0e; --panel:#141516; --edge:#222426;
+    --line:#3d4144; --detail:#2b2e30; --body:#17181a; --deck:#1b1d1f; --ground:#161719; --road:#111213;
+    --ink:#868b8f; --ink-hi:#e6e8e9; --live:#f4f5f5;
+    --ko:#d9dcde; --ko-deck:#e9ebec; --ko-line:#5a5f63; --glass:#0b0c0c;
+    --mono:"DM Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg:#e9eaea; --panel:#f6f6f5; --edge:#d6d8d8;
+    --line:#8e9397; --detail:#c3c6c8; --body:#ececeb; --deck:#f3f3f2; --ground:#f0f0ef; --road:#e6e7e7;
+    --ink:#6a6f73; --ink-hi:#16181a; --live:#0c0d0e;
+    --ko:#2a2c2e; --ko-deck:#3a3d40; --ko-line:#0c0d0e; --glass:#e2e4e4;
+  } }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg:#e9eaea; --panel:#f6f6f5; --edge:#d6d8d8;
+    --line:#8e9397; --detail:#c3c6c8; --body:#ececeb; --deck:#f3f3f2; --ground:#f0f0ef; --road:#e6e7e7;
+    --ink:#6a6f73; --ink-hi:#16181a; --live:#0c0d0e;
+    --ko:#2a2c2e; --ko-deck:#3a3d40; --ko-line:#0c0d0e; --glass:#e2e4e4;
+  }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:13px; padding:16px; overflow:hidden; }
+  main { height:100%; }
+  figure { margin:0; height:100%; min-height:420px; background:var(--panel); border:1px solid var(--edge); border-radius:22px; padding:16px 20px; display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:10px; }
+  .cap { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 18px; text-transform:uppercase; letter-spacing:.14em; }
+  .cap .hi { color:var(--ink-hi); text-transform:none; letter-spacing:.05em; }
+  .stage { position:relative; min-height:0; overflow:hidden; border-radius:14px; }
+  canvas { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  canvas:active { cursor:grabbing; }
+  canvas.over { cursor:pointer; }
+  canvas:focus-visible { outline:2px solid var(--live); outline-offset:-2px; border-radius:14px; }
+  button { font:inherit; color:var(--ink); background:var(--panel); border:1px solid var(--edge); border-radius:8px; cursor:pointer; }
+  button:hover { color:var(--ink-hi); border-color:var(--line); }
+  button:focus-visible { outline:2px solid var(--live); outline-offset:2px; }
+  .tools { position:absolute; left:10px; top:10px; display:grid; gap:6px; }
+  .tools button { width:32px; height:32px; padding:0; display:grid; place-items:center; }
+  .tools svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.25; stroke-linecap:round; stroke-linejoin:round; }
+  .tools .gap { height:4px; }
+  .tag { position:absolute; left:0; top:0; transform:translate(-50%, calc(-100% - 10px)); pointer-events:none; white-space:nowrap;
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-hi); background:var(--panel);
+    border:1px solid var(--live); border-radius:6px; padding:3px 8px; }
+  .tag.hover { color:var(--ink); border-color:var(--line); }
+  .card { position:absolute; top:10px; right:10px; width:min(300px, calc(100% - 64px)); max-height:calc(100% - 20px); overflow:auto;
+    background:var(--panel); border:1px solid var(--edge); border-radius:14px; padding:12px 16px 14px; display:grid; gap:10px; }
+  .card .head { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:11px; text-transform:uppercase; letter-spacing:.14em; }
+  .card .head button { width:26px; height:26px; padding:0; display:grid; place-items:center; font-size:15px; line-height:1; }
+  .card .title { color:var(--ink-hi); font-size:20px; letter-spacing:.04em; line-height:1.1; }
+  .card .status { justify-self:start; color:var(--ink-hi); border:1px solid var(--line); border-radius:999px; padding:2px 10px; font-size:12px; }
+  .card dl { margin:0; display:grid; grid-template-columns:auto 1fr; }
+  .card dt, .card dd { margin:0; padding:6px 0; border-top:1px solid var(--edge); font-size:12px; }
+  .card dd { text-align:right; color:var(--ink-hi); padding-left:12px; }
+  .card .bar { display:grid; gap:5px; font-size:11px; text-transform:uppercase; letter-spacing:.12em; }
+  .card .bar div { height:6px; border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+  .card .bar i { display:block; height:100%; background:var(--live); }
+  .card .foot { display:flex; gap:8px; }
+  .card .foot button { padding:5px 12px; font-size:12px; text-transform:uppercase; letter-spacing:.12em; }
+  .card .foot button[aria-pressed="true"] { color:var(--ink-hi); border-color:var(--live); }
+  .note { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:24px; line-height:1.6; }
+  .coarse { display:none; }
+  @media (pointer:coarse) { .fine { display:none; } .coarse { display:inline; } }
+  [hidden] { display:none !important; }
+  @media (max-width:600px) {
+    body { padding:10px; }
+    figure { padding:12px 14px; border-radius:18px; }
+    .card { top:auto; bottom:10px; left:10px; right:10px; width:auto; max-height:55%; }
+  }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<main>
+  <figure>
+    <div class="cap"><span class="hi">Fig 1</span><span>Factory yard</span></div>
+    <div class="stage" id="stage">
+      <canvas id="view" tabindex="0" role="img" aria-label="Isometric factory yard, live. Forklifts carry pallets from the production line onto trucks while traffic passes on the road. Drag to pan, scroll or pinch to zoom, click any vehicle, pallet or building for details. Keys: [ and ] cycle through vehicles, F follows the selection, Escape closes it, Space pauses."></canvas>
+      <div class="tools" id="tools">
+        <button id="zoomIn" title="Zoom in (+)" aria-label="Zoom in"><svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg></button>
+        <button id="zoomOut" title="Zoom out (−)" aria-label="Zoom out"><svg viewBox="0 0 16 16"><path d="M3 8h10"/></svg></button>
+        <button id="home" title="Reset view (0)" aria-label="Reset view"><svg viewBox="0 0 16 16"><path d="M2.5 7.5 8 3l5.5 4.5M4 6.5V13h8V6.5"/></svg></button>
+        <span class="gap"></span>
+        <button id="pause" title="Pause (Space)" aria-label="Pause" aria-pressed="false"><svg viewBox="0 0 16 16"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg></button>
+        <button id="theme" title="Light or dark (T)" aria-label="Switch light or dark theme"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/><path d="M8 3a5 5 0 0 0 0 10z" fill="currentColor"/></svg></button>
+      </div>
+      <div class="tag hover" id="tagHover" hidden></div>
+      <div class="tag" id="tagSel" hidden></div>
+      <aside class="card" id="card" role="region" aria-label="Selection details" hidden>
+        <div class="head"><span id="cardKind"></span><button id="cardClose" aria-label="Close details" title="Close (Esc)">×</button></div>
+        <div class="title" id="cardTitle"></div>
+        <div class="status" id="cardStatus"></div>
+        <div class="bar" id="cardBar" hidden><span></span><div><i></i></div></div>
+        <dl id="cardRows"></dl>
+        <div class="foot" id="cardFoot"><button id="cardFollow" aria-pressed="false" title="Follow (F)">Follow</button></div>
+      </aside>
+      <p class="note" id="note" hidden></p>
+    </div>
+    <div class="cap"><span class="fine">Drag to pan · scroll to zoom · click anything</span><span class="coarse">Drag to pan · pinch to zoom · tap anything</span><span class="hi" id="readout">loading</span></div>
+  </figure>
+</main>
+
+<script>
+  // if the module never starts (offline, CDN blocked), say so instead of sitting on "loading"
+  setTimeout(() => { if (window.__yardReady) return; const n = document.getElementById('note');
+    n.hidden = false; n.textContent = 'The figure could not load three.js from cdn.jsdelivr.net. Check the connection and reload.'; }, 12000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+
+const $ = id => document.getElementById(id);
+const stage = $('stage'), canvas = $('view');
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DEBUG = new URLSearchParams(location.search).has('debug');
+const noop = () => {};
+
+// ---- iso kernel (after ai-iso-skill, MIT © Tolga Cohce) ----
+// Scene coords are the skill's: +x runs down-right, +y down-left, +z up. Three.js is y-up, so W swaps
+// y and z; an orthographic camera looking down (-1,-1,-1) then draws exactly the skill's P(x,y,z).
+const W = (x, y, z = 0) => new THREE.Vector3(x, z, y);
+// plane = origin O + in-plane axes U,V. Anything drawn in (u,v) through this matrix lies flat on that plane.
+const plane = (O, U, V) => { const u = W(...U), v = W(...V), n = new THREE.Vector3().crossVectors(u, v).normalize();
+  return new THREE.Matrix4().makeBasis(u, v, n).setPosition(W(...O)); };
+const TOP   = (x, y, z) => plane([x, y, z], [1, 0, 0], [0, 1, 0]);   // z = const
+const FRONT = (x, y, z) => plane([x, y, z], [1, 0, 0], [0, 0, -1]);  // y = const (faces lower-left); pass its top-left corner
+const SIDE  = (x, y, z) => plane([x, y, z], [0, -1, 0], [0, 0, -1]); // x = const (faces lower-right); pass its top-left corner
+
+// ---- tokens → materials ----
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const FILL_TOK = { ground:'--ground', road:'--road', body:'--body', deck:'--deck', kob:'--ko', kod:'--ko-deck', glass:'--glass', livef:'--live' };
+const LINE_TOK = { line:'--line', detail:'--detail', koline:'--ko-line', live:'--live' };
+const TEXT_TOK = { ink:'--ink', paint:'--line' };
+const FILL = {}, LINE = {}, TEXT = { ink:[], paint:[] };
+// Faces are flat and unlit, pushed back a hair so the hairlines drawn on them always win the depth test.
+for (const k in FILL_TOK) FILL[k] = new THREE.MeshBasicMaterial({ side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:1, polygonOffsetUnits:1 });
+// 1 css px at any zoom: the WebGL stand-in for vector-effect:non-scaling-stroke.
+for (const k in LINE_TOK) LINE[k] = new LineMaterial({ linewidth:1, worldUnits:false });
+function applyTheme() {
+  for (const k in FILL) FILL[k].color.set(css(FILL_TOK[k]));
+  for (const k in LINE) LINE[k].color.set(css(LINE_TOK[k]));
+  for (const k in TEXT) for (const m of TEXT[k]) m.color.set(css(TEXT_TOK[k]));
+}
+applyTheme();
+
+// ---- renderer ----
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true }); }
+catch (err) { $('note').hidden = false; $('note').textContent = 'This figure needs WebGL, which this browser has turned off.'; $('readout').textContent = 'no webgl'; throw err; }
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 0);
+// Anything outside the slab is cut, so traffic slides in and out of the plate's edge.
+renderer.clippingPlanes = [
+  new THREE.Plane(new THREE.Vector3(1, 0, 0), 0.05), new THREE.Plane(new THREE.Vector3(-1, 0, 0), 200.05),
+  new THREE.Plane(new THREE.Vector3(0, 0, 1), 0.05), new THREE.Plane(new THREE.Vector3(0, 0, -1), 150.05)];
+const ANISO = renderer.capabilities.getMaxAnisotropy();
+const scene = new THREE.Scene();
+
+// ---- parts: boxes and flat detail, collected into a few draw calls ----
+const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const TONE = { n:['body','deck','line'], k:['kob','kod','koline'], g:['glass','glass','line'], gr:['body','ground','line'] };
+const TEX_PX = 64;
+class Part {
+  constructor() { this.fill = {}; this.lines = {}; this.texts = []; }
+  tri(k, a, b, c) { (this.fill[k] ??= []).push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z); }
+  poly(k, p) { for (let i = 1; i < p.length - 1; i++) this.tri(k, p[0], p[i], p[i + 1]); }
+  seg(k, a, b) { (this.lines[k] ??= []).push(a.x, a.y, a.z, b.x, b.y, b.z); return this; }
+  // A flat polygon swept along e. Up-facing faces take the deck fill, down-facing ones are never seen.
+  extrude(pts, e, tone = 'n', { seams = true, lines = true } = {}) {
+    const [bodyK, deckK, lineK] = TONE[tone];
+    const A = pts.map(p => W(...p)), E = W(...e), B = A.map(p => p.clone().add(E));
+    const midY = [...A, ...B].reduce((s, p) => s + p.y, 0) / (A.length * 2);
+    const face = q => {
+      const n = v3(0, 0, 0).crossVectors(q[1].clone().sub(q[0]), q[2].clone().sub(q[0])).normalize();
+      if (Math.abs(n.y) > 0.6) { if (q.reduce((s, p) => s + p.y, 0) / q.length > midY) this.poly(deckK, q); }
+      else this.poly(bodyK, q);
+    };
+    face(A); face(B);
+    for (let i = 0; i < A.length; i++) { const j = (i + 1) % A.length; face([A[i], A[j], B[j], B[i]]); }
+    if (lines) for (let i = 0; i < A.length; i++) { const j = (i + 1) % A.length;
+      this.seg(lineK, A[i], A[j]); this.seg(lineK, B[i], B[j]); if (seams) this.seg(lineK, A[i], B[i]); }
+    return this;
+  }
+  // box at (x,y,z), size w along x, d along y, h along z — same signature as the skill's box()
+  box(x, y, z, w, d, h, tone, o) { return this.extrude([[x, y, z], [x + w, y, z], [x + w, y + d, z], [x, y + d, z]], [0, 0, h], tone, o); }
+  cylZ(cx, cy, z, r, h, n = 12, tone) { const p = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a), z]); }
+    return this.extrude(p, [0, 0, h], tone, { seams:false }); }
+  cylY(cx, y, cz, r, len, n = 10, tone) { const p = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; p.push([cx + r * Math.cos(a), y, cz + r * Math.sin(a)]); }
+    return this.extrude(p, [0, len, 0], tone, { seams:false }); }
+  // 2D linework in a face's local units, like drawing inside the skill's <g transform="${FRONT(…)}">.
+  // lift nudges it off the face along the outward normal (negative for faces whose plane normal points out).
+  draw(M, segs, k = 'detail', lift = 0.04) {
+    const off = v3(0, 0, 0).setFromMatrixColumn(M, 2).normalize().multiplyScalar(-lift);
+    const at = (u, v) => v3(u, v, 0).applyMatrix4(M).add(off);
+    for (let i = 0; i < segs.length; i += 4) this.seg(k, at(segs[i], segs[i + 1]), at(segs[i + 2], segs[i + 3]));
+    return this;
+  }
+  rect2(M, x, y, w, h, k, lift) { return this.draw(M, [x, y, x + w, y, x + w, y, x + w, y + h, x + w, y + h, x, y + h, x, y + h, x, y], k, lift); }
+  fill2(M, x, y, w, h, k = 'glass', lift = 0.03) {
+    const off = v3(0, 0, 0).setFromMatrixColumn(M, 2).normalize().multiplyScalar(-lift);
+    const at = (u, v) => v3(u, v, 0).applyMatrix4(M).add(off);
+    this.poly(k, [at(x, y), at(x + w, y), at(x + w, y + h), at(x, y + h)]);
+    return this;
+  }
+  text(M, str, x, y, size, k = 'ink', anchor = 'start', lift = 0.035) { this.texts.push({ M, str, x, y, size, k, anchor, lift }); return this; }
+  // any three.js geometry, flat-filled by facet direction, every facet edge a hairline
+  geo(g, m, tone = 'n') {
+    const [bodyK, deckK, lineK] = TONE[tone];
+    g = (g.index ? g.toNonIndexed() : g.clone()).applyMatrix4(m);
+    const p = g.attributes.position, a = v3(), b = v3(), c = v3(), n = v3();
+    for (let i = 0; i < p.count; i += 3) {
+      a.fromBufferAttribute(p, i); b.fromBufferAttribute(p, i + 1); c.fromBufferAttribute(p, i + 2);
+      n.crossVectors(b.clone().sub(a), c.clone().sub(a)).normalize();
+      if (n.y > -0.5) this.tri(n.y > 0.45 ? deckK : bodyK, a, b, c);
+    }
+    const e = new THREE.EdgesGeometry(g).attributes.position;
+    for (let i = 0; i < e.count; i += 2) this.seg(lineK, a.fromBufferAttribute(e, i).clone(), b.fromBufferAttribute(e, i + 1).clone());
+    return this;
+  }
+  build(name) {
+    const g = new THREE.Group(); if (name) g.name = name;
+    for (const k in this.fill) {
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(this.fill[k], 3));
+      const m = new THREE.Mesh(geo, FILL[k]); m.userData.fill = k; g.add(m);
+    }
+    for (const k in this.lines) {
+      const l = new LineSegments2(new LineSegmentsGeometry().setPositions(this.lines[k]), LINE[k]);
+      l.userData.line = k; l.raycast = noop; g.add(l);
+    }
+    for (const t of this.texts) g.add(textMesh(t));
+    return g;
+  }
+}
+// Text drawn flat on a plane: a canvas glyph texture (white) tinted by its token colour.
+function textMesh({ M, str, x, y, size, k, anchor, lift }) {
+  const font = `500 ${TEX_PX}px "DM Mono", ui-monospace, monospace`;
+  const c = document.createElement('canvas'), g = c.getContext('2d'); g.font = font;
+  c.width = Math.ceil(g.measureText(str).width) + 8; c.height = Math.round(TEX_PX * 1.25);
+  g.font = font; g.fillStyle = '#fff'; g.fillText(str, 4, TEX_PX * 0.95);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = ANISO;
+  const s = size / TEX_PX, w = c.width * s, h = c.height * s;
+  const x0 = anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x - 4 * s, top = y - TEX_PX * 0.95 * s;
+  const geo = new THREE.PlaneGeometry(w, h).scale(1, -1, 1).translate(x0 + w / 2, top + h / 2, 0).applyMatrix4(M);
+  geo.translate(...v3(0, 0, 0).setFromMatrixColumn(M, 2).normalize().multiplyScalar(-lift).toArray());
+  const mat = new THREE.MeshBasicMaterial({ map:tex, transparent:true, depthWrite:false, side:THREE.DoubleSide, color:css(TEXT_TOK[k]) });
+  TEXT[k].push(mat);
+  const mesh = new THREE.Mesh(geo, mat); mesh.raycast = noop; return mesh;
+}
+const pose = (o, x, y, h = 0, z = 0) => { o.position.set(x, z, y); o.rotation.y = -h; };
+// light a part up: its faces take the live colour (LineSegments2 is also a Mesh, so go by the fill key)
+const glow = (g, on) => { for (const m of g.children) if (m.userData.fill) m.material = on ? FILL.livef : FILL[m.userData.fill]; };
+
+// ---- small maths ----
+const rng = (s => () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(+new URLSearchParams(location.search).get('seed') || 20261004);
+const rand = (a, b) => a + (b - a) * rng();
+const pick = a => a[Math.floor(rng() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+const ease = t => t * t * (3 - 2 * t);
+
+// A polyline with filleted corners, walked by arc length. at(s) also extrapolates past both ends.
+class Path {
+  constructor(pts, r = 6) {
+    this.segs = []; let cur = pts[0], s = 0;
+    const line = (a, b) => { const len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 1e-6) return;
+      this.segs.push({ t:'L', s, len, ax:a[0], ay:a[1], h:Math.atan2(b[1] - a[1], b[0] - a[0]) }); s += len; };
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], c = pts[i + 1];
+      if (!c) { line(cur, b); break; }
+      const l1 = Math.hypot(b[0] - a[0], b[1] - a[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+      const d1x = (b[0] - a[0]) / l1, d1y = (b[1] - a[1]) / l1, d2x = (c[0] - b[0]) / l2, d2y = (c[1] - b[1]) / l2;
+      const turn = Math.atan2(d1x * d2y - d1y * d2x, d1x * d2x + d1y * d2y);
+      if (Math.abs(turn) < 1e-4) continue;
+      const tanH = Math.tan(Math.abs(turn) / 2);
+      const t = Math.min(r * tanH, Math.hypot(b[0] - cur[0], b[1] - cur[1]), l2 / 2), rr = t / tanH;
+      const p1 = [b[0] - d1x * t, b[1] - d1y * t], sg = Math.sign(turn);
+      line(cur, p1);
+      const cx = p1[0] - d1y * rr * sg, cy = p1[1] + d1x * rr * sg;
+      this.segs.push({ t:'A', s, len:rr * Math.abs(turn), cx, cy, r:rr, a0:Math.atan2(p1[1] - cy, p1[0] - cx), da:turn });
+      s += rr * Math.abs(turn); cur = [b[0] + d2x * t, b[1] + d2y * t];
+    }
+    this.length = s;
+  }
+  on(g, d) {
+    if (g.t === 'L') return { x:g.ax + Math.cos(g.h) * d, y:g.ay + Math.sin(g.h) * d, h:g.h };
+    const a = g.a0 + g.da * (d / g.len);
+    return { x:g.cx + g.r * Math.cos(a), y:g.cy + g.r * Math.sin(a), h:a + Math.sign(g.da) * Math.PI / 2 };
+  }
+  at(s) {
+    const S = this.segs;
+    if (s <= 0) { const p = this.on(S[0], 0); return { x:p.x + Math.cos(p.h) * s, y:p.y + Math.sin(p.h) * s, h:p.h }; }
+    if (s >= this.length) { const g = S[S.length - 1], p = this.on(g, g.len), e = s - this.length; return { x:p.x + Math.cos(p.h) * e, y:p.y + Math.sin(p.h) * e, h:p.h }; }
+    for (const g of S) if (s <= g.s + g.len) return this.on(g, s - g.s);
+  }
+  project(x, y) { let best = 0, bd = Infinity; for (let s = 0; s <= this.length; s += 0.1) { const p = this.at(s), d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = s; } } return best; }
+}
+
+// ---- layout (skill coords; the slab is 200 × 150) ----
+// thing         | x         | y         | notes
+// slab          | 0–200     | 0–150     | z −4–0
+// main road     | 0–200     | 124–138   | westbound lane y 127.5, eastbound 134.5
+// fence + gate  | 2–196     | 4–118     | gate gap x 112–130 (out lane x 118, in lane x 124)
+// factory       | 14–94     | 12–48     | walls 14, sawtooth roof to 19
+// office annex  | 94–116    | 28–48     | h 8
+// conveyor      | 86 → 150  | 44 → 58   | belt top z 1.0, side pickup on its last 7 m
+// staging       | 134–176   | 72 & 90   | two rows of 8 slots facing an aisle at y 81
+// loading bays  | 28 / 74   | 80        | trucks park heading west, forklifts load from the north
+// forklift ways | 14–188    | 66, 81    | four chargers at x 16–33 against the factory wall
+const BAYS = [{ id:1, bx:28 }, { id:2, bx:74 }];
+const SLOTS = []; for (const row of [0, 1]) for (let c = 0; c < 8; c++) SLOTS.push({ id:`${'AB'[row]}${c + 1}`, x:134 + 6 * c, y:row ? 90 : 72, row, pallet:null, reserved:null });
+const CHARGERS = [16, 21.5, 27, 32.5].map((x, k) => ({ k, x, h:-Math.PI / 2, F:[x, 51.6], SO:[x, 58], E:{ x, y:66, si:0 } }));
+
+// ---- static scene ----
+function buildWorld() {
+  const p = new Part(), G = TOP(0, 0, 0);
+  p.box(0, 0, -4, 200, 150, 4, 'gr');
+  // asphalt
+  p.fill2(G, 0, 124, 200, 14, 'glass', 0.02);
+  for (const r of [[113, 89, 16, 35], [4, 89, 125, 10], [4, 89, 8.5, 28], [4, 107, 125, 10], [20, 76, 42, 13], [66, 76, 42, 13]]) p.fill2(G, ...r, 'road', 0.02);
+  // main road paint: kerbs, dashed centre line, verge
+  p.draw(G, [0, 138, 200, 138, 0, 141, 200, 141, 0, 124, 112, 124, 130, 124, 200, 124], 'line', 0.05);
+  for (let x = 1; x < 200; x += 6) p.draw(G, [x, 131, x + 3, 131], 'line', 0.05);
+  // yard paint: stop line, lane words, bays, staging, chargers, forklift ways
+  p.draw(G, [113, 121.4, 121, 121.4], 'line', 0.05);
+  p.text(G, 'OUT', 118, 104, 1.6, 'paint', 'middle').text(G, 'IN', 124.6, 104, 1.6, 'paint', 'middle');
+  for (const b of BAYS) { p.rect2(G, b.bx - 1, 77, 23, 6, 'line', 0.05); p.text(G, `BAY ${b.id}`, b.bx, 86.6, 1.5, 'paint'); }
+  for (const s of SLOTS) p.rect2(G, s.x - 1.7, s.y - 1.7, 3.4, 3.4, 'detail', 0.05);
+  p.text(G, 'STAGING', 132.4, 98.6, 1.5, 'paint').text(G, 'A', 129.5, 72.6, 1.5, 'paint').text(G, 'B', 129.5, 90.6, 1.5, 'paint');
+  for (const c of CHARGERS) p.rect2(G, c.x - 1.6, 49, 3.2, 6.6, 'detail', 0.05);
+  for (let x = 15; x < 186; x += 4) p.draw(G, [x, 66, x + 2, 66], 'detail', 0.05);
+  for (let i = 0; i < 3; i++) p.rect2(G, 140.5 + 3.1 * i, 60, 2.4, 2.6, 'detail', 0.05);
+  for (let x = 129; x < 187; x += 4) p.draw(G, [x, 81, x + 2, 81], 'detail', 0.05);
+  // fence: hairline posts and two rails
+  const fence = (x1, y1, x2, y2) => {
+    const n = Math.round(Math.hypot(x2 - x1, y2 - y1) / 4);
+    for (let i = 0; i <= n; i++) { const x = x1 + (x2 - x1) * i / n, y = y1 + (y2 - y1) * i / n; p.seg('line', W(x, y, 0), W(x, y, 2.4)); }
+    for (const z of [1.1, 2.3]) p.seg('line', W(x1, y1, z), W(x2, y2, z));
+  };
+  fence(2, 4, 196, 4); fence(2, 4, 2, 118); fence(196, 4, 196, 118); fence(2, 118, 112, 118); fence(130, 118, 196, 118);
+  // parking: stalls for the staff cars
+  for (let i = 0; i <= 14; i++) { const x = 140 + i * 3.4; p.draw(G, [x, 10, x, 15.5, x, 31.5, x, 37], 'detail', 0.05); }
+  p.draw(G, [140, 15.5, 187.6, 15.5, 140, 31.5, 187.6, 31.5], 'detail', 0.05);
+  p.text(G, 'STAFF', 140, 24.4, 1.5, 'paint');
+  // trees: a box trunk and a low-poly crown
+  const crown = new THREE.IcosahedronGeometry(1, 0);
+  const tree = (x, y, s = 1) => {
+    p.box(x - 0.22 * s, y - 0.22 * s, 0, 0.44 * s, 0.44 * s, 2.2 * s);
+    p.geo(crown, new THREE.Matrix4().compose(W(x, y, 2.2 * s + 1.7 * s), new THREE.Quaternion().setFromAxisAngle(v3(0, 1, 0), rand(0, 3)), v3(2 * s, 2.2 * s, 2 * s)));
+  };
+  for (let x = 6; x < 198; x += rand(11, 17)) tree(x, rand(144.5, 146.5), rand(0.85, 1.15));
+  for (const [x, y] of [[136, 46], [146, 46], [190, 46], [192, 10], [134, 8], [121, 22], [124, 8], [8, 70], [8, 30], [184, 108], [140, 108], [160, 110]]) tree(x, y, rand(0.8, 1.1));
+  return p.build('world');
+}
+
+function buildFactory() {
+  const p = new Part();
+  p.box(14, 12, 0, 80, 36, 14);
+  // sawtooth roof: four prisms, the steep glazed face of each turned to the viewer
+  for (let i = 0; i < 4; i++) {
+    const x0 = 14 + 20 * i;
+    p.extrude([[x0, 12, 14], [x0 + 20, 12, 14], [x0 + 20, 12, 19]], [0, 36, 0]);
+    const M = SIDE(x0 + 20, 48, 19);
+    p.fill2(M, 1, 0.8, 34, 3.4).rect2(M, 1, 0.8, 34, 3.4, 'line');
+    for (let u = 3.5; u < 35; u += 2.5) p.draw(M, [u, 0.8, u, 4.2]);
+    for (let y = 15; y < 48; y += 3) p.seg('detail', W(x0 + 0.4, y, 14.15), W(x0 + 19.6, y, 18.95));
+  }
+  // front wall: sign band, invented glyph, doors, corrugation
+  const F = FRONT(14, 48, 14);
+  p.draw(F, [0, 4.2, 80, 4.2]);
+  const hex = []; for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3, b = a + Math.PI / 3;
+    hex.push(5 + 1.6 * Math.cos(a), 2.1 + 1.6 * Math.sin(a), 5 + 1.6 * Math.cos(b), 2.1 + 1.6 * Math.sin(b)); }
+  p.draw(F, [...hex, 5, 2.1, 5, 0.5, 5, 2.1, 5 + 1.6 * Math.cos(Math.PI / 6), 2.1 + 0.8, 5, 2.1, 5 - 1.6 * Math.cos(Math.PI / 6), 2.1 + 0.8], 'line');
+  p.text(F, 'PLANT 01', 8.4, 3.1, 2.3);
+  const doors = [[22, 32], [44, 54], [60.5, 62.5], [69, 75]];
+  for (const [a, b] of doors.slice(0, 2)) { p.rect2(F, a, 6, b - a, 8, 'line'); for (let v = 6.7; v < 14; v += 0.7) p.draw(F, [a, v, b, v]); }
+  p.fill2(F, 60.5, 10, 2, 4).rect2(F, 60.5, 10, 2, 4, 'line');
+  p.fill2(F, 69, 9.6, 6, 4.4).rect2(F, 69, 9.6, 6, 4.4, 'line');
+  for (let u = 1.6; u < 80; u += 1.6) { if (doors.some(([a, b]) => u > a - 0.3 && u < b + 0.3)) continue; p.draw(F, [u, 4.2, u, 14]); }
+  for (const [a, b] of doors.slice(0, 2)) for (let u = a + 0.2; u < b; u += 1.6) p.draw(F, [u, 4.2, u, 6]);
+  const R = SIDE(94, 48, 14);
+  p.draw(R, [0, 4.2, 36, 4.2]); for (let u = 1.6; u < 36; u += 1.6) p.draw(R, [u, 4.2, u, 14]);
+  // chimney with rings and a warning light
+  p.cylZ(26, 22, 12, 1.3, 18, 14);
+  for (const z of [24, 28.6]) { const r = []; for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, b = (i + 1) / 14 * Math.PI * 2;
+    r.push(W(26 + 1.33 * Math.cos(a), 22 + 1.33 * Math.sin(a), z), W(26 + 1.33 * Math.cos(b), 22 + 1.33 * Math.sin(b), z)); }
+    for (let i = 0; i < r.length; i += 2) p.seg('detail', r[i], r[i + 1]); }
+  // office annex: windows, door, roof plant
+  p.box(94, 28, 0, 22, 20, 8);
+  const A = FRONT(94, 48, 8);
+  for (let i = 0; i < 4; i++) p.fill2(A, 1.5 + 4 * i, 1.6, 3, 2.4).rect2(A, 1.5 + 4 * i, 1.6, 3, 2.4, 'line');
+  p.fill2(A, 18, 3.6, 2.6, 4.4).rect2(A, 18, 3.6, 2.6, 4.4, 'line');
+  const AS = SIDE(116, 48, 8);
+  for (let i = 0; i < 4; i++) p.fill2(AS, 1.5 + 4.6 * i, 1.6, 3, 2.4).rect2(AS, 1.5 + 4.6 * i, 1.6, 3, 2.4, 'line');
+  for (const x of [97, 101.5]) { p.box(x, 31, 8, 3.4, 2.6, 1.4); p.draw(FRONT(x, 33.6, 9.4), [0.5, 0.4, 2.9, 0.4, 0.5, 0.7, 2.9, 0.7, 0.5, 1.0, 2.9, 1.0]); }
+  for (const [x, y] of FANS) p.cylZ(x, y, 8, 1.7, 0.8, 16);
+  const g = p.build('factory');
+  // live bits: the chimney light and the fan blades
+  const light = new Part().box(25.6, 21.6, 30, 0.8, 0.8, 0.5).build('light'); g.add(light);
+  for (const [x, y] of FANS) {
+    const b = new Part(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; b.seg('line', W(0, 0, 0), W(1.45 * Math.cos(a), 1.45 * Math.sin(a), 0)); }
+    const blades = b.build('fan'); pose(blades, x, y, 0, 8.85); g.add(blades);
+  }
+  return g;
+}
+const FANS = [[107.5, 37], [111.5, 43]];
+
+function buildConveyor() {
+  const p = new Part();
+  p.box(84.5, 48, 0.6, 3, 11.5, 0.4);
+  p.box(87.5, 56.5, 0.6, 62.3, 3, 0.4);
+  p.box(84.5, 48, 1.0, 0.25, 11.5, 0.25); p.box(87.25, 48, 1.0, 0.25, 8.5, 0.25);
+  p.box(87.5, 56.5, 1.0, 62.3, 0.25, 0.25); p.box(87.5, 59.25, 1.0, 51.5, 0.25, 0.25);
+  for (let y = 48.6; y < 59.2; y += 0.8) p.seg('detail', W(84.75, y, 1.02), W(87.25, y, 1.02));
+  for (let x = 88; x < 149.6; x += 0.8) p.seg('detail', W(x, 56.75, 1.02), W(x, 59.25, 1.02));
+  for (let y = 50; y < 56; y += 4) for (const x of [84.6, 87.15]) p.box(x, y, 0, 0.25, 0.25, 0.6);
+  for (let x = 90; x < 150; x += 4) for (const y of [56.6, 59.15]) p.box(x, y, 0, 0.25, 0.25, 0.6);
+  p.box(149.8, 56.5, 0.6, 0.3, 3, 0.9);
+  p.box(118, 59.6, 0.2, 1.8, 1.2, 1.2); p.draw(FRONT(118, 60.8, 1.4), [0.3, 0.3, 1.5, 0.3, 0.3, 0.55, 1.5, 0.55, 0.3, 0.8, 1.5, 0.8]);
+  return p.build('conveyor');
+}
+
+function buildGate() {
+  const p = new Part();
+  p.box(131, 107, 0, 4, 4, 3);
+  p.box(130.6, 106.6, 3, 4.8, 4.8, 0.3);
+  p.fill2(FRONT(131, 111, 3), 0.5, 0.6, 3, 1.3).rect2(FRONT(131, 111, 3), 0.5, 0.6, 3, 1.3, 'line');
+  p.fill2(SIDE(135, 111, 3), 0.5, 0.6, 3, 1.3).rect2(SIDE(135, 111, 3), 0.5, 0.6, 3, 1.3, 'line');
+  p.box(112.4, 118.2, 0, 0.6, 0.6, 1.3); p.box(129.4, 118.2, 0, 0.6, 0.6, 1.3);
+  const g = p.build('gate');
+  const arm = dir => { const a = new Part(), x0 = dir > 0 ? 0 : -8;
+    a.box(x0, -0.15, -0.15, 8, 0.3, 0.3, 'k');
+    for (let x = 1; x < 8; x += 1.4) a.seg('koline', W(x0 + x, 0.16, -0.15), W(x0 + x + 0.7, 0.16, 0.15));
+    return a.build(dir > 0 ? 'armOut' : 'armIn'); };
+  const out = arm(1), inn = arm(-1);
+  pose(out, 112.7, 118.5, 0, 1.45); pose(inn, 129.7, 118.5, 0, 1.45);
+  g.add(out, inn);
+  return g;
+}
+
+function bayLamp(b) {
+  const p = new Part(); p.box(b.bx - 3, 74.6, 0, 0.3, 0.3, 4.2);
+  const g = p.build('bayPost');
+  const lamp = new Part().box(b.bx - 3.25, 74.35, 4.2, 0.8, 0.8, 0.6).build('lamp'); g.add(lamp);
+  b.lamp = lamp; return g;
+}
+
+// ---- models (local: +x forward, origin at the front) ----
+function buildTractor() {
+  const p = new Part();
+  p.box(-5.8, -1.1, 0.55, 5.6, 2.2, 0.45);
+  p.box(-0.5, -2.05, 0.45, 0.5, 4.1, 0.65);
+  p.box(-3.0, -2.05, 1.0, 2.9, 4.1, 3.3);
+  p.box(-3.1, -2.15, 4.3, 3.1, 4.3, 0.22);
+  p.box(-5.6, -1.3, 1.0, 2.4, 2.6, 0.22);
+  for (const y of [1.25, -1.95]) p.box(-4.4, y, 0.6, 1.2, 0.7, 0.6);
+  p.box(-3.35, 1.55, 1.0, 0.24, 0.24, 4.4);
+  for (const x of [-1.2, -4.6]) { p.cylY(x, 1.5, 0.62, 0.62, 0.55, 12); p.cylY(x, -2.05, 0.62, 0.62, 0.55, 12); }
+  const front = SIDE(-0.1, 2.05, 4.3);
+  p.fill2(front, 0.3, 0.35, 3.5, 1.5).rect2(front, 0.3, 0.35, 3.5, 1.5, 'line');
+  p.draw(front, [0.6, 2.4, 3.5, 2.4, 0.6, 2.7, 3.5, 2.7, 0.6, 3.0, 3.5, 3.0]);
+  p.fill2(FRONT(-3.0, 2.05, 4.3), 1.5, 0.35, 1.2, 1.3).rect2(FRONT(-3.0, 2.05, 4.3), 1.5, 0.35, 1.2, 1.3, 'line');
+  p.fill2(FRONT(-3.0, -2.05, 4.3), 1.5, 0.35, 1.2, 1.3, 'glass', -0.03).rect2(FRONT(-3.0, -2.05, 4.3), 1.5, 0.35, 1.2, 1.3, 'line', -0.04);
+  return p.build('tractor');
+}
+const SLOT_LOCAL = [[-2.6, -1.3], [-7.2, -1.3], [-11.8, -1.3], [-2.6, 1.3], [-7.2, 1.3], [-11.8, 1.3]]; // far row first when parked heading west
+const DECK = 1.6;
+function buildTrailer() {
+  const p = new Part();
+  p.box(-14.4, -2.4, 1.15, 15.2, 4.8, 0.45);
+  p.box(-14.0, -0.9, 0.62, 14.6, 1.8, 0.53);
+  p.box(0.55, -2.4, DECK, 0.25, 4.8, 1.7);
+  p.draw(SIDE(0.8, 2.4, DECK + 1.7), [0.8, 0, 0.8, 1.7, 2.4, 0, 2.4, 1.7, 4.0, 0, 4.0, 1.7]);
+  for (const x of [-0.5, -4.9, -9.5, -14.2]) for (const y of [2.2, -2.4]) p.box(x, y, DECK, 0.2, 0.2, 0.35);
+  for (const y of [2.3, -2.3]) p.seg('line', W(-14.2, y, DECK + 0.35), W(0.55, y, DECK + 0.35));
+  const T = TOP(-14.4, -2.4, DECK);
+  for (let v = 0.8; v < 4.8; v += 0.8) p.draw(T, [0, v, 15.2, v]);
+  for (const y of [-1.5, 1.25]) p.box(-1.9, y, 0.15, 0.25, 0.25, 1.0);
+  for (const x of [-11.0, -12.5]) { p.cylY(x, 1.7, 0.62, 0.62, 0.6, 12); p.cylY(x, -2.3, 0.62, 0.62, 0.6, 12); }
+  return p.build('trailer');
+}
+function buildForklift() {
+  const p = new Part();
+  p.box(-3.5, -1.0, 0.35, 3.1, 2.0, 0.85);
+  p.box(-3.75, -1.05, 0.35, 0.9, 2.1, 1.45);
+  p.box(-2.5, -0.55, 1.2, 0.7, 1.1, 0.45);
+  p.box(-2.6, -0.55, 1.65, 0.18, 1.1, 0.6);
+  for (const [x, y] of [[-0.85, -0.95], [-0.85, 0.8], [-2.75, -0.95], [-2.75, 0.8]]) p.box(x, y, 1.2, 0.15, 0.15, 2.2);
+  p.box(-2.9, -1.05, 3.4, 2.2, 2.1, 0.12);
+  p.draw(TOP(-2.9, -1.05, 3.52), [0.55, 0, 0.55, 2.1, 1.1, 0, 1.1, 2.1, 1.65, 0, 1.65, 2.1]);
+  p.box(-0.4, -0.85, 0.2, 0.22, 0.25, 3.6); p.box(-0.4, 0.6, 0.2, 0.22, 0.25, 3.6); p.box(-0.4, -0.85, 3.55, 0.22, 1.7, 0.18);
+  for (const x of [-0.95, -3.05]) { p.cylY(x, 0.72, 0.42, 0.42, 0.42, 10); p.cylY(x, -1.14, 0.42, 0.42, 0.42, 10); }
+  const g = p.build('forklift');
+  const c = new Part(); c.box(-0.2, -0.9, 0, 0.16, 1.8, 1.1);
+  for (const y of [-0.62, 0.38]) c.box(-0.04, y, 0, 2.2, 0.24, 0.1);
+  g.add(c.build('carriage'));
+  g.add(new Part().box(-1.95, -0.15, 3.52, 0.3, 0.3, 0.25).build('beacon'));
+  return g;
+}
+function buildCar(van, tone) {
+  const p = new Part();
+  if (van) {
+    p.box(-5.2, -1.05, 0.35, 5.2, 2.1, 2.1, tone);
+    const f = SIDE(0, 1.05, 2.45); p.fill2(f, 0.2, 0.25, 1.7, 0.8).rect2(f, 0.2, 0.25, 1.7, 0.8, tone === 'k' ? 'koline' : 'line');
+    p.draw(FRONT(-5.2, 1.05, 2.45), [1.2, 0, 1.2, 2.1], tone === 'k' ? 'koline' : 'detail');
+  } else {
+    p.box(-4.2, -0.95, 0.35, 4.2, 1.9, 0.75, tone);
+    p.box(-3.2, -0.85, 1.1, 2.1, 1.7, 0.62, tone);
+    const f = SIDE(-1.1, 0.85, 1.72); p.fill2(f, 0.15, 0.1, 1.4, 0.42).rect2(f, 0.15, 0.1, 1.4, 0.42, tone === 'k' ? 'koline' : 'line');
+  }
+  for (const x of van ? [-0.9, -4.3] : [-0.8, -3.4]) { p.cylY(x, 0.72, 0.36, 0.36, 0.32, 10); p.cylY(x, -1.04, 0.36, 0.36, 0.32, 10); }
+  return p.build(van ? 'van' : 'car');
+}
+function buildPallet(v) {
+  const p = new Part();
+  p.box(-1.2, -1.2, 0, 2.4, 2.4, 0.35);
+  const slats = [0, 0.12, 2.4, 0.12, 0.55, 0.12, 0.55, 0.35, 1.85, 0.12, 1.85, 0.35];
+  p.draw(FRONT(-1.2, 1.2, 0.35), slats).draw(SIDE(1.2, 1.2, 0.35), slats);
+  p.draw(FRONT(-1.2, -1.2, 0.35), slats, 'detail', -0.04).draw(SIDE(-1.2, 1.2, 0.35), slats, 'detail', -0.04);
+  if (v === 0) {
+    p.box(-1.1, -1.1, 0.35, 2.2, 2.2, 1.5, 'k');
+    p.draw(TOP(-1.1, -1.1, 1.85), [1.1, 0, 1.1, 2.2, 0, 1.1, 0.5, 1.1, 1.7, 1.1, 2.2, 1.1], 'koline');
+  } else if (v === 1) {
+    for (let l = 0; l < 2; l++) for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) p.box(-1.1 + 1.12 * i, -1.1 + 1.12 * j, 0.35 + 0.78 * l, 1.08, 1.08, 0.76, 'k');
+  } else {
+    for (let l = 0; l < 6; l++) p.box(-1.15, -1.0, 0.35 + 0.22 * l, 2.3, 2.0, 0.2, 'k');
+    for (const x of [-0.5, 0.5]) p.seg('koline', W(x, 1.03, 0.35), W(x, 1.03, 1.67)).seg('koline', W(x, 1.03, 1.67), W(x, -1.03, 1.67));
+  }
+  return p.build('pallet');
+}
+
+// ---- simulation ----
+const STEP = 1 / 60, WARMUP = 70;
+const sim = { t:0, trucks:[], cars:[], forklifts:[], pallets:new Set(), stats:{ produced:0, trucksIn:0, trucksOut:0, trucksLoaded:0 } };
+const T0 = Date.now() - WARMUP * 1000;
+const clock = t => new Date(T0 + t * 1000).toTimeString().slice(0, 5);
+const kmh = v => `${Math.round(v * 3.6)} km/h`;
+const DESTS = ['Northgate DC', 'Harbor Point', 'Eastvale Depot', 'Millbrook Store', 'Westfield Hub', 'Cedar Ridge'];
+const DRIVERS = ['A. Haddad', 'S. Okafor', 'M. Rossi', 'J. Park', 'L. Novak', 'R. Silva', 'T. Brandt', 'K. Mensah'];
+const SKUS = [
+  { name:'Gear housings', code:'GH-24', units:[24, 48], kg:[380, 520] },
+  { name:'Cartons', code:'CT-60', units:[48, 96], kg:[160, 260] },
+  { name:'Steel panels', code:'SP-10', units:[10, 14], kg:[640, 820] },
+];
+let palletSeq = 1001, truckSeq = 2051;
+const PROTO = {};
+let selected = null, hovered = null;
+
+class Pallet {
+  constructor() {
+    this.kind = 'pallet'; this.id = `PAL-${palletSeq++}`; this.v = Math.floor(rng() * 3); this.sku = SKUS[this.v];
+    this.units = Math.round(rand(...this.sku.units)); this.kg = Math.round(rand(...this.sku.kg) / 5) * 5; this.t0 = sim.t;
+    this.group = PROTO.pallet[this.v].clone(); this.group.userData.entity = this; this.groups = [this.group];
+    this.loc = { type:'new' }; this.reserved = null; this.tw = null; this.pick = [0, 0, 1.2];
+    sim.pallets.add(this);
+  }
+  tweenTo(to, d = 0.5) {
+    const r = this.group.rotation.y;
+    this.tw = { p0:this.group.position.clone(), p1:to, r0:r, r1:Math.round(r / (Math.PI / 2)) * Math.PI / 2, t:0, d };
+  }
+  update(dt) {
+    if (!this.tw) return;
+    const w = this.tw; w.t = Math.min(w.d, w.t + dt); const e = ease(w.t / w.d);
+    this.group.position.lerpVectors(w.p0, w.p1, e); this.group.rotation.y = w.r0 + (w.r1 - w.r0) * e;
+    if (w.t >= w.d) this.tw = null;
+  }
+  where() {
+    const l = this.loc;
+    return l.type === 'conveyor' ? (conveyor.inZone(this) ? 'line A pickup' : 'on line A')
+      : l.type === 'stage' ? `staging ${l.slot.id}` : l.type === 'forklift' ? `on ${l.f.id}`
+      : l.type === 'truck' ? `on ${l.truck.id}` : '—';
+  }
+  info() {
+    return { kind:`Pallet · ${this.sku.code}`, title:this.id, status:this.where(),
+      rows:[['Contents', this.sku.name], ['Quantity', `${this.units} units`], ['Gross weight', `${this.kg} kg`], ['Produced', clock(this.t0)],
+        ['Bound for', this.loc.type === 'truck' ? this.loc.truck.dest : this.reserved?.task?.to ?? '—']] };
+  }
+  readout() { return `${this.id} · ${this.where()}`.toLowerCase(); }
+  remove() { sim.pallets.delete(this); this.group.removeFromParent(); forget(this); }
+}
+
+// Line A: pallets appear inside the factory and roll out to the pickup point.
+const conveyor = {
+  kind:'conveyor', id:'Line A', path:new Path([[86, 44], [86, 58], [148.5, 58]], 3), items:[], next:2, held:false, rate:9, pick:[118.9, 60.8, 0.8],
+  // the last stretch of belt has no rail on the yard side; forklifts pick from there, side on
+  // pallets come to rest there at three stations, 3.1 apart
+  inZone(p) { return p.s >= this.path.length - 6.3; },
+  pickable() { return this.items.filter(p => this.inZone(p) && p.rest && !p.reserved); },
+  update(dt) {
+    this.items.forEach((p, i) => {
+      // a reserved pallet holds still for the forklift coming for it; the rest queue up 3.1 apart
+      const s = p.reserved ? p.s : Math.min(i ? this.items[i - 1].s - 3.1 : this.path.length, p.s + 2.4 * dt);
+      p.rest = s - p.s < 1e-6; p.s = s;
+      const q = this.path.at(p.s); pose(p.group, q.x, q.y, 0, 1.0);
+    });
+    this.next -= dt;
+    const last = this.items[this.items.length - 1];
+    this.held = this.next <= 0 && !!last && last.s < 3.1;
+    if (this.next <= 0 && !this.held) this.spawn();
+  },
+  spawn() {
+    const p = new Pallet(); p.loc = { type:'conveyor' }; p.s = 0; scene.add(p.group); this.items.push(p);
+    this.next = this.rate; sim.stats.produced++;
+  },
+  info() {
+    return { kind:'Conveyor', title:'Line A', status:this.held ? 'held · belt full' : 'running',
+      rows:[['Rate', `1 pallet / ${this.rate} s`], ['On belt', `${this.items.length} pallets`], ['At pickup', `${this.items.filter(p => this.inZone(p)).length} pallets`],
+        ['Next pallet', this.held ? 'waiting for space' : `in ${Math.max(0, Math.ceil(this.next))} s`]] };
+  },
+  readout() { return `line a · ${this.held ? 'held' : 'running'} · ${this.items.length} on belt`; },
+};
+
+// Room along v's heading before it reaches the body of another road vehicle in its corridor, less a gap.
+// Two vehicles that stop for each other would wait forever, so the senior one (trucks first, then
+// whoever came first) looks past the other for a moment and drives on.
+let roadSeq = 0;
+const rank = v => (v.kind === 'truck' ? 0 : 1e6) + v.seq;
+function clearAhead(v, look, gap, dt) {
+  if (v.blocker?.blocker === v && rank(v) < rank(v.blocker)) { v.ignore = v.blocker; v.ignoreT = 3; }
+  if ((v.ignoreT = (v.ignoreT ?? 0) - dt) <= 0) v.ignore = null;
+  const { x, y, h } = v.front, c = Math.cos(h), s = Math.sin(h);
+  let best = Infinity, who = null;
+  for (const o of sim.cars.concat(sim.trucks)) if (o !== v && o !== v.ignore) for (const p of o.points) {
+    const dx = p[0] - x, dy = p[1] - y, f = dx * c + dy * s;
+    if (f > 0 && f < look && Math.abs(dy * c - dx * s) < v.halfW + 1.2 && f - o.halfW < best) { best = f - o.halfW; who = o; }
+  }
+  v.blocker = best - gap < 0.3 ? who : null;
+  return best - gap;
+}
+const roadBusy = (v, x0, x1, y) => sim.cars.concat(sim.trucks).some(o => o !== v && o.points.some(p => Math.abs(p[1] - y) < 2.6 && p[0] > x0 && p[0] < x1));
+
+const LANES = [{ name:'westbound', path:new Path([[208, 127.5], [-8, 127.5]]), next:0 }, { name:'eastbound', path:new Path([[-8, 134.5], [208, 134.5]]), next:1 }];
+class Car {
+  constructor(lane) {
+    this.kind = 'car'; this.seq = roadSeq++; this.van = rng() < 0.3; this.len = this.van ? 5.2 : 4.2; this.halfW = 1.05;
+    const tone = rng() < 0.4 ? 'k' : 'n';
+    this.id = `${String.fromCharCode(65 + Math.floor(rng() * 26))}${String.fromCharCode(65 + Math.floor(rng() * 26))} ${Math.floor(rand(100, 999))}`;
+    this.lane = lane; this.path = lane.path; this.s = 0; this.vmax = rand(10, 14); this.v = this.vmax * 0.8;
+    this.group = PROTO[this.van ? 'van' : 'car'][tone].clone(); this.group.userData.entity = this; this.groups = [this.group];
+    this.pick = [-this.len / 2, 0, this.van ? 1.6 : 1.2];
+    scene.add(this.group); sim.cars.push(this); this.place();
+  }
+  place() {
+    const a = this.path.at(this.s); pose(this.group, a.x, a.y, a.h);
+    this.front = a; this.points = [[a.x, a.y], [a.x - Math.cos(a.h) * this.len, a.y - Math.sin(a.h) * this.len]];
+  }
+  update(dt) {
+    const room = clearAhead(this, 30, 2, dt), vT = Math.min(this.vmax, Math.sqrt(12 * Math.max(0, room)));
+    this.v = vT < this.v ? vT : Math.min(vT, this.v + 3 * dt);
+    this.s += this.v * dt; this.place();
+    if (this.s - this.len > this.path.length) this.remove();
+  }
+  info() {
+    return { kind:this.van ? 'Van' : 'Car', title:this.id, status:`${this.lane.name} · ${kmh(this.v)}`,
+      rows:[['Road', 'Riverside Rd'], ['Direction', this.lane.name], ['Speed', kmh(this.v)], ['Length', `${this.len.toFixed(1)} m`]] };
+  }
+  readout() { return `${this.id.toLowerCase()} · ${this.lane.name} · ${kmh(this.v)}`; }
+  remove() { sim.cars.splice(sim.cars.indexOf(this), 1); this.group.removeFromParent(); forget(this); }
+}
+
+for (const b of BAYS) {
+  b.path = new Path([[218, 127.5], [124, 127.5], [124, 94], [b.bx + 40, 94], [b.bx + 30, 80], [b.bx - 4, 80], [b.bx - 14, 94], [8, 94], [8, 112], [118, 112], [118, 134.5], [218, 134.5]], 6);
+  b.stopS = b.path.project(b.bx, 80); b.gateS = b.path.project(118, 121); b.inS = b.path.project(124, 110); b.truck = null; b.cooldown = b.id === 1 ? 0 : 9;
+}
+class Truck {
+  constructor(bay) {
+    this.kind = 'truck'; this.seq = roadSeq++; this.id = `TRK-${truckSeq++}`; this.bay = bay; this.path = bay.path; this.s = 0; this.v = 8; this.halfW = 2.4;
+    this.state = 'arriving'; this.cleared = false; this.fullT = 0; this.t0 = sim.t;
+    this.slots = SLOT_LOCAL.map(() => ({ pallet:null, reserved:null }));
+    this.dest = pick(DESTS); this.driver = pick(DRIVERS);
+    this.tractor = PROTO.tractor.clone(); this.trailer = PROTO.trailer.clone(); this.groups = [this.tractor, this.trailer];
+    for (const g of this.groups) { g.userData.entity = this; scene.add(g); }
+    this.pick = [-1.5, 0, 3.0];
+    bay.truck = this; sim.trucks.push(this); sim.stats.trucksIn++; this.place();
+  }
+  loaded() { return this.slots.filter(s => s.pallet).length; }
+  freeSlot() { return this.slots.findIndex(s => !s.pallet && !s.reserved); }
+  place() {
+    const a = this.path.at(this.s), b = this.path.at(this.s - 6), th = Math.atan2(a.y - b.y, a.x - b.x);
+    pose(this.tractor, a.x, a.y, th);
+    const k = this.path.at(this.s - 4.6), r = this.path.at(this.s - 16.3), tt = Math.atan2(k.y - r.y, k.x - r.x);
+    pose(this.trailer, k.x, k.y, tt);
+    this.pose = { x:k.x, y:k.y, h:tt }; this.front = { x:a.x, y:a.y, h:th };
+    const c = Math.cos(tt), s = Math.sin(tt), at = d => [k.x + c * d, k.y + s * d];
+    this.points = [[a.x, a.y], [a.x - Math.cos(th) * 6, a.y - Math.sin(th) * 6], at(0), at(-7.2), at(-14.4)];
+  }
+  slotWorld(i) { const [lx, ly] = SLOT_LOCAL[i], p = this.pose, c = Math.cos(p.h), s = Math.sin(p.h); return [p.x + c * lx - s * ly, p.y + s * lx + c * ly]; }
+  update(dt) {
+    if (this.state === 'loading') {
+      const p = this.pose, c = Math.cos(p.h), s = Math.sin(p.h);
+      const near = sim.forklifts.some(f => { const dx = f.x - p.x, dy = f.y - p.y, lx = c * dx + s * dy, ly = c * dy - s * dx; return lx > -16.5 && lx < 2 && Math.abs(ly) < 7; });
+      this.fullT = this.loaded() === 6 && !near ? this.fullT + dt : 0;
+      if (this.fullT > 1.5) { this.state = 'departing'; this.bay.truck = null; this.bay.cooldown = rand(4, 10); sim.stats.trucksLoaded++; }
+      return;
+    }
+    const hold = this.state === 'arriving' ? this.bay.stopS : this.cleared ? Infinity : this.bay.gateS;
+    if (this.state === 'departing' && !this.cleared && this.bay.gateS - this.s < 0.6 && this.v < 0.3
+        && !roadBusy(this, 110, 144, 127.5) && !roadBusy(this, 90, 124, 134.5)) this.cleared = true;
+    const room = Math.min(hold - this.s, clearAhead(this, 24, 3, dt));
+    const vT = Math.min(this.front.y < 119 ? 5.5 : 9, Math.sqrt(5 * Math.max(0, room)));
+    this.v = vT < this.v ? vT : Math.min(vT, this.v + 2.2 * dt);
+    this.s += this.v * dt;
+    if (this.state === 'arriving' && this.bay.stopS - this.s < 0.08) { this.s = this.bay.stopS; this.v = 0; this.state = 'loading'; }
+    this.place();
+    if (this.s - 20 > this.path.length) this.remove();
+  }
+  status() {
+    return this.state === 'arriving' ? (this.s < this.bay.inS ? 'inbound' : `docking · bay ${this.bay.id}`)
+      : this.state === 'loading' ? `loading · bay ${this.bay.id}` : this.cleared ? 'outbound' : 'waiting at gate';
+  }
+  info() {
+    const n = this.loaded(), kg = this.slots.reduce((s, x) => s + (x.pallet?.kg ?? 0), 0);
+    return { kind:'Truck · flatbed', title:this.id, status:this.status(), bar:{ v:n, max:6, label:`cargo ${n}/6 pallets · ${(kg / 1000).toFixed(1)} t` },
+      rows:[['Bay', `Bay ${this.bay.id}`], ['Destination', this.dest], ['Driver', this.driver], ['Speed', kmh(this.v)], ['On site since', clock(this.t0)]] };
+  }
+  readout() { return `${this.id} · ${this.status()} · ${this.loaded()}/6`.toLowerCase(); }
+  remove() {
+    sim.trucks.splice(sim.trucks.indexOf(this), 1); sim.stats.trucksOut++;
+    for (const s of this.slots) s.pallet?.remove();
+    for (const g of this.groups) g.removeFromParent(); forget(this);
+  }
+}
+
+// Forklift ways: a little graph of corridors. Locations hang off it at an entry point E.
+const NODES = { a:[14, 66], J:[128, 66], A:[128, 81], B:[188, 81], C:[188, 66] };
+const SEGS = [['a', 'J'], ['J', 'A'], ['A', 'B'], ['B', 'C'], ['C', 'J']];
+function onSeg(x, y, si) {
+  const [p, q] = SEGS[si].map(k => NODES[k]), dx = q[0] - p[0], dy = q[1] - p[1];
+  const t = clamp(((x - p[0]) * dx + (y - p[1]) * dy) / (dx * dx + dy * dy), 0, 1);
+  return { x:p[0] + dx * t, y:p[1] + dy * t, si };
+}
+function route(p, q) {
+  if (p.si === q.si) return [[p.x, p.y], [q.x, q.y]];
+  const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]), dist = {}, prev = {}, open = new Set(Object.keys(NODES));
+  for (const k of open) dist[k] = Infinity;
+  for (const k of SEGS[p.si]) { dist[k] = d([p.x, p.y], NODES[k]); prev[k] = null; }
+  while (open.size) {
+    let u = null; for (const k of open) if (u === null || dist[k] < dist[u]) u = k;
+    open.delete(u);
+    for (const [a, b] of SEGS) { const w = a === u ? b : b === u ? a : null;
+      if (w && open.has(w) && dist[u] + d(NODES[u], NODES[w]) < dist[w]) { dist[w] = dist[u] + d(NODES[u], NODES[w]); prev[w] = u; } }
+  }
+  const [e1, e2] = SEGS[q.si], end = dist[e1] + d(NODES[e1], [q.x, q.y]) < dist[e2] + d(NODES[e2], [q.x, q.y]) ? e1 : e2;
+  const chain = []; for (let k = end; k !== null && k !== undefined; k = prev[k]) chain.unshift(NODES[k]);
+  return [[p.x, p.y], ...chain, [q.x, q.y]];
+}
+// keep to one side of the corridor so forklifts pass instead of meeting head on
+function keepSide(pts, off = 1.2) {
+  return pts.map((p, i) => {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+    let dx = b[0] - a[0], dy = b[1] - a[1]; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+    let k = off;
+    if (i > 0 && i < pts.length - 1) { const ix = p[0] - a[0], iy = p[1] - a[1], il = Math.hypot(ix, iy) || 1; k = off / Math.max(0.5, (ix * dx + iy * dy) / il); }
+    return [p[0] - dy * k, p[1] + dx * k];
+  });
+}
+const dedupe = pts => pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.3);
+
+const LOC = {
+  belt:p => { const x = conveyor.path.at(p.s).x; return { name:'line A', h:-Math.PI / 2, z:1.0, F:[x, 59.35], SO:[x, 66], E:{ x, y:66, si:4 } }; },
+  stage:sl => { const h = sl.row ? Math.PI / 2 : -Math.PI / 2; return { name:`staging ${sl.id}`, h, z:0, F:[sl.x, sl.y - Math.sin(h) * 1.35], SO:[sl.x, 81], E:{ x:sl.x, y:81, si:2 } }; },
+  truck:(t, i) => { const [x] = t.slotWorld(i); return { name:t.id, h:Math.PI / 2, z:DECK, F:[x, t.pose.y - 2.55], SO:[x, t.pose.y - 7.4], E:{ x, y:66, si:0 } }; },
+  charger:c => ({ name:'charger', h:c.h, z:0, F:c.F, SO:c.SO, E:c.E }),
+};
+
+const FL = { speed:7, acc:3.5, turn:3.2, lift:1.6, carry:0.35, slow:2.2 };
+class Forklift {
+  constructor(i) {
+    this.kind = 'forklift'; this.id = `FL-0${i + 1}`; this.charger = CHARGERS[i];
+    [this.x, this.y] = this.charger.F; this.h = this.charger.h; this.fork = 0.1; this.v = 0;
+    this.steps = []; this.task = null; this.load = null; this.label = 'charging'; this.waitT = 0; this.passT = 0;
+    this.battery = [88, 66, 41, 74][i]; this.moves = 0; this.atCharger = true; this.anchor = this.charger.E;
+    this.group = PROTO.forklift.clone(); this.carriage = this.group.getObjectByName('carriage'); this.beacon = this.group.getObjectByName('beacon');
+    this.group.userData.entity = this; this.groups = [this.group]; this.pick = [-1.8, 0, 3.46];
+    scene.add(this.group); sim.forklifts.push(this); this.place();
+  }
+  place() {
+    pose(this.group, this.x, this.y, this.h); this.carriage.position.y = this.fork;
+    const on = this.v > 0.05 && sim.t % 0.8 < 0.4;
+    glow(this.beacon, on);
+  }
+  blocked() {
+    if (this.passT > 0) return false;
+    const c = Math.cos(this.h), s = Math.sin(this.h);
+    return sim.forklifts.some(o => o !== this && [[o.x, o.y], [o.x - Math.cos(o.h) * 3.7, o.y - Math.sin(o.h) * 3.7]].some(([x, y]) => {
+      const dx = x - this.x, dy = y - this.y, f = dx * c + dy * s; return f > 0.3 && f < 6.5 && Math.abs(dy * c - dx * s) < 2.1; }));
+  }
+  update(dt) {
+    this.passT = Math.max(0, this.passT - dt);
+    if (this.atCharger) this.battery = Math.min(100, this.battery + 2.2 * dt);
+    else this.battery = Math.max(5, this.battery - (this.v > 0.05 ? 0.2 : 0.05) * dt);
+    if (!this.steps.length) { this.task = null; dispatch(this); }
+    const st = this.steps[0];
+    if (st && !st.started) { st.started = true; if (st.label) this.label = st.label; }
+    if (st && this.run(st, dt)) this.steps.shift();
+    if (!this.steps.length && !this.task) this.label = this.atCharger ? (this.battery < 99 ? 'charging' : 'idle at charger') : 'idle';
+    this.place();
+  }
+  run(st, dt) {
+    switch (st.do) {
+      case 'go': return this.drive(st, dt);
+      case 'face': { const e = wrap(st.h - this.h); if (Math.abs(e) < 0.01) { this.h = st.h; return true; } this.h += clamp(e, -FL.turn * dt, FL.turn * dt); return false; }
+      case 'lift': { const e = st.z - this.fork; if (Math.abs(e) < 0.005) { this.fork = st.z; return true; } this.fork += clamp(e, -FL.lift * dt, FL.lift * dt); return false; }
+      case 'fwd': case 'back': {
+        if (st.do === 'back') this.atCharger = false;
+        const dx = st.p[0] - this.x, dy = st.p[1] - this.y, d = Math.hypot(dx, dy);
+        this.v = Math.min(FL.slow, d * 3 + 0.2);
+        if (d <= this.v * dt + 1e-4) { this.x = st.p[0]; this.y = st.p[1]; this.v = 0; return true; }
+        this.x += dx / d * this.v * dt; this.y += dy / d * this.v * dt; return false;
+      }
+      case 'grab': this.grab(st.pallet); return true;
+      case 'drop': this.drop(st); return true;
+      case 'wait': st.t -= dt; return st.t <= 0;
+      case 'call': st.fn(); return true;
+      case 'charge': return this.battery >= st.min;
+    }
+    return true;
+  }
+  drive(st, dt) {
+    if (!st.path) {
+      const pts = dedupe([[this.x, this.y], ...keepSide(dedupe(route(this.anchor, st.loc.E))), st.loc.SO]);
+      if (pts.length < 2) { this.anchor = st.loc.E; return true; }
+      st.path = new Path(pts, 2.2); st.s = 0;
+    }
+    const start = st.path.at(0);
+    if (st.s === 0) { const e = wrap(start.h - this.h); if (Math.abs(e) > 0.01) { this.v = 0; this.h += clamp(e, -FL.turn * dt, FL.turn * dt); return false; } }
+    const left = st.path.length - st.s;
+    let vT = Math.min(FL.speed, Math.sqrt(2 * FL.acc * left) + 0.15);
+    if (this.blocked()) { vT = 0; this.waitT += dt; if (this.waitT > 2.5) { this.passT = 1.5; this.waitT = 0; } } else this.waitT = 0;
+    this.v = vT < this.v ? Math.max(vT, this.v - 6 * dt) : Math.min(vT, this.v + FL.acc * dt);
+    st.s = Math.min(st.path.length, st.s + this.v * dt);
+    const p = st.path.at(st.s); this.x = p.x; this.y = p.y; this.h = p.h;
+    if (st.s >= st.path.length) { this.v = 0; this.anchor = st.loc.E; return true; }
+    return false;
+  }
+  grab(p) {
+    if (p.loc.type === 'conveyor') conveyor.items.splice(conveyor.items.indexOf(p), 1);
+    if (p.loc.type === 'stage') p.loc.slot.pallet = null;
+    this.carriage.attach(p.group); p.tweenTo(W(1.35, 0, -0.1), 0.25);
+    p.loc = { type:'forklift', f:this }; this.load = p;
+  }
+  drop(st) {
+    const p = this.load; this.load = null; this.moves++; p.reserved = null;
+    if (st.slot) { scene.attach(p.group); p.tweenTo(W(st.slot.x, st.slot.y, 0)); st.slot.pallet = p; st.slot.reserved = null; p.loc = { type:'stage', slot:st.slot }; }
+    else { const t = st.truck, [lx, ly] = SLOT_LOCAL[st.i]; t.trailer.attach(p.group); p.tweenTo(W(lx, ly, DECK)); t.slots[st.i].pallet = p; t.slots[st.i].reserved = null; p.loc = { type:'truck', truck:t, i:st.i }; }
+  }
+  info() {
+    return { kind:'Forklift · electric', title:this.id, status:this.label, bar:{ v:this.battery, max:100, label:`battery ${Math.round(this.battery)}%` },
+      rows:[['Task', this.task?.text ?? (this.atCharger ? 'on charge' : 'none')], ['Load', this.load ? `${this.load.id} · ${this.load.kg} kg` : 'empty'],
+        ['Fork height', `${this.fork.toFixed(2)} m`], ['Speed', kmh(this.v)], ['Pallets moved', String(this.moves)]] };
+  }
+  readout() { return `${this.id} · ${this.label}`.toLowerCase(); }
+}
+
+// Task steps. Forks sit 0.1 under the pallet's bottom, so "z + 0.1" slides them into the slots.
+const leaveCharger = f => f.atCharger ? [{ do:'back', p:f.charger.SO, label:'leaving charger' }] : [];
+function pickup(p, loc) {
+  return [{ do:'go', loc, label:`to ${loc.name}` }, { do:'face', h:loc.h }, { do:'lift', z:loc.z + 0.1 },
+    { do:'fwd', p:loc.F, label:`picking ${p.id}` }, { do:'grab', pallet:p }, { do:'lift', z:loc.z + 0.4 },
+    { do:'back', p:loc.SO }, { do:'lift', z:FL.carry }];
+}
+function dropAt(p, loc, target) {
+  const over = loc.z > 0 ? 0.5 : 0.3;
+  return [{ do:'go', loc, label:`carrying ${p.id} → ${loc.name}` }, { do:'face', h:loc.h }, { do:'lift', z:loc.z + 0.1 + over },
+    { do:'fwd', p:loc.F, label:`placing ${p.id}` }, { do:'lift', z:loc.z + 0.12 }, { do:'drop', ...target }, { do:'wait', t:0.55 },
+    { do:'lift', z:loc.z + 0.02 }, { do:'back', p:loc.SO }, { do:'lift', z:FL.carry }];
+}
+function park(f, label = 'to charger') {
+  const loc = LOC.charger(f.charger);
+  return [{ do:'go', loc, label }, { do:'face', h:loc.h }, { do:'lift', z:0.1 }, { do:'fwd', p:loc.F }, { do:'call', fn:() => { f.atCharger = true; } }];
+}
+function sourceFor(f) {
+  const c = conveyor.pickable().map(p => ({ p, loc:LOC.belt(p) }));
+  for (const s of SLOTS) if (s.pallet && !s.pallet.reserved && !s.pallet.tw) c.push({ p:s.pallet, loc:LOC.stage(s) });
+  // older pallets first (rough FIFO), nearer ones break ties
+  c.sort((a, b) => (a.p.t0 - b.p.t0) / 20 + Math.hypot(a.loc.SO[0] - f.x, a.loc.SO[1] - f.y) / 60 - Math.hypot(b.loc.SO[0] - f.x, b.loc.SO[1] - f.y) / 60);
+  return c[0];
+}
+function dispatch(f) {
+  const assign = (task, steps) => { f.task = task; f.steps = steps; };
+  if (f.battery < 22) { if (f.atCharger) assign({ text:'charging to 80%' }, [{ do:'charge', min:80, label:'charging' }]); else assign({ text:'low battery' }, park(f, 'low battery · to charger')); return; }
+  const trucks = sim.trucks.filter(t => t.state === 'loading' && t.freeSlot() >= 0).sort((a, b) => b.loaded() - a.loaded() || a.t0 - b.t0);
+  if (trucks.length) {
+    const src = sourceFor(f);
+    if (src) {
+      const t = trucks[0], i = t.freeSlot();
+      src.p.reserved = f; t.slots[i].reserved = f;
+      assign({ text:`${src.p.id} → ${t.id}`, to:t.dest }, [...leaveCharger(f), ...pickup(src.p, src.loc), ...dropAt(src.p, LOC.truck(t, i), { truck:t, i })]);
+      return;
+    }
+  }
+  const e = conveyor.pickable().sort((a, b) => b.s - a.s)[0];
+  if (e) {
+    const free = SLOTS.filter(s => !s.pallet && !s.reserved).sort((a, b) => Math.hypot(a.x - 153, a.y - 63) - Math.hypot(b.x - 153, b.y - 63))[0];
+    if (free) {
+      e.reserved = f; free.reserved = f;
+      assign({ text:`${e.id} → staging ${free.id}`, to:`staging ${free.id}` }, [...leaveCharger(f), ...pickup(e, LOC.belt(e)), ...dropAt(e, LOC.stage(free), { slot:free })]);
+      return;
+    }
+  }
+  if (!f.atCharger) assign(null, park(f));
+}
+
+// ---- assemble ----
+await Promise.race([document.fonts.load(`500 ${TEX_PX}px "DM Mono"`), new Promise(r => setTimeout(r, 2500))]).catch(noop);
+const world = buildWorld();
+const factoryG = buildFactory(), conveyorG = buildConveyor(), gateG = buildGate();
+scene.add(world, factoryG, conveyorG, gateG, ...BAYS.map(bayLamp));
+PROTO.tractor = buildTractor(); PROTO.trailer = buildTrailer(); PROTO.forklift = buildForklift();
+PROTO.car = { n:buildCar(false, 'n'), k:buildCar(false, 'k') }; PROTO.van = { n:buildCar(true, 'n'), k:buildCar(true, 'k') };
+PROTO.pallet = [0, 1, 2].map(buildPallet);
+// staff cars, nose in: the north row faces +y, the south row faces −y
+for (const [i, row, van] of [[0, 0, 0], [2, 0, 1], [5, 0, 0], [9, 0, 0], [1, 1, 0], [4, 1, 1], [7, 1, 0], [11, 1, 0]]) {
+  const c = buildCar(!!van, rng() < 0.4 ? 'k' : 'n'), x = 141.7 + 3.4 * i;
+  if (row) pose(c, x, 32, -Math.PI / 2); else pose(c, x, 15, Math.PI / 2);
+  scene.add(c);
+}
+
+const factory = {
+  kind:'factory', id:'Plant 01', groups:[factoryG], pick:[54, 48, 10],
+  info() {
+    const staged = SLOTS.filter(s => s.pallet).length;
+    return { kind:'Factory', title:'Plant 01', status:conveyor.held ? 'line held · belt full' : 'line running',
+      rows:[['Pallets made', `${sim.stats.produced} this session`], ['On the belt', String(conveyor.items.length)], ['Staging', `${staged}/16 slots`],
+        ['Trucks loaded', String(sim.stats.trucksLoaded)], ['Bays busy', `${BAYS.filter(b => b.truck?.state === 'loading').length}/2`]] };
+  },
+  readout() { return `plant 01 · ${conveyor.held ? 'held' : 'running'} · ${sim.stats.produced} made`; },
+};
+conveyor.groups = [conveyorG];
+const gate = {
+  kind:'gate', id:'Main gate', groups:[gateG], pick:[133, 109, 2], open:[0, 0],
+  update(dt) {
+    const near = (x) => sim.trucks.some(t => t.points.some(p => Math.hypot(p[0] - x, p[1] - 118) < 13));
+    [118, 124].forEach((x, i) => { this.open[i] = clamp(this.open[i] + (near(x) ? 1 : -1) * dt * 1.4, 0, 1); });
+    const out = gateG.getObjectByName('armOut'), inn = gateG.getObjectByName('armIn');
+    out.rotation.z = ease(this.open[0]) * 1.45; inn.rotation.z = -ease(this.open[1]) * 1.45;
+  },
+  info() {
+    const st = o => o > 0.98 ? 'open' : o < 0.02 ? 'closed' : 'moving';
+    return { kind:'Gate', title:'Main gate', status:this.open.some(o => o > 0.02) ? 'barrier up' : 'barriers down',
+      rows:[['In lane', st(this.open[1])], ['Out lane', st(this.open[0])], ['Trucks in', String(sim.stats.trucksIn)], ['Trucks out', String(sim.stats.trucksOut)]] };
+  },
+  readout() { return `main gate · in ${sim.stats.trucksIn} · out ${sim.stats.trucksOut}`; },
+};
+factoryG.userData.entity = factory; conveyorG.userData.entity = conveyor; gateG.userData.entity = gate;
+
+for (let i = 0; i < 4; i++) new Forklift(i);
+for (const [k, si] of [[0, 1], [1, 3], [2, 4], [3, 9], [4, 12], [5, 6]]) {
+  const sl = SLOTS[si], p = new Pallet(); p.t0 = -60 + k; sl.pallet = p; p.loc = { type:'stage', slot:sl }; pose(p.group, sl.x, sl.y); scene.add(p.group);
+}
+const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
+
+sim.step = dt => {
+  sim.t += dt;
+  conveyor.update(dt);
+  for (const l of LANES) { l.next -= dt;
+    if (l.next <= 0 && !sim.cars.concat(sim.trucks).some(o => o.points.some(p => Math.hypot(p[0] - l.path.at(0).x, p[1] - l.path.at(0).y) < 10))) { new Car(l); l.next = rand(2.2, 6.5); } }
+  for (const b of BAYS) if (!b.truck && (b.cooldown -= dt) <= 0 && !sim.cars.concat(sim.trucks).some(o => o.points.some(p => p[0] > 196 && Math.abs(p[1] - 127.5) < 3))) new Truck(b);
+  for (const t of [...sim.trucks]) t.update(dt);
+  for (const c of [...sim.cars]) c.update(dt);
+  for (const f of sim.forklifts) f.update(dt);
+  for (const p of sim.pallets) p.update(dt);
+  gate.update(dt);
+  for (const b of BAYS) glow(b.lamp, b.truck?.state === 'loading');
+  glow(lightG, sim.t % 1.6 < 0.18);
+  for (const f of fans) f.rotation.y += dt * 5;
+};
+for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
+sim.stats = { produced:0, trucksIn:0, trucksOut:0, trucksLoaded:0 };
+
+// ---- camera & controls ----
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
+const ISO = v3(1, 1, 1).normalize(), CENTER = W(100, 75, 0);
+camera.position.copy(CENTER).addScaledVector(ISO, 1500); camera.lookAt(CENTER);
+const controls = new OrbitControls(camera, canvas);
+Object.assign(controls, { enableRotate:false, screenSpacePanning:true, zoomToCursor:true, enableDamping:!REDUCED, dampingFactor:0.12 });
+controls.mouseButtons = { LEFT:THREE.MOUSE.PAN, MIDDLE:THREE.MOUSE.DOLLY, RIGHT:THREE.MOUSE.PAN };
+controls.touches = { ONE:THREE.TOUCH.PAN, TWO:THREE.TOUCH.DOLLY_PAN };
+controls.target.copy(CENTER);
+controls.listenToKeyEvents(window);
+let fitZoom = 1, goal = null, follow = false, sized = false;
+function fit(w, h) {
+  camera.updateMatrixWorld();
+  const inv = camera.matrixWorldInverse, b = new THREE.Box3();
+  for (const x of [0, 200]) for (const y of [0, 150]) for (const z of [-4, 12]) b.expandByPoint(W(x, y, z).applyMatrix4(inv));
+  return Math.min(w / (b.max.x - b.min.x), h / (b.max.y - b.min.y)) * 0.92;
+}
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  Object.assign(camera, { left:-w / 2, right:w / 2, top:h / 2, bottom:-h / 2 });
+  fitZoom = fit(w, h); controls.minZoom = fitZoom * 0.6; controls.maxZoom = fitZoom * 12;
+  if (!sized) { sized = true; const narrow = w < 600; camera.zoom = fitZoom * (narrow ? 2.7 : 1);
+    if (narrow) { const c = W(96, 76, 0); camera.position.add(c.clone().sub(controls.target)); controls.target.copy(c); } }
+  camera.zoom = clamp(camera.zoom, controls.minZoom, controls.maxZoom); camera.updateProjectionMatrix();
+  for (const m of Object.values(LINE)) m.resolution.set(w, h);
+  retLine.material.resolution.set(w, h);
+}
+const retLine = new LineSegments2(new LineSegmentsGeometry(), LINE.live); retLine.raycast = noop; retLine.frustumCulled = false; retLine.visible = false; scene.add(retLine);
+new ResizeObserver(resize).observe(stage); resize();
+canvas.addEventListener('wheel', () => { goal = null; }, { passive:true });
+function moveTarget(to) { const d = to.clone().sub(controls.target); controls.target.add(d); camera.position.add(d); }
+function zoomBy(k) { goal = { zoom:clamp((goal?.zoom ?? camera.zoom) * k, controls.minZoom, controls.maxZoom), target:goal?.target }; }
+function resetView() { setFollow(false); goal = { zoom:fitZoom, target:CENTER.clone() }; }
+
+// ---- selection, tags, card ----
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), tmp = new THREE.Vector3(), box = new THREE.Box3();
+function hit(cx, cy) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set((cx - r.left) / r.width * 2 - 1, -(cy - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  for (const h of ray.intersectObjects(scene.children, true)) {
+    if (!h.object.isMesh || h.point.x < 0 || h.point.x > 200 || h.point.z < 0 || h.point.z > 150) continue;
+    let o = h.object; while (o && !o.userData.entity) o = o.parent;
+    return o ? o.userData.entity : null;   // the nearest visible surface decides
+  }
+  return null;
+}
+// walk an entity's groups, stopping at anything that belongs to another entity (a pallet on a truck)
+function eachOwn(ent, fn) { const walk = o => { if (o.userData.entity && o.userData.entity !== ent) return; fn(o); o.children.forEach(walk); };
+  for (const g of ent.groups) { fn(g); g.children.forEach(walk); } }
+function setLive(ent, on) { if (ent) eachOwn(ent, o => { if (o.isLineSegments2 && o.userData.line === 'line') o.material = on ? LINE.live : LINE.line; }); }
+function bounds(ent) { box.makeEmpty(); for (const g of ent.groups) box.expandByObject(g); return box; }
+function select(ent) {
+  if (ent === selected) return;
+  setLive(selected, false); selected = ent; setLive(selected, true);
+  setFollow(false); $('card').hidden = !ent; refresh();
+}
+function forget(ent) { if (selected === ent) select(null); if (hovered === ent) hovered = null; }
+const followable = ent => !!ent && !['factory', 'gate', 'conveyor'].includes(ent.kind);
+function setFollow(on) { follow = on && followable(selected); $('cardFollow').setAttribute('aria-pressed', follow); }
+function refresh() {
+  const r = $('readout');
+  r.textContent = (paused ? 'paused · ' : '') + (selected ? selected.readout() : 'nothing selected');
+  if (!selected) return;
+  const i = selected.info();
+  $('cardKind').textContent = i.kind; $('cardTitle').textContent = i.title; $('cardStatus').textContent = i.status;
+  const bar = $('cardBar'); bar.hidden = !i.bar;
+  if (i.bar) { bar.querySelector('span').textContent = i.bar.label; bar.querySelector('i').style.width = `${clamp(i.bar.v / i.bar.max, 0, 1) * 100}%`; }
+  const dl = $('cardRows'); dl.replaceChildren(...i.rows.flatMap(([k, v]) => { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; return [dt, dd]; }));
+  $('cardFoot').hidden = !followable(selected);
+}
+function anchorOf(ent) {
+  const b = bounds(ent); tmp.set((b.min.x + b.max.x) / 2, b.max.y, (b.min.z + b.max.z) / 2).project(camera);
+  return [(tmp.x + 1) / 2 * stage.clientWidth, (1 - tmp.y) / 2 * stage.clientHeight];
+}
+function placeTag(el, ent, text) {
+  if (!ent) { el.hidden = true; return; }
+  const [x, y] = anchorOf(ent); el.hidden = false; if (el.textContent !== text) el.textContent = text;
+  const hw = el.offsetWidth / 2 + 6;   // keep the tag inside the stage
+  el.style.left = `${clamp(x, hw, stage.clientWidth - hw)}px`; el.style.top = `${clamp(y, el.offsetHeight + 16, stage.clientHeight)}px`;
+}
+function updateReticle() {
+  if (!selected) { retLine.visible = false; return; }
+  const b = bounds(selected), x0 = b.min.x - 0.8, x1 = b.max.x + 0.8, z0 = b.min.z - 0.8, z1 = b.max.z + 0.8, y = Math.max(0, b.min.y) + 0.06;
+  const L = Math.min(3, (x1 - x0) / 3, (z1 - z0) / 3), s = [];
+  for (const [x, dx] of [[x0, 1], [x1, -1]]) for (const [z, dz] of [[z0, 1], [z1, -1]]) s.push(x, y, z, x + dx * L, y, z, x, y, z, x, y, z + dz * L);
+  retLine.geometry.dispose(); retLine.geometry = new LineSegmentsGeometry().setPositions(s); retLine.visible = true;
+}
+
+let down = null, pointer = null, hoverDirty = false;
+canvas.addEventListener('pointerdown', e => { down = { x:e.clientX, y:e.clientY, t:performance.now() }; });
+canvas.addEventListener('pointerup', e => {
+  if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6 && performance.now() - down.t < 700) select(hit(e.clientX, e.clientY));
+  down = null;
+});
+canvas.addEventListener('pointermove', e => {
+  if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) >= 6) { goal = null; setFollow(false); }   // a real drag takes the camera back
+  if (e.pointerType === 'mouse' && !e.buttons) { pointer = [e.clientX, e.clientY]; hoverDirty = true; }
+});
+canvas.addEventListener('pointerleave', () => { pointer = null; hovered = null; canvas.classList.remove('over'); });
+const vehicles = () => [...sim.forklifts, ...sim.trucks].sort((a, b) => a.id.localeCompare(b.id));
+function cycle(d) { const v = vehicles(), i = v.indexOf(selected); if (v.length) select(v[i < 0 ? (d > 0 ? 0 : v.length - 1) : (i + d + v.length) % v.length]); }
+let paused = false;
+function togglePause() { paused = !paused; $('pause').setAttribute('aria-pressed', paused); $('pause').setAttribute('aria-label', paused ? 'Resume' : 'Pause');
+  $('pause').innerHTML = paused ? '<svg viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z"/></svg>' : '<svg viewBox="0 0 16 16"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>'; refresh(); }
+function toggleTheme() {
+  const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.dataset.theme = cur === 'light' ? 'dark' : 'light'; applyTheme();
+}
+matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme);
+$('zoomIn').onclick = () => zoomBy(1.4); $('zoomOut').onclick = () => zoomBy(1 / 1.4); $('home').onclick = resetView;
+$('pause').onclick = togglePause; $('theme').onclick = toggleTheme;
+$('cardClose').onclick = () => { select(null); canvas.focus(); };
+$('cardFollow').onclick = () => setFollow(!follow);
+window.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if ((e.key === ' ' || e.key === 'Enter') && e.target.closest?.('button')) return;
+  if (e.key.startsWith('Arrow')) { goal = null; setFollow(false); return; }
+  const act = { Escape:() => select(null), f:() => setFollow(!follow), F:() => setFollow(!follow), ']':() => cycle(1), '[':() => cycle(-1), ' ':togglePause,
+    '+':() => zoomBy(1.4), '=':() => zoomBy(1.4), '-':() => zoomBy(1 / 1.4), '_':() => zoomBy(1 / 1.4), '0':resetView, Home:resetView, t:toggleTheme, T:toggleTheme }[e.key];
+  if (act) { act(); e.preventDefault(); }
+});
+
+// ---- loop ----
+let last = performance.now(), acc = 0, cardT = 0;
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  if (!paused) { acc += dt; while (acc >= STEP) { sim.step(STEP); acc -= STEP; } }
+  const k = REDUCED ? 1 : 1 - Math.exp(-dt * 6);
+  if (follow && selected) { const b = bounds(selected); moveTarget(controls.target.clone().lerp(v3((b.min.x + b.max.x) / 2, 0, (b.min.z + b.max.z) / 2), k)); }
+  if (goal) {
+    if (goal.target) moveTarget(controls.target.clone().lerp(goal.target, k));
+    camera.zoom += (goal.zoom - camera.zoom) * k; camera.updateProjectionMatrix();
+    if (Math.abs(goal.zoom - camera.zoom) < 1e-3 * goal.zoom && (!goal.target || controls.target.distanceTo(goal.target) < 0.05)) goal = null;
+  }
+  controls.update(dt);
+  // slide the target along the view ray onto the ground (an invisible move), then keep it over the slab
+  const t = controls.target; moveTarget(t.clone().addScaledVector(ISO, -t.y / ISO.y));
+  moveTarget(v3(clamp(t.x, 0, 200), 0, clamp(t.z, 0, 150)));
+  camera.updateMatrixWorld();
+  if (hoverDirty && pointer) { hoverDirty = false; hovered = hit(...pointer); canvas.classList.toggle('over', !!hovered); }
+  placeTag($('tagSel'), selected, selected ? `${selected.id} · ${selected.info().status}` : '');
+  placeTag($('tagHover'), hovered !== selected ? hovered : null, hovered?.id ?? '');
+  updateReticle();
+  if ((cardT -= dt) <= 0) { cardT = 0.25; refresh(); }
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+refresh();
+requestAnimationFrame(frame);
+window.__yardReady = true;
+
+// ---- debug hook for automated checks (?debug) ----
+if (DEBUG) {
+  const all = () => [factory, conveyor, gate, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.pallets];
+  const find = id => all().find(e => e.id === id);
+  window.yard = {
+    sim, conveyor, camera, controls, all:() => all().map(e => ({ id:e.id, kind:e.kind, status:e.info().status })),
+    step:s => { for (let t = 0; t < s; t += STEP) sim.step(STEP); },
+    look:(x, y, k) => { goal = null; setFollow(false); moveTarget(W(x, y, 0)); camera.zoom = fitZoom * k; camera.updateProjectionMatrix(); },
+    select:id => select(find(id) ?? null), selected:() => selected?.id ?? null,
+    screenOf:id => { const e = find(id); scene.updateMatrixWorld(); camera.updateMatrixWorld(); const p = e.groups[0].localToWorld(W(...e.pick)).project(camera), r = canvas.getBoundingClientRect();
+      return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; },
+  };
+}
+</script>
+</body>
+</html>
