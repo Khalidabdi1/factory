@@ -67,6 +67,10 @@
   .card .foot { display:flex; gap:8px; }
   .card .foot button { padding:5px 12px; font-size:12px; text-transform:uppercase; letter-spacing:.12em; }
   .card .foot button[aria-pressed="true"] { color:var(--ink-hi); border-color:var(--live); }
+  .sites { display:flex; flex-wrap:wrap; gap:4px 16px; }
+  .sites button { border:0; background:none; padding:0; border-radius:3px; color:var(--ink); text-transform:uppercase; letter-spacing:.14em; }
+  .sites button:hover, .sites button[aria-current="true"] { color:var(--ink-hi); }
+  .sites button[aria-current="true"] { text-decoration:underline; text-underline-offset:5px; }
   .note { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:24px; line-height:1.6; }
   .coarse { display:none; }
   @media (pointer:coarse) { .fine { display:none; } .coarse { display:inline; } }
@@ -88,9 +92,9 @@
 <body>
 <main>
   <figure>
-    <div class="cap"><span class="hi">Fig 1</span><span>Factory yard</span></div>
+    <div class="cap"><span class="hi">Fig 1</span><nav class="sites" aria-label="Places"><button data-view="0" title="Factory (1)">Factory</button><button data-view="1" title="Warehouse (2)">Warehouse</button><button data-view="2" title="Shop (3)">Shop</button></nav></div>
     <div class="stage" id="stage">
-      <canvas id="view" tabindex="0" role="img" aria-label="Isometric factory yard, live. Forklifts carry pallets from the production line onto trucks while traffic passes on the road. Drag to pan, scroll or pinch to zoom, click any vehicle, pallet or building for details. Keys: [ and ] cycle through vehicles, F follows the selection, Escape closes it, Space pauses."></canvas>
+      <canvas id="view" tabindex="0" role="img" aria-label="Isometric supply chain, live: a factory, a warehouse and a shop on one road. Forklifts load pallets onto flatbed trucks, a guard opens the warehouse gate, forklifts store the pallets and load covered delivery trucks, and shop staff carry the boxes in while shoppers buy them. Drag to pan, scroll or pinch to zoom, click anything for details. Keys: 1, 2 and 3 jump to the factory, warehouse and shop, 0 shows the whole map, [ and ] cycle through vehicles, F follows the selection, Escape closes it, Space pauses."></canvas>
       <div class="tools" id="tools">
         <button id="zoomIn" title="Zoom in (+)" aria-label="Zoom in"><svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg></button>
         <button id="zoomOut" title="Zoom out (−)" aria-label="Zoom out"><svg viewBox="0 0 16 16"><path d="M3 8h10"/></svg></button>
@@ -169,7 +173,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setClearColor(0x000000, 0);
 // Anything outside the slab is cut, so traffic slides in and out of the plate's edge.
 renderer.clippingPlanes = [
-  new THREE.Plane(new THREE.Vector3(1, 0, 0), 0.05), new THREE.Plane(new THREE.Vector3(-1, 0, 0), 200.05),
+  new THREE.Plane(new THREE.Vector3(1, 0, 0), 0.05), new THREE.Plane(new THREE.Vector3(-1, 0, 0), 440.05),
   new THREE.Plane(new THREE.Vector3(0, 0, 1), 0.05), new THREE.Plane(new THREE.Vector3(0, 0, -1), 150.05)];
 const ANISO = renderer.capabilities.getMaxAnisotropy();
 const scene = new THREE.Scene();
@@ -276,9 +280,11 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 const ease = t => t * t * (3 - 2 * t);
 
-// A polyline with filleted corners, walked by arc length. at(s) also extrapolates past both ends.
+// A polyline with filleted corners, walked by arc length. at(s) extrapolates past both ends, or wraps
+// round when the path is a closed loop (start it in the middle of a straight).
 class Path {
-  constructor(pts, r = 6) {
+  constructor(pts, r = 6, closed = false) {
+    this.closed = closed;
     this.segs = []; let cur = pts[0], s = 0;
     const line = (a, b) => { const len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 1e-6) return;
       this.segs.push({ t:'L', s, len, ax:a[0], ay:a[1], h:Math.atan2(b[1] - a[1], b[0] - a[0]) }); s += len; };
@@ -306,67 +312,111 @@ class Path {
   }
   at(s) {
     const S = this.segs;
+    if (this.closed) s = ((s % this.length) + this.length) % this.length;
     if (s <= 0) { const p = this.on(S[0], 0); return { x:p.x + Math.cos(p.h) * s, y:p.y + Math.sin(p.h) * s, h:p.h }; }
     if (s >= this.length) { const g = S[S.length - 1], p = this.on(g, g.len), e = s - this.length; return { x:p.x + Math.cos(p.h) * e, y:p.y + Math.sin(p.h) * e, h:p.h }; }
     for (const g of S) if (s <= g.s + g.len) return this.on(g, s - g.s);
   }
-  project(x, y) { let best = 0, bd = Infinity; for (let s = 0; s <= this.length; s += 0.1) { const p = this.at(s), d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = s; } } return best; }
+  project(x, y) {
+    const d = s => { const p = this.at(s); return Math.hypot(p.x - x, p.y - y); };
+    let best = 0; for (let s = 0; s <= this.length; s += 0.5) if (d(s) < d(best)) best = s;
+    for (let s = best - 0.5; s <= best + 0.5; s += 0.02) if (s >= 0 && s <= this.length && d(s) < d(best)) best = s;
+    return best;
+  }
 }
 
-// ---- layout (skill coords; the slab is 200 × 150) ----
-// thing         | x         | y         | notes
-// slab          | 0–200     | 0–150     | z −4–0
-// main road     | 0–200     | 124–138   | westbound lane y 127.5, eastbound 134.5
-// fence + gate  | 2–196     | 4–118     | gate gap x 112–130 (out lane x 118, in lane x 124)
-// factory       | 14–94     | 12–48     | walls 14, sawtooth roof to 19
-// office annex  | 94–116    | 28–48     | h 8
-// conveyor      | 86 → 150  | 44 → 58   | belt top z 1.0, side pickup on its last 7 m
-// staging       | 134–176   | 72 & 90   | two rows of 8 slots facing an aisle at y 81
-// loading bays  | 28 / 74   | 80        | trucks park heading west, forklifts load from the north
-// forklift ways | 14–188    | 66, 81    | four chargers at x 16–33 against the factory wall
+// ---- layout (skill coords; the slab is 440 × 150) ----
+// thing           | x          | y          | notes
+// slab            | 0–440      | 0–150      | z −4–0
+// main road       | 0–404      | 124–138    | westbound lane y 127.5, eastbound 134.5, roundabout at (422,131)
+// plant yard      | 2–196      | 4–118      | gate gap x 112–130 (out lane x 118, in lane x 124), automatic barriers
+// plant           | 14–94      | 12–48      | walls 14, sawtooth roof to 19; office annex 94–116
+// conveyor        | 86 → 150   | 44 → 58    | belt top z 1.0, side pickup on its last 6 m
+// staging         | 134–176    | 72 & 90    | two rows of 8 slots facing an aisle at y 81
+// plant bays      | 28 / 74    | 80         | flatbeds park heading west, forklifts load from the north
+// warehouse yard  | 206–356    | 4–118      | gate gap x 314–332 (out lane x 320, in lane x 326), sliding gate, guard
+// warehouse       | 228–308    | 14–58      | cutaway: drive lane y 20, racks y 33, aisle y 40.6, receiving y 48.5
+// docks           | 232 / 276  | 80         | flatbeds unload here, forklifts work from the north
+// shop            | 362–394    | 94–112     | cutaway; delivery lay-by y 118.5–124, x 344–384
+const SLAB = { w:440, d:150 };
+const RAB = { x:422, y:131 };   // roundabout centre
 const BAYS = [{ id:1, bx:28 }, { id:2, bx:74 }];
-const SLOTS = []; for (const row of [0, 1]) for (let c = 0; c < 8; c++) SLOTS.push({ id:`${'AB'[row]}${c + 1}`, x:134 + 6 * c, y:row ? 90 : 72, row, pallet:null, reserved:null });
-const CHARGERS = [16, 21.5, 27, 32.5].map((x, k) => ({ k, x, h:-Math.PI / 2, F:[x, 51.6], SO:[x, 58], E:{ x, y:66, si:0 } }));
+const DOCKS = [{ id:1, bx:232 }, { id:2, bx:276 }];
+const slotAt = o => ({ pallet:null, reserved:null, parent:scene, ...o });
+const STAGE = []; for (const row of [0, 1]) for (let c = 0; c < 8; c++) { const x = 134 + 6 * c, y = row ? 90 : 72, id = `${'AB'[row]}${c + 1}`;
+  STAGE.push(slotAt({ id, label:`staging ${id}`, x, y, row, local:[x, y, 0] })); }
+const RACK = []; for (const level of [0, 1]) for (let b = 0; b < 8; b++) { const x = 246 + 6 * b;
+  RACK.push(slotAt({ id:`R${b + 1}·${level + 1}`, label:`rack R${b + 1} · level ${level + 1}`, x, y:33, level, local:[x, 33, level ? 3.0 : 0] })); }
+// shop shelves: two units, two boards each, six boxes a board; staff stand in the aisle south of each unit
+const SHELF = []; for (const [y, sy] of [[98.4, 100.6], [103.6, 105.8]]) for (const z of [0.95, 1.65]) for (let i = 0; i < 6; i++)
+  SHELF.push({ x:367.6 + 3.5 * i, y, z, stand:[367.6 + 3.5 * i, sy], sku:null, reserved:null, mesh:null });
+const STOCK_CAP = 12, BOXES = 4;
+const SHOP = { in:[378, 109.6], out:[378, 114.2], counter:[387, 111], stockStand:[364.8, 100.6] };
 
 // ---- static scene ----
+const crown = new THREE.IcosahedronGeometry(1, 0);
+function tree(p, x, y, s = 1) {
+  p.box(x - 0.22 * s, y - 0.22 * s, 0, 0.44 * s, 0.44 * s, 2.2 * s);
+  p.geo(crown, new THREE.Matrix4().compose(W(x, y, 2.2 * s + 1.7 * s), new THREE.Quaternion().setFromAxisAngle(v3(0, 1, 0), rand(0, 3)), v3(2 * s, 2.2 * s, 2 * s)));
+}
+const ring = (cx, cy, r, z, n = 40) => { const s = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, b = (i + 1) / n * Math.PI * 2;
+  s.push(W(cx + r * Math.cos(a), cy + r * Math.sin(a), z), W(cx + r * Math.cos(b), cy + r * Math.sin(b), z)); } return s; };
 function buildWorld() {
   const p = new Part(), G = TOP(0, 0, 0);
-  p.box(0, 0, -4, 200, 150, 4, 'gr');
-  // asphalt
-  p.fill2(G, 0, 124, 200, 14, 'glass', 0.02);
-  for (const r of [[113, 89, 16, 35], [4, 89, 125, 10], [4, 89, 8.5, 28], [4, 107, 125, 10], [20, 76, 42, 13], [66, 76, 42, 13]]) p.fill2(G, ...r, 'road', 0.02);
-  // main road paint: kerbs, dashed centre line, verge
-  p.draw(G, [0, 138, 200, 138, 0, 141, 200, 141, 0, 124, 112, 124, 130, 124, 200, 124], 'line', 0.05);
-  for (let x = 1; x < 200; x += 6) p.draw(G, [x, 131, x + 3, 131], 'line', 0.05);
-  // yard paint: stop line, lane words, bays, staging, chargers, forklift ways
+  p.box(0, 0, -4, SLAB.w, SLAB.d, 4, 'gr');
+  // asphalt: the main road, the roundabout, the delivery lay-by, then the yards' own roads
+  p.fill2(G, 0, 124, 404, 14, 'glass', 0.02);
+  const disk = []; for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2; disk.push(W(RAB.x + 14.5 * Math.cos(a), RAB.y + 14.5 * Math.sin(a), 0.02)); }
+  p.poly('glass', disk);
+  p.fill2(G, 344, 118.5, 40, 5.5, 'glass', 0.02);
+  for (const r of [[113, 89, 16, 35], [4, 89, 125, 10], [4, 89, 8.5, 28], [4, 107, 125, 10], [20, 76, 42, 13], [66, 76, 42, 13],
+    [314, 89, 16, 35], [322.6, 17, 6.8, 72], [208, 89, 122, 10], [208, 17, 8, 100], [208, 105, 122, 10], [216, 17, 12, 6], [308, 17, 15, 6],
+    [224, 76, 42, 13], [268, 76, 42, 13]]) p.fill2(G, ...r, 'road', 0.02);
+  // road paint: kerbs (with gaps for the two gates and the lay-by), dashed centre line, verge, the roundabout's edges
+  const kx = RAB.x - Math.sqrt(14.5 ** 2 - 7 ** 2);
+  p.draw(G, [0, 138, kx, 138, 0, 124, 112, 124, 130, 124, 314, 124, 332, 124, 340, 124, 390, 124, kx, 124,
+    0, 141, RAB.x - Math.sqrt(14.5 ** 2 - 10 ** 2), 141, 344, 118.5, 384, 118.5, 340, 124, 344, 118.5, 384, 118.5, 390, 124], 'line', 0.05);
+  for (let x = 1; x < 404; x += 6) p.draw(G, [x, 131, x + 3, 131], 'line', 0.05);
+  const outer = ring(RAB.x, RAB.y, 14.5, 0.05, 48); for (let i = 0; i < outer.length; i += 2) {
+    const m = outer[i].clone().add(outer[i + 1]).multiplyScalar(0.5); if (m.x < kx + 0.5 && Math.abs(m.z - RAB.y) < 7.2) continue; p.seg('line', outer[i], outer[i + 1]); }
+  for (let a = 0; a < Math.PI * 2; a += Math.PI / 12) { const r0 = 8.5, r1 = 10; p.draw(G, [RAB.x + r0 * Math.cos(a), RAB.y + r0 * Math.sin(a), RAB.x + r1 * Math.cos(a + 0.12), RAB.y + r1 * Math.sin(a + 0.12)], 'detail', 0.05); }
+  p.cylZ(RAB.x, RAB.y, 0, 5, 0.35, 24); tree(p, RAB.x, RAB.y, 1.1);
+  p.text(G, 'DELIVERIES', 348, 123.3, 1.1, 'paint');
+  // plant yard paint: stop line, lane words, bays, staging, chargers, forklift ways, belt pickup stations
   p.draw(G, [113, 121.4, 121, 121.4], 'line', 0.05);
   p.text(G, 'OUT', 118, 104, 1.6, 'paint', 'middle').text(G, 'IN', 124.6, 104, 1.6, 'paint', 'middle');
   for (const b of BAYS) { p.rect2(G, b.bx - 1, 77, 23, 6, 'line', 0.05); p.text(G, `BAY ${b.id}`, b.bx, 86.6, 1.5, 'paint'); }
-  for (const s of SLOTS) p.rect2(G, s.x - 1.7, s.y - 1.7, 3.4, 3.4, 'detail', 0.05);
+  for (const s of STAGE) p.rect2(G, s.x - 1.7, s.y - 1.7, 3.4, 3.4, 'detail', 0.05);
   p.text(G, 'STAGING', 132.4, 98.6, 1.5, 'paint').text(G, 'A', 129.5, 72.6, 1.5, 'paint').text(G, 'B', 129.5, 90.6, 1.5, 'paint');
-  for (const c of CHARGERS) p.rect2(G, c.x - 1.6, 49, 3.2, 6.6, 'detail', 0.05);
+  for (const x of [16, 21.5, 27]) p.rect2(G, x - 1.6, 49, 3.2, 6.6, 'detail', 0.05);
   for (let x = 15; x < 186; x += 4) p.draw(G, [x, 66, x + 2, 66], 'detail', 0.05);
-  for (let i = 0; i < 3; i++) p.rect2(G, 140.5 + 3.1 * i, 60, 2.4, 2.6, 'detail', 0.05);
+  for (let i = 0; i < 3; i++) p.rect2(G, 142.3 + 3.1 * i, 60, 2.4, 2.6, 'detail', 0.05);
   for (let x = 129; x < 187; x += 4) p.draw(G, [x, 81, x + 2, 81], 'detail', 0.05);
-  // fence: hairline posts and two rails
+  // warehouse yard paint
+  p.draw(G, [316, 115.4, 324, 115.4], 'line', 0.05);
+  p.text(G, 'OUT', 320, 122.6, 1.3, 'paint', 'middle').text(G, 'IN', 326.4, 122.6, 1.3, 'paint', 'middle');
+  for (const d of DOCKS) { p.rect2(G, d.bx - 1, 77, 23, 6, 'line', 0.05); p.text(G, `DOCK ${d.id}`, d.bx, 86.6, 1.5, 'paint'); }
+  for (let x = 233; x < 304; x += 4) p.draw(G, [x, 65, x + 2, 65], 'detail', 0.05);
+  // fences: hairline posts and two rails
   const fence = (x1, y1, x2, y2) => {
     const n = Math.round(Math.hypot(x2 - x1, y2 - y1) / 4);
     for (let i = 0; i <= n; i++) { const x = x1 + (x2 - x1) * i / n, y = y1 + (y2 - y1) * i / n; p.seg('line', W(x, y, 0), W(x, y, 2.4)); }
     for (const z of [1.1, 2.3]) p.seg('line', W(x1, y1, z), W(x2, y2, z));
   };
   fence(2, 4, 196, 4); fence(2, 4, 2, 118); fence(196, 4, 196, 118); fence(2, 118, 112, 118); fence(130, 118, 196, 118);
-  // parking: stalls for the staff cars
+  fence(206, 4, 356, 4); fence(206, 4, 206, 118); fence(356, 4, 356, 118); fence(206, 118, 314, 118); fence(332, 118, 356, 118);
+  // plant parking: stalls for the staff cars
   for (let i = 0; i <= 14; i++) { const x = 140 + i * 3.4; p.draw(G, [x, 10, x, 15.5, x, 31.5, x, 37], 'detail', 0.05); }
   p.draw(G, [140, 15.5, 187.6, 15.5, 140, 31.5, 187.6, 31.5], 'detail', 0.05);
   p.text(G, 'STAFF', 140, 24.4, 1.5, 'paint');
-  // trees: a box trunk and a low-poly crown
-  const crown = new THREE.IcosahedronGeometry(1, 0);
-  const tree = (x, y, s = 1) => {
-    p.box(x - 0.22 * s, y - 0.22 * s, 0, 0.44 * s, 0.44 * s, 2.2 * s);
-    p.geo(crown, new THREE.Matrix4().compose(W(x, y, 2.2 * s + 1.7 * s), new THREE.Quaternion().setFromAxisAngle(v3(0, 1, 0), rand(0, 3)), v3(2 * s, 2.2 * s, 2 * s)));
-  };
-  for (let x = 6; x < 198; x += rand(11, 17)) tree(x, rand(144.5, 146.5), rand(0.85, 1.15));
-  for (const [x, y] of [[136, 46], [146, 46], [190, 46], [192, 10], [134, 8], [121, 22], [124, 8], [8, 70], [8, 30], [184, 108], [140, 108], [160, 110]]) tree(x, y, rand(0.8, 1.1));
+  // shop forecourt paving
+  for (let x = 358; x <= 398; x += 2) p.draw(G, [x, 112, x, 118.4], 'detail', 0.05);
+  for (let y = 113.6; y < 118.4; y += 1.6) p.draw(G, [358, y, 398, y], 'detail', 0.05);
+  // trees
+  for (let x = 6; x < 398; x += rand(11, 17)) tree(p, x, rand(144.5, 146.5), rand(0.85, 1.15));
+  for (const [x, y] of [[136, 46], [146, 46], [190, 46], [192, 10], [134, 8], [121, 22], [124, 8], [8, 70], [8, 30], [184, 108], [140, 108], [160, 110],
+    [201, 30], [201, 80], [220, 8], [342, 12], [350, 32], [344, 52], [350, 72], [342, 92], [359.5, 86], [372, 86], [388, 84], [402, 98], [414, 104], [432, 100], [436, 86]]) tree(p, x, y, rand(0.8, 1.1));
+  for (let i = 0; i < 26; i++) tree(p, rand(362, 436), rand(6, 78), rand(0.75, 1.15));
   return p.build('world');
 }
 
@@ -399,9 +449,7 @@ function buildFactory() {
   p.draw(R, [0, 4.2, 36, 4.2]); for (let u = 1.6; u < 36; u += 1.6) p.draw(R, [u, 4.2, u, 14]);
   // chimney with rings and a warning light
   p.cylZ(26, 22, 12, 1.3, 18, 14);
-  for (const z of [24, 28.6]) { const r = []; for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, b = (i + 1) / 14 * Math.PI * 2;
-    r.push(W(26 + 1.33 * Math.cos(a), 22 + 1.33 * Math.sin(a), z), W(26 + 1.33 * Math.cos(b), 22 + 1.33 * Math.sin(b), z)); }
-    for (let i = 0; i < r.length; i += 2) p.seg('detail', r[i], r[i + 1]); }
+  for (const z of [24, 28.6]) { const r = ring(26, 22, 1.33, z, 14); for (let i = 0; i < r.length; i += 2) p.seg('detail', r[i], r[i + 1]); }
   // office annex: windows, door, roof plant
   p.box(94, 28, 0, 22, 20, 8);
   const A = FRONT(94, 48, 8);
@@ -413,7 +461,7 @@ function buildFactory() {
   for (const [x, y] of FANS) p.cylZ(x, y, 8, 1.7, 0.8, 16);
   const g = p.build('factory');
   // live bits: the chimney light and the fan blades
-  const light = new Part().box(25.6, 21.6, 30, 0.8, 0.8, 0.5).build('light'); g.add(light);
+  g.add(new Part().box(25.6, 21.6, 30, 0.8, 0.8, 0.5).build('light'));
   for (const [x, y] of FANS) {
     const b = new Part(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; b.seg('line', W(0, 0, 0), W(1.45 * Math.cos(a), 1.45 * Math.sin(a), 0)); }
     const blades = b.build('fan'); pose(blades, x, y, 0, 8.85); g.add(blades);
@@ -456,10 +504,101 @@ function buildGate() {
 }
 
 function bayLamp(b) {
-  const p = new Part(); p.box(b.bx - 3, 74.6, 0, 0.3, 0.3, 4.2);
-  const g = p.build('bayPost');
-  const lamp = new Part().box(b.bx - 3.25, 74.35, 4.2, 0.8, 0.8, 0.6).build('lamp'); g.add(lamp);
-  b.lamp = lamp; return g;
+  const g = new Part().box(b.bx - 3, 74.6, 0, 0.3, 0.3, 4.2).build('bayPost');
+  b.lamp = new Part().box(b.bx - 3.25, 74.35, 4.2, 0.8, 0.8, 0.6).build('lamp'); g.add(b.lamp);
+  return g;
+}
+
+// The warehouse as a section drawing: the back walls stand full height, the front and east walls are cut
+// low (hatched on the cut), and the roof is only its outline, so the racks and the loading lane show.
+function buildWarehouse() {
+  const p = new Part(), X0 = 228, X1 = 308, Y0 = 14, Y1 = 58, H = 10, LOW = 1.2, T = 0.6;
+  p.fill2(TOP(X0, Y0, 0), 0, 0, X1 - X0, Y1 - Y0, 'deck', 0.012);
+  p.box(X0, Y0, 0, X1 - X0, T, H);
+  p.box(X0, Y0 + T, 0, T, 1.6, H); p.box(X0, 23.8, 0, T, Y1 - 23.8, H); p.box(X0, 16.2, 5.8, T, 7.6, H - 5.8);
+  const low = [[X0 + T, Y1 - T, 18.4, T], [253, Y1 - T, 30, T], [289, Y1 - T, X1 - T - 289, T], [X1 - T, Y0 + T, T, 1.6], [X1 - T, 23.8, T, Y1 - T - 23.8]];
+  for (const [x, y, w, d] of low) {
+    p.box(x, y, 0, w, d, LOW);
+    const M = TOP(x, y, LOW), n = Math.max(w, d), segs = [];   // hatch the cut
+    for (let u = 0.4; u < n; u += 0.8) segs.push(...(w > d ? [u, 0, u + T, d] : [0, u, w, u + T]));
+    p.draw(M, segs);
+  }
+  for (const [x, y] of [[X1 - T, Y1 - T], [268, Y1 - T], [X1 - T, 36], [X1 - T, 16.2 - 0.5], [X1 - T, 23.8]]) p.box(x, y, 0, T, 0.5, H);
+  p.seg('line', W(X1, 16.2, 5.8), W(X1, 23.8, 5.8));
+  // roof outline: eaves, ridge, gable ends, trusses
+  const RZ = 13.5, RY = 36;
+  for (const [a, b] of [[[X0, Y1, H], [X1, Y1, H]], [[X1, Y0, H], [X1, Y1, H]], [[X0, RY, RZ], [X1, RY, RZ]],
+    [[X0, Y0, H], [X0, RY, RZ]], [[X0, RY, RZ], [X0, Y1, H]], [[X1, Y0, H], [X1, RY, RZ]], [[X1, RY, RZ], [X1, Y1, H]]]) p.seg('line', W(...a), W(...b));
+  for (let x = X0 + 8; x < X1; x += 8) { p.seg('detail', W(x, Y0, H), W(x, RY, RZ)); p.seg('detail', W(x, RY, RZ), W(x, Y1, H)); }
+  // inner face of the back wall: name band and ribs
+  const B = FRONT(X0 + T, Y0 + T, H);
+  p.draw(B, [0, 4.6, X1 - X0 - T, 4.6]); p.text(B, 'WAREHOUSE 01', 6, 3.6, 2.6);
+  for (let u = 2; u < X1 - X0; u += 2) p.draw(B, [u, 4.6, u, H]);
+  // racks: uprights, beams, and bay numbers on the floor
+  for (let j = 0; j <= 8; j++) for (const y of [31.6, 34.2]) p.box(243 + 6 * j - 0.1, y, 0, 0.2, 0.2, 5.6);
+  for (const z of [2.85, 5.45]) for (const y of [31.6, 34.25]) p.box(243, y, z, 48, 0.15, 0.15);
+  for (let b = 0; b < 8; b++) p.text(TOP(0, 0, 0), `R${b + 1}`, 246 + 6 * b, 36.6, 0.9, 'paint', 'middle', 0.05);
+  // floor paint: drive lane, forklift ways, charger pads
+  const G = TOP(0, 0, 0);
+  p.draw(G, [X0 + T, 17.2, X1 - T, 17.2, X0 + T, 22.8, X1 - T, 22.8], 'line', 0.05);
+  for (let x = 237; x < 300; x += 4) p.draw(G, [x, 40.6, x + 2, 40.6, x, 48.5, x + 2, 48.5, x, 26, x + 2, 26], 'detail', 0.05);
+  for (const x of [262, 268, 274]) { p.rect2(G, x - 1.6, 53.2, 3.2, 3.9, 'detail', 0.05); p.box(x + 1.5, 56.4, 0, 0.45, 0.45, 1.3); }
+  return p.build('warehouse');
+}
+
+// The warehouse gate: a sliding panel the guard opens from a post, and an open-sided booth.
+function buildWhGate() {
+  const g = new THREE.Group(); g.name = 'whGate';
+  const p = new Part();
+  p.box(332, 117.6, 0, 0.5, 0.5, 2.6); p.box(313.4, 117.6, 0, 0.5, 0.5, 2.6);
+  p.box(331.2, 115.8, 0, 0.45, 0.45, 1.1);   // the guard's control post
+  g.add(p.build('posts'));
+  const s = new Part();
+  s.box(314, 117.4, 0.15, 18, 0.18, 0.18, 'k'); s.box(314, 117.4, 2.0, 18, 0.18, 0.18, 'k');
+  for (let x = 314.6; x < 332; x += 0.75) s.seg('koline', W(x, 117.49, 0.33), W(x, 117.49, 2.0));
+  s.box(314, 117.4, 0.15, 0.18, 0.18, 2.03, 'k'); s.box(331.82, 117.4, 0.15, 0.18, 0.18, 2.03, 'k');
+  const panel = s.build('panel'); g.add(panel);
+  return g;
+}
+function buildBooth() {
+  const p = new Part();
+  for (const [x, y] of [[333, 102.6], [338.6, 102.6], [333, 105.8], [338.6, 105.8]]) p.box(x, y, 0, 0.4, 0.4, 2.8);
+  p.box(332.6, 102.2, 2.8, 6.8, 4.4, 0.25);
+  p.box(333.4, 102.8, 0, 5, 1.2, 1.0);   // desk under the canopy; the guard stands out front
+  return p.build('booth');
+}
+
+// The shop as a section drawing too: low sill and mullions on the street side, a fascia with its name.
+function buildShop() {
+  const p = new Part(), X0 = 362, X1 = 394, Y0 = 94, Y1 = 112, H = 5.4, SILL = 0.9, T = 0.4;
+  p.fill2(TOP(X0, Y0, 0), 0, 0, X1 - X0, Y1 - Y0, 'deck', 0.012);
+  p.box(X0, Y0, 0, X1 - X0, T, H); p.box(X0, Y0 + T, 0, T, Y1 - Y0 - T, H);
+  p.box(X0 + T, Y1 - T, 0, 376.5 - X0 - T, T, SILL); p.box(379.5, Y1 - T, 0, X1 - 379.5, T, SILL);
+  p.box(X1 - T, Y0 + T, 0, T, Y1 - Y0 - 2 * T, SILL);
+  p.box(X1 - T, Y1 - T, 0, T, T, H - 0.8); p.box(X1 - T, Y0, 0, T, T, H);
+  p.box(X0, Y1 - T, H - 0.8, X1 - X0, T, 0.8);
+  const F = FRONT(X0, Y1, H);
+  p.text(F, 'CORNER MARKET', 1.2, 0.62, 0.56);
+  for (let u = 2.6; u < X1 - X0 - 0.5; u += 2.6) { if (u > 14 && u < 18) continue; p.draw(F, [u, 0.8, u, H - SILL], 'line'); }
+  p.draw(F, [14.5, H, 14.5, 2.2, 17.5, H, 17.5, 2.2, 14.5, 2.2, 17.5, 2.2], 'line');
+  const S = SIDE(X1, Y1, H);
+  for (let u = 3; u < Y1 - Y0 - 0.5; u += 3) p.draw(S, [u, 0.8, u, H - SILL], 'line');
+  p.seg('line', W(X1, Y0, H), W(X1, Y1, H));
+  for (let x = X0 + 3; x < X1; x += 3) p.seg('detail', W(x, Y0, H), W(x, Y1 - T, H));
+  // inside: shelf units, the counter, the stockroom corner
+  for (const y0 of [97.6, 102.8]) {
+    p.box(366, y0, 0, 22.4, 1.6, 0.15);
+    for (const z of [0.85, 1.55]) p.box(366, y0, z, 22.4, 1.6, 0.1);
+    p.box(366, y0, 0, 0.15, 1.6, 2.3); p.box(388.25, y0, 0, 0.15, 1.6, 2.3);
+  }
+  p.box(383, 108.4, 0, 8, 1.6, 1.05); p.box(388.6, 108.6, 1.05, 1.2, 0.9, 0.5);
+  p.rect2(TOP(0, 0, 0), 362.8, 94.8, 3.6, 2.8, 'detail', 0.03);
+  return p.build('shop');
+}
+function buildShopBox() {
+  const p = new Part(); p.box(-0.45, -0.4, 0, 0.9, 0.8, 0.55, 'k');
+  p.draw(TOP(-0.45, -0.4, 0.55), [0.45, 0, 0.45, 0.8], 'koline');
+  return p.build('shopBox');
 }
 
 // ---- models (local: +x forward, origin at the front) ----
@@ -480,7 +619,7 @@ function buildTractor() {
   p.fill2(FRONT(-3.0, -2.05, 4.3), 1.5, 0.35, 1.2, 1.3, 'glass', -0.03).rect2(FRONT(-3.0, -2.05, 4.3), 1.5, 0.35, 1.2, 1.3, 'line', -0.04);
   return p.build('tractor');
 }
-const SLOT_LOCAL = [[-2.6, -1.3], [-7.2, -1.3], [-11.8, -1.3], [-2.6, 1.3], [-7.2, 1.3], [-11.8, 1.3]]; // far row first when parked heading west
+const FLAT_SLOTS = [[-2.6, -1.3], [-7.2, -1.3], [-11.8, -1.3], [-2.6, 1.3], [-7.2, 1.3], [-11.8, 1.3]]; // far row first when parked heading west
 const DECK = 1.6;
 function buildTrailer() {
   const p = new Part();
@@ -496,6 +635,37 @@ function buildTrailer() {
   for (const x of [-11.0, -12.5]) { p.cylY(x, 1.7, 0.62, 0.62, 0.6, 12); p.cylY(x, -2.3, 0.62, 0.62, 0.6, 12); }
   return p.build('trailer');
 }
+// The covered delivery truck: a box body open at the back, closed by two swing doors.
+// Pallets ride in one row, loaded from the rear.
+const VAN_SLOTS = [-4.4, -6.9, -9.4, -11.9], VAN_DECK = 1.3, VAN_LEN = 13.4, VAN_BH = 2.85;
+function buildVan() {
+  const g = new THREE.Group(); g.name = 'van';
+  const p = new Part(), B0 = -VAN_LEN, BL = 10.4, D = VAN_DECK, BH = VAN_BH;
+  p.box(-12.9, -0.8, 0.5, 12.6, 1.6, 0.4);
+  p.box(-0.4, -1.3, 0.35, 0.4, 2.6, 0.55);
+  p.box(-2.8, -1.25, 0.85, 2.6, 2.5, 2.25);
+  p.box(-2.9, -1.3, 3.1, 2.7, 2.6, 0.18);
+  const fr = SIDE(-0.2, 1.25, 3.1);
+  p.fill2(fr, 0.25, 0.25, 2.0, 0.95).rect2(fr, 0.25, 0.25, 2.0, 0.95, 'line').draw(fr, [0.4, 1.7, 2.1, 1.7, 0.4, 1.95, 2.1, 1.95]);
+  p.fill2(FRONT(-2.8, 1.25, 3.1), 1.2, 0.3, 1.1, 0.85).rect2(FRONT(-2.8, 1.25, 3.1), 1.2, 0.3, 1.1, 0.85, 'line');
+  p.fill2(FRONT(-2.8, -1.25, 3.1), 1.2, 0.3, 1.1, 0.85, 'glass', -0.03).rect2(FRONT(-2.8, -1.25, 3.1), 1.2, 0.3, 1.1, 0.85, 'line', -0.04);
+  p.box(B0, -1.4, D - 0.35, BL, 2.8, 0.35);
+  p.box(B0, 1.25, D, BL, 0.15, BH); p.box(B0, -1.4, D, BL, 0.15, BH);
+  p.box(-3.15, -1.4, D, 0.15, 2.8, BH);
+  p.box(B0, -1.4, D + BH, BL, 2.8, 0.15);
+  const ribs = []; for (let u = 1.3; u < BL - 0.2; u += 1.3) ribs.push(u, 0.1, u, BH + 0.1);
+  p.draw(FRONT(B0, 1.4, D + BH + 0.15), ribs).draw(FRONT(B0, -1.4, D + BH + 0.15), ribs, 'detail', -0.04);
+  p.draw(TOP(B0, -1.4, D + BH + 0.15), [0, 1.4, BL, 1.4]);
+  for (const x of [-1.7, -10.7]) { p.cylY(x, 1.0, 0.55, 0.55, 0.42, 12); p.cylY(x, -1.42, 0.55, 0.55, 0.42, 12); }
+  g.add(p.build('vanBody'));
+  for (const [n, y, s] of [['doorL', 1.4, -1], ['doorR', -1.4, 1]]) {
+    const d = new Part(), y0 = s < 0 ? -1.4 : 0;
+    d.box(-0.08, y0, 0, 0.08, 1.4, BH + 0.12);
+    for (const k of [0.35, 1.05]) d.seg('line', W(-0.09, y0 + k, 0.2), W(-0.09, y0 + k, BH - 0.1));
+    const dg = d.build(n); dg.position.copy(W(B0, y, D)); g.add(dg);
+  }
+  return g;
+}
 function buildForklift() {
   const p = new Part();
   p.box(-3.5, -1.0, 0.35, 3.1, 2.0, 0.85);
@@ -505,7 +675,7 @@ function buildForklift() {
   for (const [x, y] of [[-0.85, -0.95], [-0.85, 0.8], [-2.75, -0.95], [-2.75, 0.8]]) p.box(x, y, 1.2, 0.15, 0.15, 2.2);
   p.box(-2.9, -1.05, 3.4, 2.2, 2.1, 0.12);
   p.draw(TOP(-2.9, -1.05, 3.52), [0.55, 0, 0.55, 2.1, 1.1, 0, 1.1, 2.1, 1.65, 0, 1.65, 2.1]);
-  p.box(-0.4, -0.85, 0.2, 0.22, 0.25, 3.6); p.box(-0.4, 0.6, 0.2, 0.22, 0.25, 3.6); p.box(-0.4, -0.85, 3.55, 0.22, 1.7, 0.18);
+  p.box(-0.4, -0.85, 0.2, 0.22, 0.25, 4.6); p.box(-0.4, 0.6, 0.2, 0.22, 0.25, 4.6); p.box(-0.4, -0.85, 4.62, 0.22, 1.7, 0.18);
   for (const x of [-0.95, -3.05]) { p.cylY(x, 0.72, 0.42, 0.42, 0.42, 10); p.cylY(x, -1.14, 0.42, 0.42, 0.42, 10); }
   const g = p.build('forklift');
   const c = new Part(); c.box(-0.2, -0.9, 0, 0.16, 1.8, 1.1);
@@ -545,21 +715,36 @@ function buildPallet(v) {
   }
   return p.build('pallet');
 }
+// People: box legs that swing at the hip, a torso, arms, a head. Staff wear the two-tone shirt, the guard a cap.
+function buildPerson(look) {
+  const tone = look === 'staff' ? 'k' : 'n', p = new Part();
+  p.box(-0.13, -0.25, 0.85, 0.26, 0.5, 0.62, tone);
+  p.box(-0.1, 0.25, 0.92, 0.2, 0.12, 0.52, tone); p.box(-0.1, -0.37, 0.92, 0.2, 0.12, 0.52, tone);
+  p.box(-0.12, -0.12, 1.5, 0.24, 0.24, 0.27);
+  if (look === 'guard') { p.box(-0.15, -0.15, 1.77, 0.3, 0.3, 0.07, 'k'); p.box(0.15, -0.15, 1.77, 0.12, 0.3, 0.03, 'k'); }
+  const g = p.build('person');
+  for (const [n, y] of [['legL', 0.12], ['legR', -0.12]]) { const l = new Part().box(-0.08, -0.08, -0.85, 0.16, 0.16, 0.85).build(n); l.position.copy(W(0, y, 0.85)); g.add(l); }
+  const c = new Part(); c.box(0.16, -0.24, 0.95, 0.46, 0.48, 0.42, 'k'); c.draw(TOP(0.16, -0.24, 1.37), [0.23, 0, 0.23, 0.48], 'koline');
+  g.add(c.build('carry'));
+  return g;
+}
 
 // ---- simulation ----
-const STEP = 1 / 60, WARMUP = 70;
-const sim = { t:0, trucks:[], cars:[], forklifts:[], pallets:new Set(), stats:{ produced:0, trucksIn:0, trucksOut:0, trucksLoaded:0 } };
+const STEP = 1 / 60, WARMUP = 80;
+const sim = { t:0, trucks:[], cars:[], forklifts:[], people:[], pallets:new Set(), stats:{} };
+const resetStats = () => { sim.stats = { produced:0, flatTrips:0, whIn:0, whOut:0, shopIn:0, sold:0, plantOut:0 }; };
+resetStats();
 const T0 = Date.now() - WARMUP * 1000;
 const clock = t => new Date(T0 + t * 1000).toTimeString().slice(0, 5);
 const kmh = v => `${Math.round(v * 3.6)} km/h`;
-const DESTS = ['Northgate DC', 'Harbor Point', 'Eastvale Depot', 'Millbrook Store', 'Westfield Hub', 'Cedar Ridge'];
 const DRIVERS = ['A. Haddad', 'S. Okafor', 'M. Rossi', 'J. Park', 'L. Novak', 'R. Silva', 'T. Brandt', 'K. Mensah'];
+const STAFF = ['R. Diaz', 'M. Chen', 'O. Bakr'];
 const SKUS = [
   { name:'Gear housings', code:'GH-24', units:[24, 48], kg:[380, 520] },
   { name:'Cartons', code:'CT-60', units:[48, 96], kg:[160, 260] },
   { name:'Steel panels', code:'SP-10', units:[10, 14], kg:[640, 820] },
 ];
-let palletSeq = 1001, truckSeq = 2051;
+let palletSeq = 1001, shopperSeq = 1;
 const PROTO = {};
 let selected = null, hovered = null;
 
@@ -571,9 +756,11 @@ class Pallet {
     this.loc = { type:'new' }; this.reserved = null; this.tw = null; this.pick = [0, 0, 1.2];
     sim.pallets.add(this);
   }
-  tweenTo(to, d = 0.5) {
+  // slide to a spot in the current parent's frame; the further it goes, the longer it takes
+  tweenTo(to, d) {
     const r = this.group.rotation.y;
-    this.tw = { p0:this.group.position.clone(), p1:to, r0:r, r1:Math.round(r / (Math.PI / 2)) * Math.PI / 2, t:0, d };
+    this.tw = { p0:this.group.position.clone(), p1:to, r0:r, r1:Math.round(r / (Math.PI / 2)) * Math.PI / 2, t:0,
+      d:d ?? clamp(0.25 + this.group.position.distanceTo(to) * 0.09, 0.25, 1.2) };
   }
   update(dt) {
     if (!this.tw) return;
@@ -583,24 +770,30 @@ class Pallet {
   }
   where() {
     const l = this.loc;
-    return l.type === 'conveyor' ? (conveyor.inZone(this) ? 'line A pickup' : 'on line A')
-      : l.type === 'stage' ? `staging ${l.slot.id}` : l.type === 'forklift' ? `on ${l.f.id}`
-      : l.type === 'truck' ? `on ${l.truck.id}` : '—';
+    return l.type === 'conveyor' ? (conveyor.inZone(this) ? 'line A pickup' : 'on line A') : l.type === 'slot' ? l.slot.label : l.type === 'forklift' ? `on ${l.f.id}` : '—';
+  }
+  bound() {
+    const o = this.loc.slot?.owner;
+    if (o?.model === 'flatbed') return 'Warehouse 01';
+    if (o?.model === 'van' || RACK.includes(this.loc.slot)) return 'Corner Market';
+    return this.reserved?.task?.to ?? 'Warehouse 01';
   }
   info() {
     return { kind:`Pallet · ${this.sku.code}`, title:this.id, status:this.where(),
-      rows:[['Contents', this.sku.name], ['Quantity', `${this.units} units`], ['Gross weight', `${this.kg} kg`], ['Produced', clock(this.t0)],
-        ['Bound for', this.loc.type === 'truck' ? this.loc.truck.dest : this.reserved?.task?.to ?? '—']] };
+      rows:[['Contents', this.sku.name], ['Quantity', `${this.units} units · ${BOXES} boxes`], ['Gross weight', `${this.kg} kg`], ['Produced', clock(this.t0)], ['Bound for', this.bound()]] };
   }
   readout() { return `${this.id} · ${this.where()}`.toLowerCase(); }
   remove() { sim.pallets.delete(this); this.group.removeFromParent(); forget(this); }
 }
+function putIn(slot, p) {
+  slot.parent.add(p.group); p.group.position.copy(W(...slot.local)); p.group.rotation.set(0, 0, 0);
+  slot.pallet = p; p.loc = { type:'slot', slot };
+}
 
-// Line A: pallets appear inside the factory and roll out to the pickup point.
+// Line A: pallets appear inside the factory and roll out to the pickup stations.
 const conveyor = {
-  kind:'conveyor', id:'Line A', path:new Path([[86, 44], [86, 58], [148.5, 58]], 3), items:[], next:2, held:false, rate:9, pick:[118.9, 60.8, 0.8],
-  // the last stretch of belt has no rail on the yard side; forklifts pick from there, side on
-  // pallets come to rest there at three stations, 3.1 apart
+  kind:'conveyor', id:'Line A', path:new Path([[86, 44], [86, 58], [148.5, 58]], 3), items:[], next:2, held:false, rate:40, pick:[118.9, 60.8, 0.8],
+  // the last stretch of belt has no rail on the yard side; pallets come to rest there at three stations, 3.1 apart
   inZone(p) { return p.s >= this.path.length - 6.3; },
   pickable() { return this.items.filter(p => this.inZone(p) && p.rest && !p.reserved); },
   update(dt) {
@@ -645,15 +838,17 @@ function clearAhead(v, look, gap, dt) {
   return best - gap;
 }
 const roadBusy = (v, x0, x1, y) => sim.cars.concat(sim.trucks).some(o => o !== v && o.points.some(p => Math.abs(p[1] - y) < 2.6 && p[0] > x0 && p[0] < x1));
+const gapW = (t, x0, x1) => !roadBusy(t, x0, x1, 127.5), gapE = (t, x0, x1) => !roadBusy(t, x0, x1, 134.5);
 
-const LANES = [{ name:'westbound', path:new Path([[208, 127.5], [-8, 127.5]]), next:0 }, { name:'eastbound', path:new Path([[-8, 134.5], [208, 134.5]]), next:1 }];
+// Cars come in from the west, go round the roundabout and leave west again.
+const ROAD = { path:new Path([[-8, 134.5], [404, 134.5], [RAB.x, 143], [434, RAB.y], [RAB.x, 119], [404, 127.5], [-8, 127.5]], 8), next:0 };
 class Car {
-  constructor(lane) {
+  constructor() {
     this.kind = 'car'; this.seq = roadSeq++; this.van = rng() < 0.3; this.len = this.van ? 5.2 : 4.2; this.halfW = 1.05;
     const tone = rng() < 0.4 ? 'k' : 'n';
     this.id = `${String.fromCharCode(65 + Math.floor(rng() * 26))}${String.fromCharCode(65 + Math.floor(rng() * 26))} ${Math.floor(rand(100, 999))}`;
-    this.lane = lane; this.path = lane.path; this.s = 0; this.vmax = rand(10, 14); this.v = this.vmax * 0.8;
-    this.group = PROTO[this.van ? 'van' : 'car'][tone].clone(); this.group.userData.entity = this; this.groups = [this.group];
+    this.path = ROAD.path; this.s = 0; this.vmax = rand(10, 14); this.v = this.vmax * 0.8;
+    this.group = (this.van ? PROTO.carVan : PROTO.car)[tone].clone(); this.group.userData.entity = this; this.groups = [this.group];
     this.pick = [-this.len / 2, 0, this.van ? 1.6 : 1.2];
     scene.add(this.group); sim.cars.push(this); this.place();
   }
@@ -661,105 +856,175 @@ class Car {
     const a = this.path.at(this.s); pose(this.group, a.x, a.y, a.h);
     this.front = a; this.points = [[a.x, a.y], [a.x - Math.cos(a.h) * this.len, a.y - Math.sin(a.h) * this.len]];
   }
+  dir() { const c = Math.cos(this.front.h); return c > 0.5 ? 'eastbound' : c < -0.5 ? 'westbound' : 'at the roundabout'; }
   update(dt) {
-    const room = clearAhead(this, 30, 2, dt), vT = Math.min(this.vmax, Math.sqrt(12 * Math.max(0, room)));
+    const near = Math.hypot(this.front.x - RAB.x, this.front.y - RAB.y) < 22;
+    const room = clearAhead(this, 30, 2, dt), vT = Math.min(near ? 7 : this.vmax, Math.sqrt(12 * Math.max(0, room)));
     this.v = vT < this.v ? vT : Math.min(vT, this.v + 3 * dt);
     this.s += this.v * dt; this.place();
     if (this.s - this.len > this.path.length) this.remove();
   }
   info() {
-    return { kind:this.van ? 'Van' : 'Car', title:this.id, status:`${this.lane.name} · ${kmh(this.v)}`,
-      rows:[['Road', 'Riverside Rd'], ['Direction', this.lane.name], ['Speed', kmh(this.v)], ['Length', `${this.len.toFixed(1)} m`]] };
+    return { kind:this.van ? 'Van' : 'Car', title:this.id, status:`${this.dir()} · ${kmh(this.v)}`,
+      rows:[['Road', 'Riverside Rd'], ['Direction', this.dir()], ['Speed', kmh(this.v)], ['Length', `${this.len.toFixed(1)} m`]] };
   }
-  readout() { return `${this.id.toLowerCase()} · ${this.lane.name} · ${kmh(this.v)}`; }
+  readout() { return `${this.id.toLowerCase()} · ${this.dir()} · ${kmh(this.v)}`; }
   remove() { sim.cars.splice(sim.cars.indexOf(this), 1); this.group.removeFromParent(); forget(this); }
 }
 
-for (const b of BAYS) {
-  b.path = new Path([[218, 127.5], [124, 127.5], [124, 94], [b.bx + 40, 94], [b.bx + 30, 80], [b.bx - 4, 80], [b.bx - 14, 94], [8, 94], [8, 112], [118, 112], [118, 134.5], [218, 134.5]], 6);
-  b.stopS = b.path.project(b.bx, 80); b.gateS = b.path.project(118, 121); b.inS = b.path.project(124, 110); b.truck = null; b.cooldown = b.id === 1 ? 0 : 9;
-}
+// ---- trucks: each one drives a closed loop and stops at "holds" until that hold lets it go ----
+function settled(t, site, dt) { t.calm = t.near(site) ? 0 : t.calm + dt; return t.calm > 1.2; }
 class Truck {
-  constructor(bay) {
-    this.kind = 'truck'; this.seq = roadSeq++; this.id = `TRK-${truckSeq++}`; this.bay = bay; this.path = bay.path; this.s = 0; this.v = 8; this.halfW = 2.4;
-    this.state = 'arriving'; this.cleared = false; this.fullT = 0; this.t0 = sim.t;
-    this.slots = SLOT_LOCAL.map(() => ({ pallet:null, reserved:null }));
-    this.dest = pick(DESTS); this.driver = pick(DRIVERS);
-    this.tractor = PROTO.tractor.clone(); this.trailer = PROTO.trailer.clone(); this.groups = [this.tractor, this.trailer];
+  constructor(o) {
+    Object.assign(this, { kind:'truck', seq:roadSeq++, v:0, doors:0, doorsTo:0, at:null, hi:0, base:0, calm:0, boxes:0, boxRes:0, boxMax:0, trips:0, t0:sim.t }, o);
+    if (this.model === 'flatbed') {
+      this.tractor = PROTO.tractor.clone(); this.trailer = PROTO.trailer.clone(); this.groups = [this.tractor, this.trailer]; this.halfW = 2.4;
+      this.slots = FLAT_SLOTS.map(([lx, ly], i) => slotAt({ id:`${this.id}·${i + 1}`, label:`on ${this.id}`, parent:this.trailer, local:[lx, ly, DECK], owner:this, i }));
+      this.pick = [-1.5, 0, 3.0];
+    } else {
+      this.body = PROTO.van.clone(); this.groups = [this.body]; this.halfW = 1.4;
+      this.doorL = this.body.getObjectByName('doorL'); this.doorR = this.body.getObjectByName('doorR');
+      this.slots = VAN_SLOTS.map((lx, i) => slotAt({ id:`${this.id}·${i + 1}`, label:`in ${this.id}`, parent:this.body, local:[lx, 0, VAN_DECK], owner:this, i }));
+      this.pick = [-1.5, 0, 2.2];
+    }
     for (const g of this.groups) { g.userData.entity = this; scene.add(g); }
-    this.pick = [-1.5, 0, 3.0];
-    bay.truck = this; sim.trucks.push(this); sim.stats.trucksIn++; this.place();
+    this.holds.sort((a, b) => a.s - b.s);
+    this.hi = this.holds.findIndex(h => h.s >= this.s - 0.01); if (this.hi < 0) { this.hi = 0; this.base = this.path.length; }
+    sim.trucks.push(this); this.place();
   }
+  get hold() { return this.holds[this.hi]; }
+  get target() { return this.hold.s + this.base; }
   loaded() { return this.slots.filter(s => s.pallet).length; }
   freeSlot() { return this.slots.findIndex(s => !s.pallet && !s.reserved); }
   place() {
-    const a = this.path.at(this.s), b = this.path.at(this.s - 6), th = Math.atan2(a.y - b.y, a.x - b.x);
-    pose(this.tractor, a.x, a.y, th);
-    const k = this.path.at(this.s - 4.6), r = this.path.at(this.s - 16.3), tt = Math.atan2(k.y - r.y, k.x - r.x);
-    pose(this.trailer, k.x, k.y, tt);
-    this.pose = { x:k.x, y:k.y, h:tt }; this.front = { x:a.x, y:a.y, h:th };
-    const c = Math.cos(tt), s = Math.sin(tt), at = d => [k.x + c * d, k.y + s * d];
-    this.points = [[a.x, a.y], [a.x - Math.cos(th) * 6, a.y - Math.sin(th) * 6], at(0), at(-7.2), at(-14.4)];
-  }
-  slotWorld(i) { const [lx, ly] = SLOT_LOCAL[i], p = this.pose, c = Math.cos(p.h), s = Math.sin(p.h); return [p.x + c * lx - s * ly, p.y + s * lx + c * ly]; }
-  update(dt) {
-    if (this.state === 'loading') {
-      const p = this.pose, c = Math.cos(p.h), s = Math.sin(p.h);
-      const near = sim.forklifts.some(f => { const dx = f.x - p.x, dy = f.y - p.y, lx = c * dx + s * dy, ly = c * dy - s * dx; return lx > -16.5 && lx < 2 && Math.abs(ly) < 7; });
-      this.fullT = this.loaded() === 6 && !near ? this.fullT + dt : 0;
-      if (this.fullT > 1.5) { this.state = 'departing'; this.bay.truck = null; this.bay.cooldown = rand(4, 10); sim.stats.trucksLoaded++; }
-      return;
+    const a = this.path.at(this.s);
+    if (this.model === 'flatbed') {
+      const b = this.path.at(this.s - 6), th = Math.atan2(a.y - b.y, a.x - b.x);
+      pose(this.tractor, a.x, a.y, th);
+      const k = this.path.at(this.s - 4.6), r = this.path.at(this.s - 16.3), tt = Math.atan2(k.y - r.y, k.x - r.x);
+      pose(this.trailer, k.x, k.y, tt);
+      this.pose = { x:k.x, y:k.y, h:tt }; this.front = { x:a.x, y:a.y, h:th };
+      const c = Math.cos(tt), s = Math.sin(tt), at = d => [k.x + c * d, k.y + s * d];
+      this.points = [[a.x, a.y], [a.x - Math.cos(th) * 6, a.y - Math.sin(th) * 6], at(0), at(-7.2), at(-14.4)];
+    } else {
+      const b = this.path.at(this.s - 8), th = Math.atan2(a.y - b.y, a.x - b.x), c = Math.cos(th), s = Math.sin(th);
+      pose(this.body, a.x, a.y, th);
+      this.pose = { x:a.x, y:a.y, h:th }; this.front = this.pose;
+      this.points = [[a.x, a.y], [a.x - c * 6.7, a.y - s * 6.7], [a.x - c * VAN_LEN, a.y - s * VAN_LEN]];
     }
-    const hold = this.state === 'arriving' ? this.bay.stopS : this.cleared ? Infinity : this.bay.gateS;
-    if (this.state === 'departing' && !this.cleared && this.bay.gateS - this.s < 0.6 && this.v < 0.3
-        && !roadBusy(this, 110, 144, 127.5) && !roadBusy(this, 90, 124, 134.5)) this.cleared = true;
-    const room = Math.min(hold - this.s, clearAhead(this, 24, 3, dt));
-    const vT = Math.min(this.front.y < 119 ? 5.5 : 9, Math.sqrt(5 * Math.max(0, room)));
+  }
+  slotWorld(i) { const [lx, ly] = this.slots[i].local, p = this.pose, c = Math.cos(p.h), s = Math.sin(p.h); return [p.x + c * lx - s * ly, p.y + s * lx + c * ly]; }
+  // is a forklift from this site working at the truck? (alongside a flatbed, behind a van)
+  near(site) {
+    const p = this.pose, c = Math.cos(p.h), s = Math.sin(p.h);
+    return site.forklifts.some(f => { const dx = f.x - p.x, dy = f.y - p.y, lx = c * dx + s * dy, ly = c * dy - s * dx;
+      return this.model === 'flatbed' ? lx > -16.5 && lx < 2 && Math.abs(ly) < 7 : lx > -VAN_LEN - 7 && lx < 1 && Math.abs(ly) < 3.5; });
+  }
+  inLane() { return this.front.x > 200 && this.front.x < 312 && Math.abs(this.front.y - 20) < 3; }
+  limit() {
+    const f = this.front;
+    if (Math.hypot(f.x - RAB.x, f.y - RAB.y) < 20) return 6;
+    if (f.x > 228 && f.x < 312 && f.y > 14 && f.y < 58) return 4;
+    return f.y < 119 ? 5.5 : 9;
+  }
+  update(dt) {
+    if (this.model === 'van') {
+      this.doors = clamp(this.doors + Math.sign(this.doorsTo - this.doors) * dt / 1.3, 0, 1);
+      const a = ease(this.doors) * 1.85; this.doorL.rotation.y = a; this.doorR.rotation.y = -a;   // swung open behind the truck
+    }
+    if (this.at) {
+      this.blocker = null;
+      if (this.at.release(this, dt)) this.pass(); else { this.v = 0; return; }
+    }
+    const h = this.hold;
+    if (h.gate && this.target - this.s < 70) h.gate.want(this);
+    const room = Math.min(this.target - this.s, clearAhead(this, 24, 3, dt));
+    const vT = Math.min(this.limit(), Math.sqrt(5 * Math.max(0, room)));
     this.v = vT < this.v ? vT : Math.min(vT, this.v + 2.2 * dt);
     this.s += this.v * dt;
-    if (this.state === 'arriving' && this.bay.stopS - this.s < 0.08) { this.s = this.bay.stopS; this.v = 0; this.state = 'loading'; }
+    if (this.target - this.s < 0.08) { this.s = this.target; this.v = 0; this.at = h; this.calm = 0; h.arrive?.(this); }
     this.place();
-    if (this.s - 20 > this.path.length) this.remove();
   }
-  status() {
-    return this.state === 'arriving' ? (this.s < this.bay.inS ? 'inbound' : `docking · bay ${this.bay.id}`)
-      : this.state === 'loading' ? `loading · bay ${this.bay.id}` : this.cleared ? 'outbound' : 'waiting at gate';
+  pass() {
+    const h = this.at; this.at = null; if (h.gate) h.gate.passed++;
+    h.left?.(this);
+    if (++this.hi >= this.holds.length) { this.hi = 0; this.base += this.path.length; }
   }
+  status() { return this.at ? (this.at.wait?.(this) ?? this.at.label) : this.hold.toward; }
+  doorText() { return this.doors === 0 ? 'closed' : this.doors === 1 ? 'open' : this.doorsTo ? 'opening' : 'closing'; }
   info() {
     const n = this.loaded(), kg = this.slots.reduce((s, x) => s + (x.pallet?.kg ?? 0), 0);
-    return { kind:'Truck · flatbed', title:this.id, status:this.status(), bar:{ v:n, max:6, label:`cargo ${n}/6 pallets · ${(kg / 1000).toFixed(1)} t` },
-      rows:[['Bay', `Bay ${this.bay.id}`], ['Destination', this.dest], ['Driver', this.driver], ['Speed', kmh(this.v)], ['On site since', clock(this.t0)]] };
+    if (this.model === 'flatbed') return { kind:'Truck · flatbed', title:this.id, status:this.status(), bar:{ v:n, max:6, label:`cargo ${n}/6 pallets · ${(kg / 1000).toFixed(1)} t` },
+      rows:[['Route', 'Plant 01 ⇄ Warehouse 01'], ['Plant bay', `Bay ${this.bay.id}`], ['Warehouse dock', `Dock ${this.dock.id}`], ['Driver', this.driver], ['Speed', kmh(this.v)], ['Trips', String(this.trips)]] };
+    const atShop = this.at?.name === 'shop';
+    return { kind:'Truck · box, rear doors', title:this.id, status:this.status(),
+      bar:atShop ? { v:this.boxes, max:Math.max(1, this.boxMax), label:`${this.boxes} boxes left to unload` } : { v:n, max:4, label:`cargo ${n}/4 pallets` },
+      rows:[['Route', 'Warehouse 01 ⇄ Corner Market'], ['Rear doors', this.doorText()], ['Driver', this.driver], ['Speed', kmh(this.v)], ['Deliveries', String(this.trips)]] };
   }
-  readout() { return `${this.id} · ${this.status()} · ${this.loaded()}/6`.toLowerCase(); }
-  remove() {
-    sim.trucks.splice(sim.trucks.indexOf(this), 1); sim.stats.trucksOut++;
-    for (const s of this.slots) s.pallet?.remove();
-    for (const g of this.groups) g.removeFromParent(); forget(this);
-  }
+  readout() { return `${this.id} · ${this.status()} · ${this.model === 'van' && this.at?.name === 'shop' ? `${this.boxes} boxes left` : `${this.loaded()}/${this.slots.length} pallets`}`.toLowerCase(); }
+}
+const holdOn = (path, x, y, o) => ({ s:path.project(x, y), ...o });
+function flatbedLoop(bay, dock) {
+  const path = new Path([[200, 134.5], [404, 134.5], [RAB.x, 143], [434, RAB.y], [RAB.x, 119], [404, 127.5],
+    [326, 127.5], [326, 94], [dock.bx + 40, 94], [dock.bx + 30, 80], [dock.bx - 4, 80], [dock.bx - 14, 94], [212, 94], [212, 110], [320, 110], [320, 127.5],
+    [124, 127.5], [124, 94], [bay.bx + 40, 94], [bay.bx + 30, 80], [bay.bx - 4, 80], [bay.bx - 14, 94], [8, 94], [8, 112], [118, 112], [118, 134.5], [200, 134.5]], 6, true);
+  const holds = [
+    holdOn(path, bay.bx, 80, { name:'bay', toward:`to Plant 01 · bay ${bay.id}`, label:`loading · bay ${bay.id}`,
+      release:(t, dt) => t.loaded() === 6 && settled(t, PLANT, dt), left:() => sim.stats.plantOut++ }),
+    holdOn(path, 118, 121, { name:'plantGate', toward:'to the plant gate', label:'waiting for a gap in traffic',
+      release:t => gapW(t, 110, 144) && gapE(t, 90, 124) }),
+    holdOn(path, 326, 120.5, { name:'gateIn', gate:whGate, toward:'to Warehouse 01', label:'waiting at the warehouse gate', release:() => whGate.isOpen() }),
+    holdOn(path, dock.bx, 80, { name:'dock', toward:`to dock ${dock.id}`, label:`unloading · dock ${dock.id}`,
+      release:(t, dt) => t.loaded() === 0 && settled(t, WH, dt), left:t => { t.trips++; sim.stats.flatTrips++; } }),
+    holdOn(path, 320, 116, { name:'gateOut', gate:whGate, toward:'to the warehouse gate', label:'waiting at the warehouse gate',
+      release:t => whGate.isOpen() && gapW(t, 316, 352) }),
+  ];
+  return { path, holds };
+}
+const VAN_LOOP = new Path([[350, 134.5], [404, 134.5], [RAB.x, 143], [434, RAB.y], [RAB.x, 119], [404, 127.5], [390, 127.5], [382, 121], [352, 121], [344, 127.5],
+  [326, 127.5], [326, 20], [212, 20], [212, 110], [320, 110], [320, 134.5], [350, 134.5]], 6, true);
+function vanHolds() {
+  const P = VAN_LOOP;
+  return [
+    holdOn(P, 356, 121, { name:'shop', toward:'to Corner Market', label:'unloading at Corner Market · rear doors open',
+      arrive:t => { t.doorsTo = 1; t.boxes = t.boxMax = t.loaded() * BOXES; t.boxRes = 0; },
+      release:t => { if (t.boxes > 0 || t.boxRes > 0 || shop.staffAt(t)) return false; t.doorsTo = 0; return t.doors === 0; },
+      wait:t => t.boxes || t.boxRes || shop.staffAt(t) ? null : 'closing the rear doors', left:t => t.trips++ }),
+    holdOn(P, 326, 120.5, { name:'gateIn', gate:whGate, toward:'back to Warehouse 01', label:'waiting at the warehouse gate', release:() => whGate.isOpen() }),
+    holdOn(P, 317, 20, { name:'enter', toward:'to the loading lane', label:'waiting for the loading lane to clear',
+      release:t => !sim.trucks.some(o => o !== t && o.model === 'van' && o.inLane()) && !WH.forklifts.some(f => Math.abs(f.y - 20) < 4.5 && f.x > 230 && f.x < 312) }),
+    holdOn(P, 240, 20, { name:'load', toward:'to the loading spot', label:'loading · rear doors open', arrive:t => { t.doorsTo = 1; },
+      release:(t, dt) => { if (t.loaded() < 4 || !settled(t, WH, dt) || shop.room() < BOXES * 4) return false; t.doorsTo = 0; return t.doors === 0; },
+      wait:t => t.loaded() === 4 && shop.room() < BOXES * 4 ? 'loaded · waiting until the shop has room' : null }),
+    holdOn(P, 320, 116, { name:'gateOut', gate:whGate, toward:'to the warehouse gate', label:'waiting at the warehouse gate',
+      release:t => whGate.isOpen() && gapW(t, 312, 352) && gapE(t, 286, 326) }),
+  ];
 }
 
-// Forklift ways: a little graph of corridors. Locations hang off it at an entry point E.
-const NODES = { a:[14, 66], J:[128, 66], A:[128, 81], B:[188, 81], C:[188, 66] };
-const SEGS = [['a', 'J'], ['J', 'A'], ['A', 'B'], ['B', 'C'], ['C', 'J']];
-function onSeg(x, y, si) {
-  const [p, q] = SEGS[si].map(k => NODES[k]), dx = q[0] - p[0], dy = q[1] - p[1];
-  const t = clamp(((x - p[0]) * dx + (y - p[1]) * dy) / (dx * dx + dy * dy), 0, 1);
-  return { x:p[0] + dx * t, y:p[1] + dy * t, si };
-}
-function route(p, q) {
-  if (p.si === q.si) return [[p.x, p.y], [q.x, q.y]];
-  const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]), dist = {}, prev = {}, open = new Set(Object.keys(NODES));
-  for (const k of open) dist[k] = Infinity;
-  for (const k of SEGS[p.si]) { dist[k] = d([p.x, p.y], NODES[k]); prev[k] = null; }
-  while (open.size) {
-    let u = null; for (const k of open) if (u === null || dist[k] < dist[u]) u = k;
-    open.delete(u);
-    for (const [a, b] of SEGS) { const w = a === u ? b : b === u ? a : null;
-      if (w && open.has(w) && dist[u] + d(NODES[u], NODES[w]) < dist[w]) { dist[w] = dist[u] + d(NODES[u], NODES[w]); prev[w] = u; } }
+// ---- forklift sites: a little graph of corridors each; locations hang off it at an entry point E ----
+class Site {
+  constructor(o) { Object.assign(this, o); this.forklifts = []; }
+  onSeg(x, y, si) {
+    const [p, q] = this.segs[si].map(k => this.nodes[k]), dx = q[0] - p[0], dy = q[1] - p[1];
+    const t = clamp(((x - p[0]) * dx + (y - p[1]) * dy) / (dx * dx + dy * dy), 0, 1);
+    return { x:p[0] + dx * t, y:p[1] + dy * t, si };
   }
-  const [e1, e2] = SEGS[q.si], end = dist[e1] + d(NODES[e1], [q.x, q.y]) < dist[e2] + d(NODES[e2], [q.x, q.y]) ? e1 : e2;
-  const chain = []; for (let k = end; k !== null && k !== undefined; k = prev[k]) chain.unshift(NODES[k]);
-  return [[p.x, p.y], ...chain, [q.x, q.y]];
+  at(x, y) { let best = null; for (let si = 0; si < this.segs.length; si++) { const q = this.onSeg(x, y, si), d = Math.hypot(q.x - x, q.y - y); if (!best || d < best.d - 1e-6) best = { ...q, d }; } return best; }
+  route(p, q) {
+    if (p.si === q.si) return [[p.x, p.y], [q.x, q.y]];
+    const N = this.nodes, S = this.segs, d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]), dist = {}, prev = {}, open = new Set(Object.keys(N));
+    for (const k of open) dist[k] = Infinity;
+    for (const k of S[p.si]) { dist[k] = d([p.x, p.y], N[k]); prev[k] = null; }
+    while (open.size) {
+      let u = null; for (const k of open) if (u === null || dist[k] < dist[u]) u = k;
+      open.delete(u);
+      for (const [a, b] of S) { const w = a === u ? b : b === u ? a : null;
+        if (w && open.has(w) && dist[u] + d(N[u], N[w]) < dist[w]) { dist[w] = dist[u] + d(N[u], N[w]); prev[w] = u; } }
+    }
+    const [e1, e2] = S[q.si], end = dist[e1] + d(N[e1], [q.x, q.y]) < dist[e2] + d(N[e2], [q.x, q.y]) ? e1 : e2;
+    const chain = []; for (let k = end; k !== null && k !== undefined; k = prev[k]) chain.unshift(N[k]);
+    return [[p.x, p.y], ...chain, [q.x, q.y]];
+  }
 }
 // keep to one side of the corridor so forklifts pass instead of meeting head on
 function keepSide(pts, off = 1.2) {
@@ -772,34 +1037,45 @@ function keepSide(pts, off = 1.2) {
   });
 }
 const dedupe = pts => pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.3);
+const PLANT = new Site({ name:'Plant 01', lane:66,
+  nodes:{ a:[14, 66], J:[128, 66], A:[128, 81], B:[188, 81], C:[188, 66] }, segs:[['a', 'J'], ['J', 'A'], ['A', 'B'], ['B', 'C'], ['C', 'J']] });
+const WH = new Site({ name:'Warehouse 01', lane:65,
+  nodes:{ oA:[232, 65], o1:[250, 65], o2:[286, 65], oB:[304, 65], i1:[250, 48.5], i2:[286, 48.5], iA:[236, 48.5], iB:[300, 48.5],
+    kA:[236, 40.6], kB:[300, 40.6], uA:[236, 26], uB:[304, 26] },
+  segs:[['oA', 'o1'], ['o1', 'o2'], ['o2', 'oB'], ['o1', 'i1'], ['o2', 'i2'], ['iA', 'i1'], ['i1', 'i2'], ['i2', 'iB'], ['iA', 'kA'], ['kA', 'kB'], ['iB', 'kB'], ['kA', 'uA'], ['uA', 'uB']] });
+PLANT.chargers = [16, 21.5, 27].map(x => ({ x, h:-Math.PI / 2, F:[x, 51.6], SO:[x, 58], E:PLANT.at(x, 66) }));
+WH.chargers = [262, 268, 274].map(x => ({ x, h:Math.PI / 2, F:[x, 55.0], SO:[x, 48.5], E:WH.at(x, 48.5) }));
 
 const LOC = {
-  belt:p => { const x = conveyor.path.at(p.s).x; return { name:'line A', h:-Math.PI / 2, z:1.0, F:[x, 59.35], SO:[x, 66], E:{ x, y:66, si:4 } }; },
-  stage:sl => { const h = sl.row ? Math.PI / 2 : -Math.PI / 2; return { name:`staging ${sl.id}`, h, z:0, F:[sl.x, sl.y - Math.sin(h) * 1.35], SO:[sl.x, 81], E:{ x:sl.x, y:81, si:2 } }; },
-  truck:(t, i) => { const [x] = t.slotWorld(i); return { name:t.id, h:Math.PI / 2, z:DECK, F:[x, t.pose.y - 2.55], SO:[x, t.pose.y - 7.4], E:{ x, y:66, si:0 } }; },
+  belt:p => { const x = conveyor.path.at(p.s).x; return { name:'line A', h:-Math.PI / 2, z:1.0, F:[x, 59.35], SO:[x, 66], E:PLANT.at(x, 66) }; },
+  stage:sl => { const h = sl.row ? Math.PI / 2 : -Math.PI / 2; return { name:sl.label, h, z:0, F:[sl.x, sl.y - Math.sin(h) * 1.35], SO:[sl.x, 81], E:PLANT.at(sl.x, 81) }; },
+  flat:(site, t, i) => { const [x] = t.slotWorld(i); return { name:t.id, h:Math.PI / 2, z:DECK, F:[x, t.pose.y - 2.55], SO:[x, t.pose.y - 7.4], E:site.at(x, site.lane) }; },
+  rack:sl => ({ name:sl.label, h:-Math.PI / 2, z:sl.local[2], F:[sl.x, 34.35], SO:[sl.x, 40.6], E:WH.at(sl.x, 40.6) }),
+  van:t => { const p = t.pose, c = Math.cos(p.h), s = Math.sin(p.h), rx = p.x - c * VAN_LEN, ry = p.y - s * VAN_LEN, SO = [rx - c * 5.7, ry - s * 5.7];
+    return { name:t.id, h:p.h, z:VAN_DECK, F:[rx - c * 0.2, ry - s * 0.2], SO, E:WH.at(SO[0], 26) }; },
   charger:c => ({ name:'charger', h:c.h, z:0, F:c.F, SO:c.SO, E:c.E }),
 };
 
 const FL = { speed:7, acc:3.5, turn:3.2, lift:1.6, carry:0.35, slow:2.2 };
+let forkSeq = 1;
 class Forklift {
-  constructor(i) {
-    this.kind = 'forklift'; this.id = `FL-0${i + 1}`; this.charger = CHARGERS[i];
+  constructor(site, i) {
+    this.kind = 'forklift'; this.site = site; this.id = `FL-0${forkSeq++}`; this.charger = site.chargers[i];
     [this.x, this.y] = this.charger.F; this.h = this.charger.h; this.fork = 0.1; this.v = 0;
     this.steps = []; this.task = null; this.load = null; this.label = 'charging'; this.waitT = 0; this.passT = 0;
-    this.battery = [88, 66, 41, 74][i]; this.moves = 0; this.atCharger = true; this.anchor = this.charger.E;
+    this.battery = [88, 66, 47, 74, 58, 92][sim.forklifts.length]; this.moves = 0; this.atCharger = true; this.anchor = this.charger.E;
     this.group = PROTO.forklift.clone(); this.carriage = this.group.getObjectByName('carriage'); this.beacon = this.group.getObjectByName('beacon');
     this.group.userData.entity = this; this.groups = [this.group]; this.pick = [-1.8, 0, 3.46];
-    scene.add(this.group); sim.forklifts.push(this); this.place();
+    scene.add(this.group); sim.forklifts.push(this); site.forklifts.push(this); this.place();
   }
   place() {
     pose(this.group, this.x, this.y, this.h); this.carriage.position.y = this.fork;
-    const on = this.v > 0.05 && sim.t % 0.8 < 0.4;
-    glow(this.beacon, on);
+    glow(this.beacon, this.v > 0.05 && sim.t % 0.8 < 0.4);
   }
   blocked() {
     if (this.passT > 0) return false;
     const c = Math.cos(this.h), s = Math.sin(this.h);
-    return sim.forklifts.some(o => o !== this && [[o.x, o.y], [o.x - Math.cos(o.h) * 3.7, o.y - Math.sin(o.h) * 3.7]].some(([x, y]) => {
+    return this.site.forklifts.some(o => o !== this && [[o.x, o.y], [o.x - Math.cos(o.h) * 3.7, o.y - Math.sin(o.h) * 3.7]].some(([x, y]) => {
       const dx = x - this.x, dy = y - this.y, f = dx * c + dy * s; return f > 0.3 && f < 6.5 && Math.abs(dy * c - dx * s) < 2.1; }));
   }
   update(dt) {
@@ -826,7 +1102,7 @@ class Forklift {
         this.x += dx / d * this.v * dt; this.y += dy / d * this.v * dt; return false;
       }
       case 'grab': this.grab(st.pallet); return true;
-      case 'drop': this.drop(st); return true;
+      case 'drop': this.drop(st.slot); return true;
       case 'wait': st.t -= dt; return st.t <= 0;
       case 'call': st.fn(); return true;
       case 'charge': return this.battery >= st.min;
@@ -835,7 +1111,7 @@ class Forklift {
   }
   drive(st, dt) {
     if (!st.path) {
-      const pts = dedupe([[this.x, this.y], ...keepSide(dedupe(route(this.anchor, st.loc.E))), st.loc.SO]);
+      const pts = dedupe([[this.x, this.y], ...keepSide(dedupe(this.site.route(this.anchor, st.loc.E))), st.loc.SO]);
       if (pts.length < 2) { this.anchor = st.loc.E; return true; }
       st.path = new Path(pts, 2.2); st.s = 0;
     }
@@ -852,80 +1128,276 @@ class Forklift {
   }
   grab(p) {
     if (p.loc.type === 'conveyor') conveyor.items.splice(conveyor.items.indexOf(p), 1);
-    if (p.loc.type === 'stage') p.loc.slot.pallet = null;
-    this.carriage.attach(p.group); p.tweenTo(W(1.35, 0, -0.1), 0.25);
+    if (p.loc.type === 'slot') p.loc.slot.pallet = null;
+    this.carriage.attach(p.group); p.tweenTo(W(1.35, 0, -0.1));
     p.loc = { type:'forklift', f:this }; this.load = p;
   }
-  drop(st) {
+  drop(slot) {
     const p = this.load; this.load = null; this.moves++; p.reserved = null;
-    if (st.slot) { scene.attach(p.group); p.tweenTo(W(st.slot.x, st.slot.y, 0)); st.slot.pallet = p; st.slot.reserved = null; p.loc = { type:'stage', slot:st.slot }; }
-    else { const t = st.truck, [lx, ly] = SLOT_LOCAL[st.i]; t.trailer.attach(p.group); p.tweenTo(W(lx, ly, DECK)); t.slots[st.i].pallet = p; t.slots[st.i].reserved = null; p.loc = { type:'truck', truck:t, i:st.i }; }
+    slot.parent.attach(p.group); p.tweenTo(W(...slot.local)); slot.pallet = p; slot.reserved = null; p.loc = { type:'slot', slot };
+    if (RACK.includes(slot)) sim.stats.whIn++;
+    if (slot.owner?.model === 'van') sim.stats.whOut++;
   }
   info() {
-    return { kind:'Forklift · electric', title:this.id, status:this.label, bar:{ v:this.battery, max:100, label:`battery ${Math.round(this.battery)}%` },
+    return { kind:`Forklift · ${this.site.name}`, title:this.id, status:this.label, bar:{ v:this.battery, max:100, label:`battery ${Math.round(this.battery)}%` },
       rows:[['Task', this.task?.text ?? (this.atCharger ? 'on charge' : 'none')], ['Load', this.load ? `${this.load.id} · ${this.load.kg} kg` : 'empty'],
         ['Fork height', `${this.fork.toFixed(2)} m`], ['Speed', kmh(this.v)], ['Pallets moved', String(this.moves)]] };
   }
   readout() { return `${this.id} · ${this.label}`.toLowerCase(); }
 }
 
-// Task steps. Forks sit 0.1 under the pallet's bottom, so "z + 0.1" slides them into the slots.
+// Task steps. Forks sit 0.1 under the pallet's bottom, so "z + 0.1" slides them into the pallet.
 const leaveCharger = f => f.atCharger ? [{ do:'back', p:f.charger.SO, label:'leaving charger' }] : [];
 function pickup(p, loc) {
   return [{ do:'go', loc, label:`to ${loc.name}` }, { do:'face', h:loc.h }, { do:'lift', z:loc.z + 0.1 },
-    { do:'fwd', p:loc.F, label:`picking ${p.id}` }, { do:'grab', pallet:p }, { do:'lift', z:loc.z + 0.4 },
+    { do:'fwd', p:loc.F, label:`picking ${p.id}` }, { do:'grab', pallet:p }, { do:'lift', z:loc.z + (loc.z > 0 ? 0.5 : 0.4) },
     { do:'back', p:loc.SO }, { do:'lift', z:FL.carry }];
 }
-function dropAt(p, loc, target) {
+function dropAt(p, loc, slot) {
   const over = loc.z > 0 ? 0.5 : 0.3;
   return [{ do:'go', loc, label:`carrying ${p.id} → ${loc.name}` }, { do:'face', h:loc.h }, { do:'lift', z:loc.z + 0.1 + over },
-    { do:'fwd', p:loc.F, label:`placing ${p.id}` }, { do:'lift', z:loc.z + 0.12 }, { do:'drop', ...target }, { do:'wait', t:0.55 },
+    { do:'fwd', p:loc.F, label:`placing ${p.id}` }, { do:'lift', z:loc.z + 0.12 }, { do:'drop', slot }, { do:'wait', t:0.55 },
     { do:'lift', z:loc.z + 0.02 }, { do:'back', p:loc.SO }, { do:'lift', z:FL.carry }];
 }
 function park(f, label = 'to charger') {
   const loc = LOC.charger(f.charger);
   return [{ do:'go', loc, label }, { do:'face', h:loc.h }, { do:'lift', z:0.1 }, { do:'fwd', p:loc.F }, { do:'call', fn:() => { f.atCharger = true; } }];
 }
-function sourceFor(f) {
-  const c = conveyor.pickable().map(p => ({ p, loc:LOC.belt(p) }));
-  for (const s of SLOTS) if (s.pallet && !s.pallet.reserved && !s.pallet.tw) c.push({ p:s.pallet, loc:LOC.stage(s) });
-  // older pallets first (rough FIFO), nearer ones break ties
-  c.sort((a, b) => (a.p.t0 - b.p.t0) / 20 + Math.hypot(a.loc.SO[0] - f.x, a.loc.SO[1] - f.y) / 60 - Math.hypot(b.loc.SO[0] - f.x, b.loc.SO[1] - f.y) / 60);
-  return c[0];
-}
+const ready = p => p && !p.reserved && !p.tw;
 function dispatch(f) {
   const assign = (task, steps) => { f.task = task; f.steps = steps; };
   if (f.battery < 22) { if (f.atCharger) assign({ text:'charging to 80%' }, [{ do:'charge', min:80, label:'charging' }]); else assign({ text:'low battery' }, park(f, 'low battery · to charger')); return; }
-  const trucks = sim.trucks.filter(t => t.state === 'loading' && t.freeSlot() >= 0).sort((a, b) => b.loaded() - a.loaded() || a.t0 - b.t0);
-  if (trucks.length) {
-    const src = sourceFor(f);
-    if (src) {
-      const t = trucks[0], i = t.freeSlot();
-      src.p.reserved = f; t.slots[i].reserved = f;
-      assign({ text:`${src.p.id} → ${t.id}`, to:t.dest }, [...leaveCharger(f), ...pickup(src.p, src.loc), ...dropAt(src.p, LOC.truck(t, i), { truck:t, i })]);
-      return;
+  const move = (p, from, to, slot, task) => { p.reserved = f; slot.reserved = f; assign(task, [...leaveCharger(f), ...pickup(p, from), ...dropAt(p, to, slot)]); };
+  if (f.site === PLANT) {
+    // load a flatbed waiting at a bay; otherwise clear the belt into staging
+    const t = sim.trucks.filter(t => t.at?.name === 'bay' && t.freeSlot() >= 0).sort((a, b) => b.loaded() - a.loaded())[0];
+    if (t) {
+      const c = conveyor.pickable().map(p => ({ p, loc:LOC.belt(p) }));
+      for (const s of STAGE) if (ready(s.pallet)) c.push({ p:s.pallet, loc:LOC.stage(s) });
+      // older pallets first (rough FIFO), nearer ones break ties
+      c.sort((a, b) => (a.p.t0 - b.p.t0) / 20 + Math.hypot(a.loc.SO[0] - f.x, a.loc.SO[1] - f.y) / 60 - Math.hypot(b.loc.SO[0] - f.x, b.loc.SO[1] - f.y) / 60);
+      if (c[0]) { const i = t.freeSlot(); return move(c[0].p, c[0].loc, LOC.flat(PLANT, t, i), t.slots[i], { text:`${c[0].p.id} → ${t.id}`, to:'Warehouse 01' }); }
     }
-  }
-  const e = conveyor.pickable().sort((a, b) => b.s - a.s)[0];
-  if (e) {
-    const free = SLOTS.filter(s => !s.pallet && !s.reserved).sort((a, b) => Math.hypot(a.x - 153, a.y - 63) - Math.hypot(b.x - 153, b.y - 63))[0];
-    if (free) {
-      e.reserved = f; free.reserved = f;
-      assign({ text:`${e.id} → staging ${free.id}`, to:`staging ${free.id}` }, [...leaveCharger(f), ...pickup(e, LOC.belt(e)), ...dropAt(e, LOC.stage(free), { slot:free })]);
-      return;
+    const e = conveyor.pickable().sort((a, b) => b.s - a.s)[0];
+    const free = STAGE.filter(s => !s.pallet && !s.reserved).sort((a, b) => Math.hypot(a.x - 153, a.y - 63) - Math.hypot(b.x - 153, b.y - 63))[0];
+    if (e && free) return move(e, LOC.belt(e), LOC.stage(free), free, { text:`${e.id} → ${free.label}`, to:'Warehouse 01' });
+  } else {
+    // warehouse: fill a waiting delivery truck from the racks, unload flatbeds into the racks
+    const van = sim.trucks.find(t => t.at?.name === 'load' && t.doors === 1 && t.freeSlot() >= 0);
+    const stock = RACK.filter(s => ready(s.pallet)).sort((a, b) => a.pallet.t0 - b.pallet.t0);
+    const loadVan = () => { const s = stock[0], i = van.freeSlot();
+      move(s.pallet, LOC.rack(s), LOC.van(van), van.slots[i], { text:`${s.pallet.id} → ${van.id}`, to:'Corner Market', van }); };
+    if (van && stock.length && WH.forklifts.filter(o => o.task?.van === van).length < 2) return loadVan();
+    const free = RACK.filter(s => !s.pallet && !s.reserved).sort((a, b) => a.level - b.level || Math.abs(a.x - f.x) - Math.abs(b.x - f.x));
+    for (const t of sim.trucks.filter(t => t.at?.name === 'dock')) {
+      const i = [3, 4, 5, 0, 1, 2].find(i => ready(t.slots[i].pallet));
+      if (i !== undefined && free.length) { const p = t.slots[i].pallet; return move(p, LOC.flat(WH, t, i), LOC.rack(free[0]), free[0], { text:`${p.id} → ${free[0].label}`, to:'Corner Market' }); }
     }
+    if (van && stock.length) return loadVan();
   }
   if (!f.atCharger) assign(null, park(f));
+}
+
+// ---- people ----
+class Person {
+  constructor(o) {
+    Object.assign(this, { kind:'person', h:0, v:0, speed:1.5, steps:[], phase:0, label:'', carrying:null, done:0, t0:sim.t }, o);
+    this.group = PROTO.person[this.look].clone(); this.legs = ['legL', 'legR'].map(n => this.group.getObjectByName(n));
+    this.box = this.group.getObjectByName('carry'); this.box.visible = false; this.group.userData.entity = this; this.groups = [this.group]; this.pick = [0, 0, 1.25];
+    scene.add(this.group); sim.people.push(this); this.place();
+  }
+  walk(pts, label) { for (const to of pts) this.steps.push({ do:'walk', to, label }); return this; }
+  face(h) { this.steps.push({ do:'face', h }); return this; }
+  wait(t, label) { this.steps.push({ do:'wait', t, label }); return this; }
+  then(fn, label) { this.steps.push({ do:'call', fn, label }); return this; }
+  update(dt) {
+    if (!this.steps.length) this.think?.();
+    const st = this.steps[0];
+    if (st) { if (!st.started) { st.started = true; if (st.label) this.label = st.label; } if (this.run(st, dt)) this.steps.shift(); } else this.v = 0;
+    if (this.v > 0.05) this.phase += dt * this.v * 4.5;
+    const sw = this.v > 0.05 ? Math.sin(this.phase) * 0.5 : 0;
+    this.legs[0].rotation.z = sw; this.legs[1].rotation.z = -sw;
+    this.box.visible = !!this.carrying;
+    this.place();
+  }
+  run(st, dt) {
+    if (st.do === 'walk') {
+      const dx = st.to[0] - this.x, dy = st.to[1] - this.y, d = Math.hypot(dx, dy);
+      if (d < 0.03) { this.x = st.to[0]; this.y = st.to[1]; this.v = 0; return true; }
+      const e = wrap(Math.atan2(dy, dx) - this.h); this.h += clamp(e, -7 * dt, 7 * dt);
+      this.v = Math.abs(e) > 0.8 ? 0 : this.speed;
+      const step = Math.min(d, this.v * dt); this.x += dx / d * step; this.y += dy / d * step; return false;
+    }
+    this.v = 0;
+    if (st.do === 'wait') return (st.t -= dt) <= 0;
+    if (st.do === 'face') { const e = wrap(st.h - this.h); if (Math.abs(e) < 0.02) { this.h = st.h; return true; } this.h += clamp(e, -7 * dt, 7 * dt); return false; }
+    if (st.do === 'call') { st.fn(this); return true; }
+    return true;
+  }
+  place() { pose(this.group, this.x, this.y, this.h); }
+  readout() { return `${this.id} · ${this.status()}`.toLowerCase(); }
+  status() { return this.label || 'standing'; }
+  remove() { sim.people.splice(sim.people.indexOf(this), 1); this.group.removeFromParent(); forget(this); }
+}
+
+// The shop: shelves, a stockroom stack, and the staff who carry boxes in from the delivery truck.
+const shop = {
+  kind:'shop', id:'Corner Market', pick:[370, 112, 5.0], stock:[], next:3,
+  // where a person walks from the door to reach a spot in the aisle south of a shelf unit
+  routeTo(stand) {
+    const back = stand[1] < 102;   // the back unit is reached round the end of the front one
+    const side = stand[0] < 377 ? 364.2 : 392.2;
+    return back ? [[stand[0] < 377 ? 372 : 381, 106.8], [side, 106.8], [side, 101], stand] : [[stand[0], 107.2], stand];
+  },
+  routeOut(from) { return from[1] < 102 ? [[from[0] < 377 ? 364.2 : 392.2, 101], [from[0] < 377 ? 364.2 : 392.2, 106.8], [from[0] < 377 ? 372 : 381, 106.8], SHOP.in] : [[from[0], 107.2], SHOP.in]; },
+  onShelf() { return SHELF.filter(s => s.sku).length; },
+  freeShelf() { const f = SHELF.filter(s => !s.sku && !s.reserved); return f[Math.floor(rng() * f.length)] ?? null; },
+  stockFree() { return STOCK_CAP - this.stock.length; },
+  // boxes the shop can still take, less boxes already on their way
+  room() {
+    const coming = sim.trucks.filter(t => t.model === 'van' && (t.at?.name === 'shop' || t.hold.name === 'shop')).reduce((n, t) => n + (t.at?.name === 'shop' ? t.boxes : t.loaded() * BOXES), 0);
+    return SHELF.filter(s => !s.sku).length + STOCK_CAP - this.stock.length - coming;
+  },
+  truckReady() { return sim.trucks.find(t => t.at?.name === 'shop' && t.doors === 1 && t.boxes - t.boxRes > 0); },
+  staffAt(t) { return STAFFERS.some(p => p.truck === t); },
+  takeBox(t) {
+    const i = t.slots.findLastIndex(s => s.pallet), sku = t.slots[i].pallet.sku.name;
+    t.boxes--; t.boxRes--;
+    if (t.boxes % BOXES === 0) t.slots[i].pallet.remove(), t.slots[i].pallet = null;
+    return sku;
+  },
+  put(sh, sku) { sh.sku = sku; sh.reserved = null; sh.mesh.visible = true; sim.stats.shopIn++; },
+  stockPush(sku) { this.stock.push(sku); sim.stats.shopIn++; this.drawStock(); },
+  drawStock() { this.stockMeshes.forEach((m, i) => { m.visible = i < this.stock.length; }); },
+  info() {
+    const t = sim.trucks.find(t => t.at?.name === 'shop');
+    return { kind:'Shop', title:'Corner Market', status:t ? `delivery from ${t.id} · ${t.boxes} boxes to go` : 'open',
+      bar:{ v:this.onShelf(), max:SHELF.length, label:`shelves ${this.onShelf()}/${SHELF.length} boxes` },
+      rows:[['Stockroom', `${this.stock.length}/${STOCK_CAP} boxes`], ['Received', `${sim.stats.shopIn} boxes this session`], ['Sold', `${sim.stats.sold} boxes this session`],
+        ['Shoppers inside', String(SHOPPERS().filter(p => p.inside()).length)]] };
+  },
+  readout() { return `corner market · ${this.onShelf()}/${SHELF.length} on the shelves`; },
+};
+const STAFFERS = [];
+class Staff extends Person {
+  constructor(k) { const home = [[387, 106.2], [372, 106.2], [367, 106.6]][k]; super({ look:'staff', id:STAFF[k], k, home, x:home[0], y:home[1], h:-Math.PI / 2, speed:2.0 }); STAFFERS.push(this); }
+  think() {
+    const t = shop.truckReady();
+    if (t && (shop.freeShelf() || shop.stockFree() > 0)) {
+      t.boxRes++; this.truck = t; this.task = `unloading ${t.id}`;
+      const spot = [370.6, 120.3 + 0.8 * this.k];
+      this.walk([SHOP.in, SHOP.out, [372.8, 117], spot], `to ${t.id}`).face(Math.PI).wait(0.5, 'taking a box')
+        .then(p => { p.carrying = shop.takeBox(t); })
+        .walk([[372.8, 117]], 'carrying a box in').then(p => { p.truck = null; })
+        .walk([SHOP.out, SHOP.in]).then(p => p.stockBox());
+      return;
+    }
+    const sh = shop.stock.length && shop.freeShelf();
+    if (sh) {
+      sh.reserved = this; this.task = 'restocking from the stockroom';
+      this.walk(shop.routeTo(SHOP.stockStand), 'to the stockroom').face(-Math.PI / 2).wait(0.6, 'taking a box')
+        .then(p => { p.carrying = shop.stock.pop(); shop.drawStock(); })
+        .walk([...shop.routeOut(SHOP.stockStand), ...shop.routeTo(sh.stand)], 'restocking the shelves').face(-Math.PI / 2).wait(0.5)
+        .then(p => { sh.sku = p.carrying; sh.reserved = null; sh.mesh.visible = true; p.carrying = null; p.done++; })
+        .walk(shop.routeOut(sh.stand));
+      return;
+    }
+    this.task = null;
+    this.walk([this.home], 'back to the counter').face(-Math.PI / 2).wait(rand(1.5, 3), 'waiting for a delivery');
+  }
+  stockBox() {
+    const sh = shop.freeShelf();
+    if (sh) {
+      sh.reserved = this;
+      this.walk(shop.routeTo(sh.stand), 'stocking the shelves').face(-Math.PI / 2).wait(0.5)
+        .then(p => { shop.put(sh, p.carrying); p.carrying = null; p.done++; }).walk(shop.routeOut(sh.stand));
+    } else {
+      this.walk(shop.routeTo(SHOP.stockStand), 'to the stockroom').face(-Math.PI / 2).wait(0.5)
+        .then(p => { shop.stockPush(p.carrying); p.carrying = null; p.done++; }).walk(shop.routeOut(SHOP.stockStand));
+    }
+  }
+  info() {
+    return { kind:'Staff · Corner Market', title:this.id, status:this.status(),
+      rows:[['Task', this.task ?? 'none'], ['Carrying', this.carrying ? `1 box · ${this.carrying}` : 'nothing'], ['Boxes moved', String(this.done)]] };
+  }
+}
+const SHOPPERS = () => sim.people.filter(p => p.look === 'shopper');
+class Shopper extends Person {
+  constructor() {
+    super({ look:'shopper', id:`Shopper ${shopperSeq++}`, x:444, y:115.2, h:Math.PI, speed:rand(1.2, 1.5), want:rng() < 0.5 ? 2 : 1, got:[] });
+    this.walk([[384, 115.2], SHOP.out, SHOP.in], 'walking in').then(p => p.choose());
+  }
+  inside() { return this.x > 362 && this.x < 394 && this.y > 94 && this.y < 112; }
+  choose() {
+    const shelf = SHELF.filter(s => s.sku && !s.reserved), sh = shelf[Math.floor(rng() * shelf.length)];
+    if (!sh) {
+      if (this.got.length) { this.pay(this.from); return; }
+      this.walk([[372, 107]], 'looking for stock').wait(2.5, 'nothing on the shelves').then(p => p.leave()); return;
+    }
+    sh.reserved = this;
+    this.walk(this.from ? [...shop.routeOut(this.from).slice(0, -1), ...shop.routeTo(sh.stand).slice(1)] : shop.routeTo(sh.stand), 'browsing')
+      .face(-Math.PI / 2).wait(rand(1.2, 2.4), 'choosing')
+      .then(p => { p.got.push(sh.sku); p.carrying = sh.sku; sh.sku = null; sh.reserved = null; sh.mesh.visible = false; p.from = sh.stand;
+        if (p.got.length < p.want) p.choose(); else p.pay(sh.stand); });
+  }
+  pay(from) {
+    this.walk([...shop.routeOut(from).slice(0, -1), [381.5, 111], SHOP.counter], 'to the counter').face(-Math.PI / 2).wait(2, 'paying')
+      .then(p => { sim.stats.sold += p.got.length; p.paid = true; p.leave(); });
+  }
+  leave() { this.walk([SHOP.in, SHOP.out, [392, 115.2], [446, 115.2]], 'leaving').then(p => p.remove()); }
+  info() {
+    return { kind:'Shopper', title:this.id, status:this.status(),
+      rows:[['Arrived', clock(this.t0)], ['Shopping for', `${this.want} ${this.want > 1 ? 'boxes' : 'box'}`], [this.paid ? 'Bought' : 'Basket', this.got.length ? this.got.join(', ') : 'empty']] };
+  }
+}
+
+// The warehouse gate: whoever comes near asks for it; the guard walks out, opens it, closes it again.
+const whGate = {
+  kind:'gate', id:'Warehouse gate', open:0, phase:'closed', lastWant:-99, passed:0, forId:'', pick:[323, 117.49, 2.09],
+  want(t) { if (sim.t - this.lastWant > 3 || !this.forId) this.forId = t.id; this.lastWant = sim.t; },
+  isOpen() { return this.open >= 1; },
+  update(dt) {
+    if (sim.trucks.some(t => t.points.some(([x, y]) => x > 311 && x < 335 && y > 112 && y < 125))) this.lastWant = sim.t;
+    const wanted = sim.t - this.lastWant < 2.5;
+    switch (this.phase) {
+      case 'closed': case 'guardBack': if (wanted) { this.phase = 'guardOut'; guard.toPost(); } break;
+      case 'opening': this.open = Math.min(1, this.open + dt / 2.2); if (this.open === 1) this.phase = 'open'; break;
+      case 'open': if (!wanted) this.phase = 'closing'; break;
+      case 'closing': if (wanted) { this.phase = 'opening'; break; }
+        this.open = Math.max(0, this.open - dt / 2.2); if (this.open === 0) { this.phase = 'guardBack'; this.forId = ''; guard.toBooth(); } break;
+    }
+    this.panel.position.x = -18 * ease(this.open);
+  },
+  state() { return { closed:'closed', guardOut:'closed · guard on the way', opening:'opening', open:'open', closing:'closing', guardBack:'closed' }[this.phase]; },
+  info() { return { kind:'Gate · sliding', title:'Warehouse gate', status:this.state(), rows:[['Opened by', guard.id], ['For', this.forId || '—'], ['Vehicles through', String(this.passed)]] }; },
+  readout() { return `warehouse gate · ${this.state()}`; },
+};
+class Guard extends Person {
+  constructor() { super({ look:'guard', id:'P. Adeyemi', x:336, y:108, h:Math.PI / 2, speed:1.6 }); }
+  toPost() { this.steps = []; this.walk([[333.6, 110.4], [331.4, 114.6]], 'walking to the gate').face(Math.PI).then(() => { whGate.phase = 'opening'; }); }
+  toBooth() { this.steps = []; this.walk([[333.6, 110.4], [336, 108]], 'walking back to the booth').face(Math.PI / 2).then(() => { if (whGate.phase === 'guardBack') whGate.phase = 'closed'; }); }
+  status() {
+    return { closed:'in the booth', guardOut:'walking to the gate', opening:`opening the gate for ${whGate.forId}`, open:`holding the gate for ${whGate.forId}`,
+      closing:'closing the gate', guardBack:'walking back to the booth' }[whGate.phase];
+  }
+  info() { return { kind:'Guard · Warehouse 01', title:this.id, status:this.status(), rows:[['Gate', whGate.state()], ['Vehicles let through', String(whGate.passed)], ['Post', 'east side of the gate']] }; }
 }
 
 // ---- assemble ----
 await Promise.race([document.fonts.load(`500 ${TEX_PX}px "DM Mono"`), new Promise(r => setTimeout(r, 2500))]).catch(noop);
 const world = buildWorld();
-const factoryG = buildFactory(), conveyorG = buildConveyor(), gateG = buildGate();
-scene.add(world, factoryG, conveyorG, gateG, ...BAYS.map(bayLamp));
-PROTO.tractor = buildTractor(); PROTO.trailer = buildTrailer(); PROTO.forklift = buildForklift();
-PROTO.car = { n:buildCar(false, 'n'), k:buildCar(false, 'k') }; PROTO.van = { n:buildCar(true, 'n'), k:buildCar(true, 'k') };
+const factoryG = buildFactory(), conveyorG = buildConveyor(), gateG = buildGate(), whG = buildWarehouse(), whGateG = buildWhGate(), shopG = buildShop();
+whGateG.add(buildBooth());
+scene.add(world, factoryG, conveyorG, gateG, whG, whGateG, shopG, ...BAYS.map(bayLamp), ...DOCKS.map(bayLamp));
+whGate.panel = whGateG.getObjectByName('panel');
+PROTO.tractor = buildTractor(); PROTO.trailer = buildTrailer(); PROTO.forklift = buildForklift(); PROTO.van = buildVan();
+PROTO.car = { n:buildCar(false, 'n'), k:buildCar(false, 'k') }; PROTO.carVan = { n:buildCar(true, 'n'), k:buildCar(true, 'k') };
 PROTO.pallet = [0, 1, 2].map(buildPallet);
+PROTO.person = { staff:buildPerson('staff'), guard:buildPerson('guard'), shopper:buildPerson('shopper') };
+const boxProto = buildShopBox();
+for (const s of SHELF) { s.mesh = boxProto.clone(); pose(s.mesh, s.x, s.y, 0, s.z); s.mesh.visible = false; shopG.add(s.mesh); }
+shop.stockMeshes = []; for (let l = 0; l < 2; l++) for (let j = 0; j < 2; j++) for (let i = 0; i < 3; i++) {
+  const m = boxProto.clone(); pose(m, 363.6 + 1.1 * i, 95.6 + 1.0 * j, 0, 0.56 * l); shopG.add(m); shop.stockMeshes.push(m); }
 // staff cars, nose in: the north row faces +y, the south row faces −y
 for (const [i, row, van] of [[0, 0, 0], [2, 0, 1], [5, 0, 0], [9, 0, 0], [1, 1, 0], [4, 1, 1], [7, 1, 0], [11, 1, 0]]) {
   const c = buildCar(!!van, rng() < 0.4 ? 'k' : 'n'), x = 141.7 + 3.4 * i;
@@ -936,58 +1408,87 @@ for (const [i, row, van] of [[0, 0, 0], [2, 0, 1], [5, 0, 0], [9, 0, 0], [1, 1, 
 const factory = {
   kind:'factory', id:'Plant 01', groups:[factoryG], pick:[54, 48, 10],
   info() {
-    const staged = SLOTS.filter(s => s.pallet).length;
+    const staged = STAGE.filter(s => s.pallet).length;
     return { kind:'Factory', title:'Plant 01', status:conveyor.held ? 'line held · belt full' : 'line running',
       rows:[['Pallets made', `${sim.stats.produced} this session`], ['On the belt', String(conveyor.items.length)], ['Staging', `${staged}/16 slots`],
-        ['Trucks loaded', String(sim.stats.trucksLoaded)], ['Bays busy', `${BAYS.filter(b => b.truck?.state === 'loading').length}/2`]] };
+        ['Trucks loaded', String(sim.stats.plantOut)], ['Bays busy', `${sim.trucks.filter(t => t.at?.name === 'bay').length}/2`]] };
   },
   readout() { return `plant 01 · ${conveyor.held ? 'held' : 'running'} · ${sim.stats.produced} made`; },
 };
+const warehouse = {
+  kind:'warehouse', id:'Warehouse 01', groups:[whG], pick:[268, 14.61, 6],
+  info() {
+    const n = RACK.filter(s => s.pallet).length;
+    return { kind:'Warehouse', title:'Warehouse 01', status:`${n} pallets in the racks`, bar:{ v:n, max:RACK.length, label:`racks ${n}/${RACK.length}` },
+      rows:[['Received', `${sim.stats.whIn} pallets this session`], ['Shipped', `${sim.stats.whOut} pallets this session`],
+        ['At the docks', sim.trucks.filter(t => t.at?.name === 'dock').map(t => t.id).join(', ') || 'none'],
+        ['Loading lane', sim.trucks.find(t => t.at?.name === 'load')?.id ?? 'empty'], ['Forklifts', `${WH.forklifts.length}`]] };
+  },
+  readout() { return `warehouse 01 · ${RACK.filter(s => s.pallet).length}/${RACK.length} in the racks`; },
+};
 conveyor.groups = [conveyorG];
 const gate = {
-  kind:'gate', id:'Main gate', groups:[gateG], pick:[133, 109, 2], open:[0, 0],
+  kind:'gate', id:'Plant gate', groups:[gateG], pick:[133, 109, 2], open:[0, 0],
   update(dt) {
-    const near = (x) => sim.trucks.some(t => t.points.some(p => Math.hypot(p[0] - x, p[1] - 118) < 13));
+    const near = x => sim.trucks.some(t => t.points.some(p => Math.hypot(p[0] - x, p[1] - 118) < 13));
     [118, 124].forEach((x, i) => { this.open[i] = clamp(this.open[i] + (near(x) ? 1 : -1) * dt * 1.4, 0, 1); });
-    const out = gateG.getObjectByName('armOut'), inn = gateG.getObjectByName('armIn');
-    out.rotation.z = ease(this.open[0]) * 1.45; inn.rotation.z = -ease(this.open[1]) * 1.45;
+    gateG.getObjectByName('armOut').rotation.z = ease(this.open[0]) * 1.45; gateG.getObjectByName('armIn').rotation.z = -ease(this.open[1]) * 1.45;
   },
   info() {
     const st = o => o > 0.98 ? 'open' : o < 0.02 ? 'closed' : 'moving';
-    return { kind:'Gate', title:'Main gate', status:this.open.some(o => o > 0.02) ? 'barrier up' : 'barriers down',
-      rows:[['In lane', st(this.open[1])], ['Out lane', st(this.open[0])], ['Trucks in', String(sim.stats.trucksIn)], ['Trucks out', String(sim.stats.trucksOut)]] };
+    return { kind:'Gate · barriers', title:'Plant gate', status:this.open.some(o => o > 0.02) ? 'barrier up' : 'barriers down',
+      rows:[['In lane', st(this.open[1])], ['Out lane', st(this.open[0])], ['Trucks out', String(sim.stats.plantOut)]] };
   },
-  readout() { return `main gate · in ${sim.stats.trucksIn} · out ${sim.stats.trucksOut}`; },
+  readout() { return `plant gate · ${sim.stats.plantOut} trucks out`; },
 };
-factoryG.userData.entity = factory; conveyorG.userData.entity = conveyor; gateG.userData.entity = gate;
+whGate.groups = [whGateG]; shop.groups = [shopG];
+for (const [g, e] of [[factoryG, factory], [conveyorG, conveyor], [gateG, gate], [whG, warehouse], [whGateG, whGate], [shopG, shop]]) g.userData.entity = e;
 
-for (let i = 0; i < 4; i++) new Forklift(i);
-for (const [k, si] of [[0, 1], [1, 3], [2, 4], [3, 9], [4, 12], [5, 6]]) {
-  const sl = SLOTS[si], p = new Pallet(); p.t0 = -60 + k; sl.pallet = p; p.loc = { type:'stage', slot:sl }; pose(p.group, sl.x, sl.y); scene.add(p.group);
-}
+const guard = new Guard();
+for (let k = 0; k < 3; k++) new Staff(k);
+for (let i = 0; i < 3; i++) new Forklift(PLANT, i);
+for (let i = 0; i < 3; i++) new Forklift(WH, i);
+// trucks: flatbed 1 waits at its plant bay, flatbed 2 has just reached its dock with a full load;
+// delivery truck 1 is in the loading lane, delivery truck 2 is at the shop with three pallets of boxes
+const flats = BAYS.map((b, k) => { const L = flatbedLoop(b, DOCKS[k]); return { ...L, bay:b, dock:DOCKS[k] }; });
+const T1 = new Truck({ model:'flatbed', id:'TRK-2051', driver:DRIVERS[0], ...flats[0], s:flats[0].holds.find(h => h.name === 'bay').s });
+const T2 = new Truck({ model:'flatbed', id:'TRK-2052', driver:DRIVERS[1], ...flats[1], s:flats[1].holds.find(h => h.name === 'dock').s });
+const V1h = vanHolds(), V2h = vanHolds();
+const V1 = new Truck({ model:'van', id:'DLV-01', driver:DRIVERS[2], path:VAN_LOOP, holds:V1h, s:V1h.find(h => h.name === 'load').s });
+const V2 = new Truck({ model:'van', id:'DLV-02', driver:DRIVERS[3], path:VAN_LOOP, holds:V2h, s:V2h.find(h => h.name === 'shop').s });
+for (const t of [T1, T2, V1, V2]) t.place();
+const stockOf = (slot, age) => { const p = new Pallet(); p.t0 = age; putIn(slot, p); return p; };
+for (let i = 0; i < 6; i++) stockOf(T2.slots[i], -50 + i);
+for (let i = 0; i < 3; i++) stockOf(V2.slots[i], -90 + i);
+for (const i of [0, 1, 2, 4, 6, 9]) stockOf(RACK[i], -70 + i);
+for (const [k, si] of [[0, 1], [1, 3], [2, 4], [3, 9], [4, 12], [5, 6]]) { const sl = STAGE[si]; stockOf(sl, -60 + k); }
+for (let i = 0; i < 16; i++) { const s = SHELF[(i * 7) % SHELF.length]; s.sku = SKUS[i % 3].name; s.mesh.visible = true; }
+for (let i = 0; i < 4; i++) shop.stock.push(SKUS[i % 3].name);
+shop.drawStock();
+
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
-
 sim.step = dt => {
   sim.t += dt;
   conveyor.update(dt);
-  for (const l of LANES) { l.next -= dt;
-    if (l.next <= 0 && !sim.cars.concat(sim.trucks).some(o => o.points.some(p => Math.hypot(p[0] - l.path.at(0).x, p[1] - l.path.at(0).y) < 10))) { new Car(l); l.next = rand(2.2, 6.5); } }
-  for (const b of BAYS) if (!b.truck && (b.cooldown -= dt) <= 0 && !sim.cars.concat(sim.trucks).some(o => o.points.some(p => p[0] > 196 && Math.abs(p[1] - 127.5) < 3))) new Truck(b);
-  for (const t of [...sim.trucks]) t.update(dt);
+  if ((ROAD.next -= dt) <= 0 && !sim.cars.concat(sim.trucks).some(o => o.points.some(p => Math.hypot(p[0] + 8, p[1] - 134.5) < 10))) { new Car(); ROAD.next = rand(3, 7); }
+  if ((shop.next -= dt) <= 0 && SHOPPERS().length < 8) { new Shopper(); shop.next = rand(4.5, 7.5); }
+  for (const t of sim.trucks) t.update(dt);
   for (const c of [...sim.cars]) c.update(dt);
   for (const f of sim.forklifts) f.update(dt);
+  for (const p of [...sim.people]) p.update(dt);
   for (const p of sim.pallets) p.update(dt);
-  gate.update(dt);
-  for (const b of BAYS) glow(b.lamp, b.truck?.state === 'loading');
+  gate.update(dt); whGate.update(dt);
+  for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
+  for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);
   for (const f of fans) f.rotation.y += dt * 5;
 };
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
-sim.stats = { produced:0, trucksIn:0, trucksOut:0, trucksLoaded:0 };
+resetStats();
 
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
-const ISO = v3(1, 1, 1).normalize(), CENTER = W(100, 75, 0);
+const ISO = v3(1, 1, 1).normalize(), CENTER = W(SLAB.w / 2, SLAB.d / 2, 0);
 camera.position.copy(CENTER).addScaledVector(ISO, 1500); camera.lookAt(CENTER);
 const controls = new OrbitControls(camera, canvas);
 Object.assign(controls, { enableRotate:false, screenSpacePanning:true, zoomToCursor:true, enableDamping:!REDUCED, dampingFactor:0.12 });
@@ -995,39 +1496,49 @@ controls.mouseButtons = { LEFT:THREE.MOUSE.PAN, MIDDLE:THREE.MOUSE.DOLLY, RIGHT:
 controls.touches = { ONE:THREE.TOUCH.PAN, TWO:THREE.TOUCH.DOLLY_PAN };
 controls.target.copy(CENTER);
 controls.listenToKeyEvents(window);
+// the three places the caption links jump to: [x0, x1, y0, y1]
+const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [336, 440, 80, 150]];
 let fitZoom = 1, goal = null, follow = false, sized = false;
-function fit(w, h) {
+function fit(w, h, [x0, x1, y0, y1] = [0, SLAB.w, 0, SLAB.d]) {
   camera.updateMatrixWorld();
   const inv = camera.matrixWorldInverse, b = new THREE.Box3();
-  for (const x of [0, 200]) for (const y of [0, 150]) for (const z of [-4, 12]) b.expandByPoint(W(x, y, z).applyMatrix4(inv));
+  for (const x of [x0, x1]) for (const y of [y0, y1]) for (const z of [-4, 12]) b.expandByPoint(W(x, y, z).applyMatrix4(inv));
   return Math.min(w / (b.max.x - b.min.x), h / (b.max.y - b.min.y)) * 0.92;
 }
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
   renderer.setSize(w, h, false);
   Object.assign(camera, { left:-w / 2, right:w / 2, top:h / 2, bottom:-h / 2 });
-  fitZoom = fit(w, h); controls.minZoom = fitZoom * 0.6; controls.maxZoom = fitZoom * 12;
-  if (!sized) { sized = true; const narrow = w < 600; camera.zoom = fitZoom * (narrow ? 2.7 : 1);
-    if (narrow) { const c = W(96, 76, 0); camera.position.add(c.clone().sub(controls.target)); controls.target.copy(c); } }
+  fitZoom = fit(w, h); controls.minZoom = fitZoom * 0.6; controls.maxZoom = fitZoom * 24;
+  if (!sized) { sized = true; if (w < 600) { const v = VIEWS[0]; camera.zoom = fit(w, h, v); moveTarget(W((v[0] + v[1]) / 2, (v[2] + v[3]) / 2, 0)); } else camera.zoom = fitZoom; }
   camera.zoom = clamp(camera.zoom, controls.minZoom, controls.maxZoom); camera.updateProjectionMatrix();
   for (const m of Object.values(LINE)) m.resolution.set(w, h);
   retLine.material.resolution.set(w, h);
 }
 const retLine = new LineSegments2(new LineSegmentsGeometry(), LINE.live); retLine.raycast = noop; retLine.frustumCulled = false; retLine.visible = false; scene.add(retLine);
+function moveTarget(to) { const d = to.clone().sub(controls.target); controls.target.add(d); camera.position.add(d); }
 new ResizeObserver(resize).observe(stage); resize();
 canvas.addEventListener('wheel', () => { goal = null; }, { passive:true });
-function moveTarget(to) { const d = to.clone().sub(controls.target); controls.target.add(d); camera.position.add(d); }
 function zoomBy(k) { goal = { zoom:clamp((goal?.zoom ?? camera.zoom) * k, controls.minZoom, controls.maxZoom), target:goal?.target }; }
 function resetView() { setFollow(false); goal = { zoom:fitZoom, target:CENTER.clone() }; }
+function goView(i) { const v = VIEWS[i]; setFollow(false); goal = { zoom:fit(stage.clientWidth, stage.clientHeight, v), target:W((v[0] + v[1]) / 2, (v[2] + v[3]) / 2, 0) }; }
+const siteButtons = [...document.querySelectorAll('.sites button')];
+siteButtons.forEach((b, i) => { b.onclick = () => goView(i); });
+function markSite() {
+  const t = controls.target, close = camera.zoom > fitZoom * 1.3;
+  const i = close ? VIEWS.findIndex(([x0, x1, y0, y1]) => t.x >= x0 && t.x <= x1 && t.z >= y0 && t.z <= y1) : -1;
+  siteButtons.forEach((b, k) => b.setAttribute('aria-current', k === i));
+}
 
 // ---- selection, tags, card ----
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), tmp = new THREE.Vector3(), box = new THREE.Box3();
+const shown = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
 function hit(cx, cy) {
   const r = canvas.getBoundingClientRect();
   ndc.set((cx - r.left) / r.width * 2 - 1, -(cy - r.top) / r.height * 2 + 1);
   ray.setFromCamera(ndc, camera);
   for (const h of ray.intersectObjects(scene.children, true)) {
-    if (!h.object.isMesh || h.point.x < 0 || h.point.x > 200 || h.point.z < 0 || h.point.z > 150) continue;
+    if (!h.object.isMesh || !shown(h.object) || h.point.x < 0 || h.point.x > SLAB.w || h.point.z < 0 || h.point.z > SLAB.d) continue;
     let o = h.object; while (o && !o.userData.entity) o = o.parent;
     return o ? o.userData.entity : null;   // the nearest visible surface decides
   }
@@ -1044,11 +1555,12 @@ function select(ent) {
   setFollow(false); $('card').hidden = !ent; refresh();
 }
 function forget(ent) { if (selected === ent) select(null); if (hovered === ent) hovered = null; }
-const followable = ent => !!ent && !['factory', 'gate', 'conveyor'].includes(ent.kind);
+const followable = ent => !!ent && !['factory', 'gate', 'conveyor', 'warehouse', 'shop'].includes(ent.kind);
 function setFollow(on) { follow = on && followable(selected); $('cardFollow').setAttribute('aria-pressed', follow); }
 function refresh() {
   const r = $('readout');
   r.textContent = (paused ? 'paused · ' : '') + (selected ? selected.readout() : 'nothing selected');
+  markSite();
   if (!selected) return;
   const i = selected.info();
   $('cardKind').textContent = i.kind; $('cardTitle').textContent = i.title; $('cardStatus').textContent = i.status;
@@ -1105,7 +1617,8 @@ window.addEventListener('keydown', e => {
   if ((e.key === ' ' || e.key === 'Enter') && e.target.closest?.('button')) return;
   if (e.key.startsWith('Arrow')) { goal = null; setFollow(false); return; }
   const act = { Escape:() => select(null), f:() => setFollow(!follow), F:() => setFollow(!follow), ']':() => cycle(1), '[':() => cycle(-1), ' ':togglePause,
-    '+':() => zoomBy(1.4), '=':() => zoomBy(1.4), '-':() => zoomBy(1 / 1.4), '_':() => zoomBy(1 / 1.4), '0':resetView, Home:resetView, t:toggleTheme, T:toggleTheme }[e.key];
+    '+':() => zoomBy(1.4), '=':() => zoomBy(1.4), '-':() => zoomBy(1 / 1.4), '_':() => zoomBy(1 / 1.4), '0':resetView, Home:resetView, t:toggleTheme, T:toggleTheme,
+    1:() => goView(0), 2:() => goView(1), 3:() => goView(2) }[e.key];
   if (act) { act(); e.preventDefault(); }
 });
 
@@ -1124,7 +1637,7 @@ function frame(now) {
   controls.update(dt);
   // slide the target along the view ray onto the ground (an invisible move), then keep it over the slab
   const t = controls.target; moveTarget(t.clone().addScaledVector(ISO, -t.y / ISO.y));
-  moveTarget(v3(clamp(t.x, 0, 200), 0, clamp(t.z, 0, 150)));
+  moveTarget(v3(clamp(t.x, 0, SLAB.w), 0, clamp(t.z, 0, SLAB.d)));
   camera.updateMatrixWorld();
   if (hoverDirty && pointer) { hoverDirty = false; hovered = hit(...pointer); canvas.classList.toggle('over', !!hovered); }
   placeTag($('tagSel'), selected, selected ? `${selected.id} · ${selected.info().status}` : '');
@@ -1140,10 +1653,10 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [factory, conveyor, gate, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.pallets];
+  const all = () => [factory, conveyor, gate, warehouse, whGate, shop, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
-    sim, conveyor, camera, controls, all:() => all().map(e => ({ id:e.id, kind:e.kind, status:e.info().status })),
+    sim, conveyor, shop, whGate, RACK, SHELF, camera, controls, all:() => all().map(e => ({ id:e.id, kind:e.kind, status:e.info().status })),
     step:s => { for (let t = 0; t < s; t += STEP) sim.step(STEP); },
     look:(x, y, k) => { goal = null; setFollow(false); moveTarget(W(x, y, 0)); camera.zoom = fitZoom * k; camera.updateProjectionMatrix(); },
     select:id => select(find(id) ?? null), selected:() => selected?.id ?? null,
