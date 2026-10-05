@@ -107,7 +107,7 @@ const flats = [['Market Court', 72, 146, 24, 44, 15, 12], ['Harbour View', 266, 
   e.pick = [x + w / 2, y + d, h / 2]; e.portal = portal('home', id, [x + door, y + d + 0.6], { w:3 }); return e;
 });
 bank.groups = [buildBank()]; bank.groups[0].userData.entity = bank; scene.add(bank.groups[0]);
-const bankAlarm = bank.groups[0].getObjectByName('alarm');
+const bankAlarm = bank.groups[0].getObjectByName('alarm'); incident.vaultDoor = bank.groups[0].getObjectByName('vaultDoor');
 policeStation.groups = [buildPolice()]; policeStation.groups[0].userData.entity = policeStation; scene.add(policeStation.groups[0]);
 const cafe = entity(buildCafe(), { kind:'building', id:'Café Mira', pick:[151, 186, 3],
   info() { const h = hourAt(sim.t), open = h >= 7 && h < 22, n = WALKERS().filter(w => w.to?.kind === 'cafe' && w.steps[0]?.do === 'wait').length;
@@ -235,7 +235,7 @@ sim.step = dt => {
   sim.peds = sim.people.filter(p => onRoad(p.x, p.y));
   for (const p of sim.pallets) p.update(dt);
   for (const b of BOATS) b.update(dt);
-  gate.update(dt); whGate.update(dt); incident.update();
+  gate.update(dt); whGate.update(dt); incident.update(dt);
   for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
   for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);

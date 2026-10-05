@@ -4,7 +4,7 @@ import { FRONT, SIDE, TOP, W, plane } from '../kernel/iso';
 import { Part, pose, v3 } from '../kernel/part';
 import { rand, rng } from '../kernel/math';
 import { CURB } from '../layout';
-import { palm, roof4, tree, yaw } from './ground';
+import { crown, palm, roof4, tree, yaw } from './ground';
 import { buildCar } from '../models/vehicles';
 import { houseSection, villaSection } from './interiors';
 
@@ -31,22 +31,58 @@ export function buildFlats(name, x, y, w, d, h, door) {
   p.cylZ(x + w / 2, y + d / 2, z + h + 0.45, 1.3, 2.2, 12);
   return p.build('flats');
 }
+// Harbour Bank: a portico of columns under a pediment, steps up to the door. Like the homes it opens to its section:
+// the banking hall with its counter and screens, the back office, the vault with a round door that swings open.
+export const BANK = { x0:102, x1:130, y0:168, y1:192, door:[116, 194.9], back:[108.3, 165.2], vault:[122.2, 176.2] };
 export function buildBank() {
-  const p = new Part(), z = CURB, x = 102, y = 168, w = 28, d = 24, h = 9;
-  p.box(x, y, z, w, d, h);
-  p.box(x - 0.3, y - 0.3, z + h, w + 0.6, d + 0.6, 0.5);
+  const p = new Part(), s = new Part(), z = CURB, x = 102, y = 168, w = 28, d = 24, h = 9;
+  s.box(x, y, z, w, d, h);
+  s.box(x - 0.3, y - 0.3, z + h, w + 0.6, d + 0.6, 0.5);
   for (let i = 0; i < 3; i++) p.box(x + 3, y + d, z, w - 6, 2.4 - 0.8 * i, 0.15 * (i + 1));
-  for (let i = 0; i < 7; i++) p.box(x + 3.6 + i * 3.4, y + d, z + 0.45, 0.8, 0.6, h - 2.05);
-  p.box(x + 2.8, y + d - 0.1, z + h - 1.6, w - 5.6, 0.9, 1.6);
-  p.extrude([[x + 8, y + d + 0.8, z + h + 0.5], [x + w - 8, y + d + 0.8, z + h + 0.5], [x + w / 2, y + d + 0.8, z + h + 2.6]], [0, -3, 0]);
+  for (let i = 0; i < 7; i++) s.box(x + 3.6 + i * 3.4, y + d, z + 0.45, 0.8, 0.6, h - 2.05);
+  s.box(x + 2.8, y + d - 0.1, z + h - 1.6, w - 5.6, 0.9, 1.6);
+  s.extrude([[x + 8, y + d + 0.8, z + h + 0.5], [x + w - 8, y + d + 0.8, z + h + 0.5], [x + w / 2, y + d + 0.8, z + h + 2.6]], [0, -3, 0]);
   const E = FRONT(x + 2.8, y + d + 0.8, z + h);
-  p.text(E, 'HARBOUR BANK', (w - 5.6) / 2, 1.05, 0.8, 'ink', 'middle');
+  s.text(E, 'HARBOUR BANK', (w - 5.6) / 2, 1.05, 0.8, 'ink', 'middle');
   const F = FRONT(x, y + d, z + h);
-  for (let i = 0; i < 6; i++) { const u = 4.6 + i * 3.4; if (i === 2 || i === 3) continue; p.fill2(F, u, 2.4, 1.8, 4.6, rng() < 0.4 ? 'window' : 'glass').rect2(F, u, 2.4, 1.8, 4.6, 'line'); }
-  p.fill2(F, 12.5, 4.6, 3, 3.95).rect2(F, 12.5, 4.6, 3, 3.95, 'line').draw(F, [14, 4.6, 14, 8.55], 'line');
-  windows(p, SIDE(x + w, y + d, z + h), d, h, { x0:2, ww:1.6, wh:2.4, dx:3.6, dy:4, y0:1.6, lit:0.3 });
-  const g = p.build('bank');
-  g.add(new Part().box(x + w - 2.4, y + d + 0.02, z + h - 3.4, 1.2, 0.4, 0.7, 'k').build('alarm'));
+  for (let i = 0; i < 6; i++) { const u = 4.6 + i * 3.4; if (i === 2 || i === 3) continue; s.fill2(F, u, 2.4, 1.8, 4.6, rng() < 0.4 ? 'window' : 'glass').rect2(F, u, 2.4, 1.8, 4.6, 'line'); }
+  s.fill2(F, 12.5, 4.6, 3, 3.95).rect2(F, 12.5, 4.6, 3, 3.95, 'line').draw(F, [14, 4.6, 14, 8.55], 'line');
+  windows(s, SIDE(x + w, y + d, z + h), d, h, { x0:2, ww:1.6, wh:2.4, dx:3.6, dy:4, y0:1.6, lit:0.3 });
+  const g = new THREE.Group(); g.name = 'bank';
+  const shell = s.build('bankShell'); g.add(p.build('bankBase'), shell);
+  shell.add(new Part().box(x + w - 2.4, y + d + 0.02, z + h - 3.4, 1.2, 0.4, 0.7, 'k').build('alarm'));
+  // the cut: walls low and hatched, the front door and the back door open, column stubs, the roof as an outline
+  const c = new Part(), T = 0.5, LOW = 1.0;
+  for (const [bx, by, bw, bd] of [[x, y, 107.5 - x, T], [109, y, x + w - 109, T], [x, y, T, d], [x + w - T, y, T, d], [x, y + d - T, 114.5 - x, T], [117.5, y + d - T, x + w - 117.5, T]]) {
+    c.box(bx, by, z, bw, bd, LOW); const segs = [], n = Math.max(bw, bd);
+    for (let u = 0.3; u < n - 0.1; u += 0.6) segs.push(...(bw > bd ? [u, 0, Math.min(n, u + T), bd] : [0, u, bw, Math.min(n, u + T)]));
+    c.draw(TOP(bx, by, z + LOW), segs);
+  }
+  for (let i = 0; i < 7; i++) c.box(x + 3.6 + i * 3.4, y + d, z + 0.45, 0.8, 0.6, LOW);
+  for (const [a, b] of [[[x, y, z + h], [x + w, y, z + h]], [[x + w, y, z + h], [x + w, y + d, z + h]], [[x + w, y + d, z + h], [x, y + d, z + h]], [[x, y + d, z + h], [x, y, z + h]]]) c.seg('detail', W(...a), W(...b));
+  c.seg('detail', W(x + 8, y + d + 0.8, z + h + 0.5), W(x + w / 2, y + d + 0.8, z + h + 2.6)).seg('detail', W(x + w / 2, y + d + 0.8, z + h + 2.6), W(x + w - 8, y + d + 0.8, z + h + 0.5));
+  const cut = c.build('bankCut'); cut.visible = false; g.add(cut);
+  // inside: the hall (counter with glass screens, waiting chairs, a cash machine, plants), the back office, the vault
+  const f = new Part();
+  f.fill2(TOP(x, y, z), 0, 0, w, d, 'deck', 0.012);
+  f.box(104.5, 178.6, z, 22, 0.8, 1.05);
+  for (let k = 0; k < 4; k++) f.box(104.5 + k * 7.0 + 0.2, 178.9, z + 1.05, 5.4, 0.06, 0.95, 'g');
+  for (let yy = 182; yy < 189.5; yy += 1.4) f.box(103.0, yy, z, 0.5, 0.5, 0.45).box(102.6, yy, z, 0.12, 0.5, 0.95);
+  f.box(128.9, 189.4, z, 0.6, 1.0, 1.7).box(128.85, 189.6, z + 1.05, 0.06, 0.6, 0.4, 'w');
+  for (const [px, py] of [[104.0, 190.6], [128.6, 182.2]]) f.cylZ(px, py, z, 0.32, 0.45, 8).geo(crown, new THREE.Matrix4().compose(W(px, py, z + 0.95), yaw(0.4), v3(0.5, 0.6, 0.5)), 'gs');
+  f.box(104.2, 170.4, z, 3.0, 1.1, 0.75).box(105.3, 171.8, z, 0.5, 0.5, 0.45).box(105.1, 170.6, z + 0.75, 0.6, 0.06, 0.4, 'w');
+  for (let k = 0; k < 4; k++) f.box(102.5, 172.8 + k * 0.9, z, 0.6, 0.8, 1.3);
+  // the vault: a strong room in the north-east corner, deposit boxes on its walls, cash crates on a table
+  f.box(119, y + 0.5, z, 0.5, 6.1, 2.8).box(119, 174.6, z, 2.0, 0.5, 2.8).box(123.4, 174.6, z, x + w - 0.5 - 123.4, 0.5, 2.8);
+  for (const M of [FRONT(119.5, y + 0.55, z + 2.4), SIDE(x + w - 0.55, 174.5, z + 2.4)]) for (let u = 0.2; u < 6; u += 0.5) for (let v = 0.1; v < 2.2; v += 0.45) f.rect2(M, u, v, 0.42, 0.38, 'detail', -0.03);
+  f.box(124, 170.5, z, 2.4, 1.0, 0.8);
+  for (let k = 0; k < 3; k++) f.box(124.2 + k * 0.75, 170.65, z + 0.8, 0.6, 0.7, 0.35, 'k');
+  const inside = f.build('bankInside'); inside.visible = false; g.add(inside);
+  // the vault door, hinged at its west edge, round and heavy
+  const vd = new Part(); vd.geo(new THREE.CylinderGeometry(1.15, 1.15, 0.45, 18), new THREE.Matrix4().compose(W(1.2, 0.25, 1.3), new THREE.Quaternion().setFromAxisAngle(v3(1, 0, 0), Math.PI / 2), v3(1, 1, 1)), 'k');
+  vd.box(1.0, 0.45, 1.1, 0.4, 0.15, 0.4);
+  const vault = vd.build('vaultDoor'); vault.position.copy(W(121, 174.6, z)); inside.add(vault);
+  g.userData.peek = { shell, cut, inside, box:[x, x + w, y, y + d] };
   return g;
 }
 // the café's terrace tables (x), each with a chair either side

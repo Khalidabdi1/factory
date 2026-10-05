@@ -4,6 +4,8 @@
 // round when the path is a closed loop (start it in the middle of a straight).
 export class Path {
   constructor(pts, r = 6, closed = false) {
+    // a point repeated back to back would make a zero-length leg (and a corner with no direction): drop it
+    pts = pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 1e-6);
     this.closed = closed;
     this.segs = []; let cur = pts[0], s = 0;
     const line = (a, b) => { const len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 1e-6) return;

@@ -113,13 +113,17 @@ Done:
 - Phase 2: people redesign, with outfits, swinging arms and seated poses.
 - Phase 3: Orchard Lane (`yard/world/orchard.ts`, `ORCHARD` in `layout.ts`), plus sections and residents for every house and villa.
 - Phase 5: courier PKG-1, with online orders and tracking.
+- Phase 6: the bank siege (`yard/sim/police.ts`).
+  - The bank is a peek building (`BANK` in `world/town.ts`), and `route()` moves people through its doors and the counter gap.
+  - Tellers keep its hours, and walkers visit through the `bank` portal.
+  - The incident runs through the phases quiet → casing → alarm → siege → chase → done.
+  - Four officers hold the posts left, right, back and east; front pair go in after a stand-off. Debug `yard.robbery()`.
 - Phase 4: Warehouse 01.
   - `RACK` now has rows A and B, three levels, 48 slots. `LOC.rack` faces by row, and forklifts have a telescoping `mast2`.
   - Shelving, a packing bench and pickers (`Picker`).
   - People inside a shut building are hidden via `hooks.closedAt`.
 
 Next:
-6. A bank siege you can see inside: four officers surround the bank, arrest inside or a back-door chase.
 7. Sunset Pier amusement pier: Ferris wheel, carousel, coaster.
 8. Fishing boat Kestrel and a pier angler.
 9. Weather: rain and sea fog.

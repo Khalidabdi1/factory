@@ -121,6 +121,7 @@ function refresh() {
 }
 let cardActs = [];
 // Track: select a vehicle, follow it and come in close
+hooks.select = ent => select(ent);
 hooks.track = ent => { select(ent); setFollow(true); goal = { zoom:Math.max(camera.zoom, fitZoom * 5.5) }; };
 // Look inside: frame the building close enough to see its rooms (it is open while it is selected)
 hooks.lookInside = ent => { const [x0, x1, y0, y1] = ent.groups[0].userData.peek.box; setFollow(false); goal = frame(stage.clientWidth, stage.clientHeight, [x0 - 4, x1 + 4, y0 - 4, y1 + 4], [0, 5]); };
@@ -161,7 +162,7 @@ function drawRoute() {
 }
 // A closed building opens up while it, or something inside it, is selected. Homes draw their section (and are told
 // to show who is in) the first time they open.
-const PEEK = [[whG, warehouse], [shopG, shop], ...homes.map(h => [h.groups[0], h])];
+const PEEK = [[whG, warehouse], [shopG, shop], [bank.groups[0], bank], ...homes.map(h => [h.groups[0], h])];
 hooks.closedAt = (x, y) => { for (const [g] of PEEK) { const pk = g.userData.peek, b = pk.box; if (x > b[0] && x < b[1] && y > b[2] && y < b[3]) return !pk.cut?.visible; } return false; };
 function updatePeek() {
   let c = null; if (selected) { const b = bounds(selected); c = [(b.min.x + b.max.x) / 2, (b.min.z + b.max.z) / 2]; }
@@ -291,6 +292,8 @@ if (DEBUG) {
     drawCalls:() => { tick(performance.now()); return renderer.info.render.calls; },
     // place an online order now (for a home by id, or any): returns the order
     order:id => placeOrder(id ? find(id) : homes[Math.floor(Math.random() * homes.length)]), orders, courier, roadnet:{ trip, locate, kerbStop, EDGES },
+    // start the bank job now (when the town is quiet)
+    robbery:() => { if (incident.phase === 'quiet') incident.next = sim.t; return incident.phase; },
     screenOf:id => { const e = find(id); scene.updateMatrixWorld(); camera.updateMatrixWorld(); const p = e.groups[0].localToWorld(W(...(e.pick ?? [0, 0, 1]))).project(camera), r = canvas.getBoundingClientRect();
       return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; },
   };
