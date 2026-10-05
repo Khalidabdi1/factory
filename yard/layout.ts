@@ -12,7 +12,8 @@ import { scene } from './shared';
 // plant bays      | 28 / 74        | 80         | flatbeds park heading west, forklifts load from the north
 // truck park      | 136–198        | 118.5–124  | a lay-by where flatbeds wait for a free bay
 // warehouse yard  | 206–356        | 4–118      | gate gap x 314–332 (out lane x 320, in lane x 326), sliding gate, guard
-// warehouse       | 228–308        | 14–58      | drive lane y 20, racks y 33, aisle y 40.6, receiving y 48.5
+// warehouse       | 228–308        | 14–58      | drive lane y 20, rack rows B (y 29.8) and A (y 33), aisles y 26 and 40.6, receiving y 48.5;
+//                 |                |            | shelving, packing and pickers in the west strip x 228–235, office in the south-east corner
 // docks           | 232 / 276      | 80         | flatbeds unload here, forklifts work from the north
 // shop            | 362–394        | 94–112     | delivery lay-by y 118.5–124 (x 344–384), zebra at x 394.5, customer parking y 138–142.6
 // avenues         | 60·180·300·420 | 138–274    | Park, Mill, Harbour and Hill Av, 14 wide; southbound lane x − 3.5, northbound x + 3.5
@@ -30,8 +31,11 @@ export const DOCKS = [{ id:1, bx:232, truck:null }, { id:2, bx:276, truck:null }
 export const slotAt = o => ({ pallet:null, reserved:null, parent:scene, ...o });
 export const STAGE = []; for (const row of [0, 1]) for (let c = 0; c < 8; c++) { const x = 134 + 6 * c, y = row ? 90 : 72, id = `${'AB'[row]}${c + 1}`;
   STAGE.push(slotAt({ id, label:`staging ${id}`, x, y, row, local:[x, y, 0] })); }
-export const RACK = []; for (const level of [0, 1]) for (let b = 0; b < 8; b++) { const x = 246 + 6 * b;
-  RACK.push(slotAt({ id:`R${b + 1}·${level + 1}`, label:`rack R${b + 1} · level ${level + 1}`, x, y:33, level, local:[x, 33, level ? 3.0 : 0] })); }
+// pallet racking: two rows back to back, eight bays, three levels. Row A is worked from the aisle south of it (y 40.6),
+// row B from the lane north of it (y 26). Listed A level 1, A level 2, then the rest, so the opening stock keeps its places.
+export const RACK = []; for (const [row, level] of [['A', 0], ['A', 1], ['A', 2], ['B', 0], ['B', 1], ['B', 2]]) for (let b = 0; b < 8; b++) {
+  const x = 246 + 6 * b, y = row === 'A' ? 33 : 29.8;
+  RACK.push(slotAt({ id:`${row}${b + 1}·${level + 1}`, label:`rack ${row}${b + 1} · level ${level + 1}`, x, y, row, level, local:[x, y, level * 3.0] })); }
 // shop shelves: two units, two boards each, six boxes a board; staff stand in the aisle south of each unit
 export const SHELF = []; for (const [y, sy] of [[98.4, 100.6], [103.6, 105.8]]) for (const z of [0.95, 1.65]) for (let i = 0; i < 6; i++)
   SHELF.push({ x:367.6 + 3.5 * i, y, z, stand:[367.6 + 3.5 * i, sy], sku:null, reserved:null, mesh:null });

@@ -158,6 +158,7 @@ function drawRoute() {
 // A closed building opens up while it, or something inside it, is selected. Homes draw their section (and are told
 // to show who is in) the first time they open.
 const PEEK = [[whG, warehouse], [shopG, shop], ...homes.map(h => [h.groups[0], h])];
+hooks.closedAt = (x, y) => { for (const [g] of PEEK) { const pk = g.userData.peek, b = pk.box; if (x > b[0] && x < b[1] && y > b[2] && y < b[3]) return !pk.cut?.visible; } return false; };
 function updatePeek() {
   let c = null; if (selected) { const b = bounds(selected); c = [(b.min.x + b.max.x) / 2, (b.min.z + b.max.z) / 2]; }
   for (const [g, ent] of PEEK) { const pk = g.userData.peek, [x0, x1, y0, y1] = pk.box;
@@ -167,7 +168,7 @@ function updatePeek() {
       const s = pk.section({ twoBeds:ent.household?.n >= 3 }); s.cut.visible = s.inside.visible = false;
       g.add(s.cut, s.inside); Object.assign(pk, { cut:s.cut, inside:s.inside }); ent.spots = s.spots;
     }
-    if (pk.cut && pk.cut.visible !== on) { pk.cut.visible = on; pk.shell.visible = !on; if (pk.inside) pk.inside.visible = on; ent.peeked?.(on); }
+    if (pk.cut && pk.cut.visible !== on) { pk.cut.visible = on; pk.shell.visible = !on; if (pk.inside) pk.inside.visible = on; ent.peeked?.(on); for (const p of sim.people) p.place(); }
     if (on) ent.whileOpen?.();
     if (ent === warehouse) for (const s of RACK) if (s.pallet) s.pallet.group.visible = on; }
 }

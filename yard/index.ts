@@ -1,6 +1,6 @@
 // @ts-nocheck
 import * as THREE from 'three';
-import { $, canvas, gfx, noop, scene } from './shared';
+import { $, canvas, gfx, hooks, noop, scene } from './shared';
 import { W } from './kernel/iso';
 import { applyTheme, css } from './theme';
 import { Part, TEX_PX, glow, pose } from './kernel/part';
@@ -21,7 +21,7 @@ import { COAST, Car, LOOPS, ROAD, SPOTS, custNext, customerCar } from './sim/car
 import { BUS_PATH, BUS_STOPS, Truck, VAN_LOOP, busHolds, flatVariant, vanHolds } from './sim/trucks';
 import { Forklift, PLANT, WH } from './sim/forklifts';
 import './sim/person';
-import { Guard, SHOPPERS, Shopper, Staff, WALKERS, Walker, nextPortal, portal, setGuard, shop, startPortal, walkSpawn, whGate } from './sim/people';
+import { Guard, PICKERS, Picker, SHOPPERS, Shopper, Staff, WALKERS, Walker, nextPortal, portal, setGuard, shop, startPortal, walkSpawn, whGate } from './sim/people';
 import { PoliceCar, bank, incident, policeStation } from './sim/police';
 import { BOATS, Boat } from './sim/boats';
 import { entity, home, homes, lightsText } from './sim/homes';
@@ -145,11 +145,15 @@ const factory = {
 const warehouse = {
   kind:'warehouse', id:'Warehouse 01', groups:[whG], pick:[268, 58.1, 6],
   info() {
-    const n = RACK.filter(s => s.pallet).length;
+    const n = RACK.filter(s => s.pallet).length, per = l => RACK.filter(s => s.level === l && s.pallet).length;
+    const stock = SKUS.map(k => [k.name, RACK.filter(s => s.pallet?.sku === k).length]).filter(([, c]) => c);
     return { kind:'Warehouse', title:'Warehouse 01', status:`${n} pallets in the racks`, bar:{ v:n, max:RACK.length, label:`racks ${n}/${RACK.length}` },
-      rows:[['Received', `${sim.stats.whIn} pallets this session`], ['Shipped', `${sim.stats.whOut} pallets this session`],
+      rows:[...stock.map(([k, c]) => [k, `${c} ${c === 1 ? 'pallet' : 'pallets'}`]), ['Levels 1 · 2 · 3', [0, 1, 2].map(l => `${per(l)}/16`).join(' · ')],
+        ['Received', `${sim.stats.whIn} pallets this session`], ['Shipped', `${sim.stats.whOut} pallets this session`],
         ['At the docks', sim.trucks.filter(t => t.at?.name === 'dock').map(t => t.id).join(', ') || 'none'],
-        ['Loading lane', sim.trucks.find(t => t.at?.name === 'load')?.id ?? 'empty'], ['Forklifts', `${WH.forklifts.length}`]] };
+        ['Loading lane', sim.trucks.find(t => t.at?.name === 'load')?.id ?? 'empty'], ['Forklifts', `${WH.forklifts.length}`],
+        ['Parcels packed', String(PICKERS.reduce((n, p) => n + p.done, 0))]],
+      actions:[['Look inside', () => hooks.lookInside(this)]] };
   },
   readout() { return `warehouse 01 · ${RACK.filter(s => s.pallet).length}/${RACK.length} in the racks`; },
 };
@@ -173,6 +177,7 @@ for (const [g, e] of [[factoryG, factory], [conveyorG, conveyor], [gateG, gate],
 
 const guard = new Guard(); setGuard(guard);
 for (let k = 0; k < 4; k++) new Staff(k);
+for (let k = 0; k < 2; k++) new Picker(k);
 for (let i = 0; i < 3; i++) new Forklift(PLANT, i);
 for (let i = 0; i < 3; i++) new Forklift(WH, i);
 // the fleet: flatbed 1 at its bay, flatbed 2 unloading at dock 2, flatbed 3 loaded on the road east to dock 1;
@@ -192,7 +197,8 @@ const stockOf = (slot, age) => { const p = new Pallet(); p.t0 = age; putIn(slot,
 for (let i = 0; i < 6; i++) stockOf(T2.slots[i], -50 + i);
 for (let i = 0; i < 6; i++) stockOf(T3.slots[i], -40 + i);
 for (let i = 0; i < 3; i++) stockOf(V2.slots[i], -90 + i);
-for (const i of [0, 1, 2, 4, 6, 9]) stockOf(RACK[i], -70 + i);
+// the racks open the day part-full, on every level of both rows
+for (const i of [0, 1, 2, 4, 6, 9, 11, 17, 20, 22, 24, 25, 27, 30, 33, 36, 42, 45]) stockOf(RACK[i], -70 + i);
 for (const [k, si] of [[0, 1], [1, 3], [2, 4], [3, 9], [4, 12], [5, 6]]) { const sl = STAGE[si]; stockOf(sl, -60 + k); }
 for (let i = 0; i < 16; i++) { const s = SHELF[(i * 7) % SHELF.length]; s.sku = SKUS[i % 3].name; s.mesh.visible = true; }
 for (let i = 0; i < 4; i++) shop.stock.push(SKUS[i % 3].name);

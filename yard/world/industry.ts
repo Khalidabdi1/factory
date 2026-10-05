@@ -106,13 +106,42 @@ export function buildWarehouse() {
   const B = FRONT(X0 + T, Y0 + T, H);
   p.draw(B, [0, 4.6, X1 - X0 - T, 4.6]); p.text(B, 'WAREHOUSE 01', 6, 3.6, 2.6);
   for (let u = 2; u < X1 - X0; u += 2) p.draw(B, [u, 4.6, u, H]);
-  for (let j = 0; j <= 8; j++) for (const y of [31.6, 34.2]) p.box(243 + 6 * j - 0.1, y, 0, 0.2, 0.2, 5.6);
-  for (const z of [2.85, 5.45]) for (const y of [31.6, 34.25]) p.box(243, y, z, 48, 0.15, 0.15);
-  for (let b = 0; b < 8; b++) p.text(TOP(0, 0, 0), `R${b + 1}`, 246 + 6 * b, 36.6, 0.9, 'paint', 'middle', 0.05);
   const G = TOP(0, 0, 0);
+  // pallet racking, two rows back to back: an upright at every bay with zig-zag bracing, two-tone beams under levels 2
+  // and 3 and along the top
+  for (const [y0, y1] of [[28.4, 31.0], [31.6, 34.2]]) {
+    for (let j = 0; j <= 8; j++) { const x = 243 + 6 * j - 0.1; for (const y of [y0, y1]) p.box(x, y, 0, 0.2, 0.2, 8.6);
+      for (let z = 0.4, k = 0; z < 8.2; z += 1.4, k++) p.seg('detail', W(x + 0.1, k % 2 ? y1 : y0 + 0.2, z), W(x + 0.1, k % 2 ? y0 + 0.2 : y1, z + 1.4)); }
+    for (const z of [2.85, 5.85, 8.45]) for (const y of [y0, y1 + 0.05]) p.box(243, y, z, 48, 0.15, 0.15, 'k');
+  }
+  for (let b = 0; b < 8; b++) p.text(G, `A${b + 1}`, 246 + 6 * b, 36.6, 0.9, 'paint', 'middle', 0.05).text(G, `B${b + 1}`, 246 + 6 * b, 27.7, 0.9, 'paint', 'middle', 0.05);
+  // the west strip, where people work: two runs of shelving stocked with cartons (picked from the aisle between them),
+  // the packing bench and its outgoing parcels, stacks of empty pallets, a painted walkway
+  for (const x0 of [228.8, 231.6]) {
+    for (let y = 24.8; y <= 37.3; y += 3.1) p.box(x0, y - 0.05, 0, 0.1, 0.1, 3.1).box(x0 + 1.1, y - 0.05, 0, 0.1, 0.1, 3.1);
+    for (const z of [0.15, 0.95, 1.75, 2.55]) {
+      p.box(x0, 24.75, z, 1.2, 12.5, 0.05);
+      for (let i = 0; i < 16; i++) if ((i * 7 + z * 10 + x0) % 5 > 1.2) p.box(x0 + 0.2, 25.0 + i * 0.77, z + 0.05, 0.75, 0.62, 0.38 + (i % 3) * 0.08, 'k');
+    }
+  }
+  p.box(228.8, 39.6, 0, 1.3, 4.0, 0.9).box(229.0, 40.2, 0.9, 0.55, 0.5, 0.35, 'k').box(229.0, 42.6, 0.9, 0.25, 0.4, 0.45);
+  for (let i = 0; i < 5; i++) p.box(229.0 + (i % 2) * 0.6, 44.4 + Math.floor(i / 2) * 0.62, Math.floor(i / 4) * 0.42, 0.55, 0.55, 0.4, 'k');
+  for (const y of [50.2, 53.4]) for (let k = 0; k < 6; k++) p.box(229.2, y, k * 0.17, 2.4, 2.4, 0.15);
+  for (const x of [234.0, 234.5]) p.draw(G, [x, 24.2, x, 57], 'detail', 0.05);
+  for (let y = 25; y < 57; y += 1.2) p.draw(G, [234.0, y, 234.5, y + 0.5], 'detail', 0.05);
+  p.text(G, 'PICKING', 229.0, 24.3, 0.6, 'paint', 'start', 0.05).text(G, 'PACKING', 229.0, 39.3, 0.6, 'paint', 'start', 0.05);
+  // a pallet wrapper: turntable, mast and film
+  p.cylZ(241.5, 54, 0, 1.4, 0.15, 16).box(243.3, 53.7, 0, 0.5, 0.6, 2.6).cylZ(243.0, 54.0, 1.0, 0.16, 0.6, 8, 'k');
+  // the office in the south-east corner: partitions with a glass band, two desks with lit screens
+  p.box(291, 50.5, 0, 16.4, 0.2, 2.2).box(291, 50.7, 0, 0.2, 6.7, 2.2);
+  p.fill2(FRONT(291.2, 50.7, 2.2), 0.6, 0.15, 15.4, 0.9, 'window').fill2(SIDE(291.2, 57.4, 2.2), 0.6, 0.15, 5.8, 0.9, 'window');
+  for (const x of [295, 301]) { p.box(x, 53.2, 0, 2.4, 1.0, 0.75).box(x + 0.9, 53.3, 0.75, 0.6, 0.08, 0.45, 'w').box(x + 0.9, 54.5, 0, 0.5, 0.5, 0.45); }
+  p.text(G, 'OFFICE', 292, 51.6, 0.6, 'paint', 'start', 0.05);
   p.draw(G, [X0 + T, 17.2, X1 - T, 17.2, X0 + T, 22.8, X1 - T, 22.8], 'line', 0.05);
   for (let x = 237; x < 300; x += 4) p.draw(G, [x, 40.6, x + 2, 40.6, x, 48.5, x + 2, 48.5, x, 26, x + 2, 26], 'detail', 0.05);
   for (const x of [262, 268, 274]) { p.rect2(G, x - 1.6, 53.2, 3.2, 3.9, 'detail', 0.05); p.box(x + 1.5, 56.4, 0, 0.45, 0.45, 1.3); }
+  // outside: canopies over the two forklift doorways, held by tie rods from the wall
+  for (const x of [246.4, 282.4]) { p.box(x, Y1, 6.2, 7.2, 2.6, 0.15); for (const dx of [0.3, 6.9]) p.seg('line', W(x + dx, Y1, 8.8), W(x + dx, Y1 + 2.5, 6.35)); }
   g.add(p.build('whBase'));
   // the cut: low front and east walls hatched on the cut, posts, the roof as an outline with its trusses
   const c = new Part();
@@ -140,13 +169,18 @@ export function buildWarehouse() {
   for (const u of [12, 30, 48, 66]) s.fill2(SL, u, 6, 5, 9, 'window', 0.03).rect2(SL, u, 6, 5, 9, 'line', 0.04);
   for (let x = X0; x <= X1; x += 2.4) s.seg('detail', W(x, Y0 - 0.5, H - 0.12), W(x, RY, RZ));
   const F = FRONT(X0, Y1, H);
-  s.draw(F, [0, 1.8, X1 - X0, 1.8]); s.text(F, 'WAREHOUSE 01', 2, 1.45, 1.3);
+  // the sign band, with an invented glyph (three stacked crates) like Plant 01's
+  s.draw(F, [0, 1.8, X1 - X0, 1.8]); s.text(F, 'WAREHOUSE 01', 4.6, 1.45, 1.3);
+  for (const [u, v] of [[1.4, 0.95], [2.6, 0.95], [2.0, 0.35]]) s.rect2(F, u, v, 1.0, 0.6, 'line');
   for (let u = 1.2; u < X1 - X0; u += 1.2) { if (u > 18.6 && u < 25.4 || u > 54.6 && u < 61.4) continue; s.draw(F, [u, u < 18 ? 1.8 : 0, u, H]); }
   for (const [a, b] of [[19, 25], [55, 61]]) { s.rect2(F, a, H - 5.6, b - a, 5.6, 'line'); s.box(X0 + a - 0.2, Y1 - 0.2, 5.6, b - a + 0.4, 0.5, 0.5); }
   for (const u of [32, 38, 44, 66, 72]) s.fill2(F, u, 2.4, 3.6, 1.2, 'window').rect2(F, u, 2.4, 3.6, 1.2, 'line');
   const E = SIDE(X1, Y1, H);
   for (let u = 1.2; u < Y1 - Y0; u += 1.2) { if (u > 34 - 0.1 && u < 41.9) { s.draw(E, [u, 0, u, 4.2]); continue; } s.draw(E, [u, 0, u, H]); }
   s.rect2(E, 34.2, 4.2, 7.6, 5.8, 'line');
+  // roof vents along the ridge, downpipes at the front corners
+  for (let x = X0 + 10; x < X1; x += 20) s.cylZ(x, RY, RZ - 0.25, 0.8, 1.1, 10).cylZ(x, RY, RZ + 0.85, 1.0, 0.12, 10);
+  for (const x of [X0 + 0.3, X1 - 0.5]) s.box(x, Y1 + 0.05, 0, 0.2, 0.2, H);
   const shell = s.build('whShell'); g.add(shell);
   g.userData.peek = { shell, cut, box:[X0, X1, Y0, Y1] };
   return g;

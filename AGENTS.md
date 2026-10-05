@@ -103,9 +103,12 @@ Done:
 - Phase 1: night page frame, theme memory, WebGL context-loss handling.
 - Phase 2: people redesign, with outfits, swinging arms and seated poses.
 - Phase 3: Orchard Lane (`yard/world/orchard.ts`, `ORCHARD` in `layout.ts`), plus sections and residents for every house and villa.
+- Phase 4: Warehouse 01.
+  - `RACK` now has rows A and B, three levels, 48 slots. `LOC.rack` faces by row, and forklifts have a telescoping `mast2`.
+  - Shelving, a packing bench and pickers (`Picker`).
+  - People inside a shut building are hidden via `hooks.closedAt`.
 
 Next:
-4. A realistic Warehouse 01: 48-slot racking on 3 levels, shelving, pickers.
 5. Courier PKG-1 with online orders from Corner Market and order tracking (Track button, the main camera follows).
 6. A bank siege you can see inside: four officers surround the bank, arrest inside or a back-door chase.
 7. Sunset Pier amusement pier: Ferris wheel, carousel, coaster.

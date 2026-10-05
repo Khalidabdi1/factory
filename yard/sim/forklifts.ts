@@ -22,7 +22,8 @@ const LOC = {
   belt:p => { const x = conveyor.path.at(p.s).x; return { name:'line A', h:-Math.PI / 2, z:1.0, F:[x, 59.35], SO:[x, 66], E:PLANT.at(x, 66) }; },
   stage:sl => { const h = sl.row ? Math.PI / 2 : -Math.PI / 2; return { name:sl.label, h, z:0, F:[sl.x, sl.y - Math.sin(h) * 1.35], SO:[sl.x, 81], E:PLANT.at(sl.x, 81) }; },
   flat:(site, t, i) => { const [x] = t.slotWorld(i); return { name:t.id, h:Math.PI / 2, z:DECK, F:[x, t.pose.y - 2.55], SO:[x, t.pose.y - 7.4], E:site.at(x, site.lane) }; },
-  rack:sl => ({ name:sl.label, h:-Math.PI / 2, z:sl.local[2], F:[sl.x, 34.35], SO:[sl.x, 40.6], E:WH.at(sl.x, 40.6) }),
+  rack:sl => sl.row === 'B' ? { name:sl.label, h:Math.PI / 2, z:sl.local[2], F:[sl.x, sl.y - 1.35], SO:[sl.x, 26], E:WH.at(sl.x, 26) }
+    : { name:sl.label, h:-Math.PI / 2, z:sl.local[2], F:[sl.x, sl.y + 1.35], SO:[sl.x, 40.6], E:WH.at(sl.x, 40.6) },
   van:t => { const p = t.pose, c = Math.cos(p.h), s = Math.sin(p.h), rx = p.x - c * VAN_LEN, ry = p.y - s * VAN_LEN, SO = [rx - c * 5.7, ry - s * 5.7];
     return { name:t.id, h:p.h, z:VAN_DECK, F:[rx - c * 0.2, ry - s * 0.2], SO, E:WH.at(SO[0], 26) }; },
   charger:c => ({ name:'charger', h:c.h, z:0, F:c.F, SO:c.SO, E:c.E }),
@@ -36,12 +37,13 @@ export class Forklift {
     [this.x, this.y] = this.charger.F; this.h = this.charger.h; this.fork = 0.1; this.v = 0;
     this.steps = []; this.task = null; this.load = null; this.label = 'charging'; this.waitT = 0; this.passT = 0;
     this.battery = [88, 66, 47, 74, 58, 92][sim.forklifts.length]; this.moves = 0; this.atCharger = true; this.anchor = this.charger.E;
-    this.group = PROTO.forklift.clone(); this.carriage = this.group.getObjectByName('carriage'); this.beacon = this.group.getObjectByName('beacon');
+    this.group = PROTO.forklift.clone(); this.carriage = this.group.getObjectByName('carriage'); this.mast2 = this.group.getObjectByName('mast2'); this.beacon = this.group.getObjectByName('beacon');
     this.group.userData.entity = this; this.groups = [this.group]; this.pick = [-1.8, 0, 3.46];
     scene.add(this.group); sim.forklifts.push(this); site.forklifts.push(this); this.place();
   }
   place() {
     pose(this.group, this.x, this.y, this.h); this.carriage.position.y = this.fork;
+    this.mast2.position.y = Math.max(0, this.fork + 1.25 - 4.55);   // the inner mast telescopes up for the top rack level
     glow(this.beacon, this.v > 0.05 && sim.t % 0.8 < 0.4);
   }
   blocked() {

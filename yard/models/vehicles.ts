@@ -123,6 +123,8 @@ export function buildForklift() {
   const c = new Part(); c.box(-0.2, -0.9, 0, 0.16, 1.8, 1.1);
   for (const y of [-0.62, 0.38]) c.box(-0.04, y, 0, 2.2, 0.24, 0.1);
   g.add(c.build('carriage'));
+  // the inner mast, which rises out of the outer one when the forks go above it
+  g.add(new Part().box(-0.3, -0.75, 0.4, 0.14, 0.18, 4.15).box(-0.3, 0.57, 0.4, 0.14, 0.18, 4.15).box(-0.3, -0.75, 4.4, 0.14, 1.5, 0.15).build('mast2'));
   g.add(new Part().box(-1.95, -0.15, 3.52, 0.3, 0.3, 0.25).build('beacon'));
   return g;
 }

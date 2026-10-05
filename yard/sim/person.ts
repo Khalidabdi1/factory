@@ -79,7 +79,9 @@ export class Person {
     // seated, the hips drop to the seat (or to the ground)
     const s = this.scale, z = zAt(this.x, this.y) + (this.sit === 'chair' ? (this.seat.z ?? 0.45) - (HIP_H - 0.07) * s : this.sit === 'ground' ? -(HIP_H - 0.08) * s : 0);
     pose(this.group, this.x, this.y, this.h, z); pose(this.lite, this.x, this.y, this.h, z);
-    this.group.visible = !TINY; this.lite.visible = TINY; if (this.dogG) this.dogG.visible = !TINY;
+    // inside a building that is shut, nobody is drawn (its walls hide them anyway)
+    const away = hooks.closedAt(this.x, this.y);
+    this.group.visible = !TINY && !away; this.lite.visible = TINY && !away; if (this.dogG) this.dogG.visible = !TINY && !away;
     if (this.dogG) { const c = Math.cos(this.h), s = Math.sin(this.h), x = this.x - c * 0.9 - s * 0.55, y = this.y - s * 0.9 + c * 0.55; pose(this.dogG, x, y, this.h, zAt(x, y)); }
   }
   // where the person is still going: the walk legs left

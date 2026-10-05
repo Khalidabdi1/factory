@@ -96,6 +96,21 @@ export class Staff extends Person {
       rows:[['Task', this.task ?? 'none'], ['Carrying', this.carrying ? `1 box · ${this.carrying}` : 'nothing'], ['Boxes moved', String(this.done)]] };
   }
 }
+// Pickers in Warehouse 01: they take parts off the shelving in the west strip and pack them into parcels at the bench.
+const PICK_FACES = [[230.8, 26.2, Math.PI], [230.8, 29.6, 0], [230.8, 32.4, Math.PI], [230.8, 35.8, 0], [230.8, 27.8, 0], [230.8, 34.2, Math.PI]];
+export const PICKERS = [];
+export class Picker extends Person {
+  constructor(k) { super({ look:'staff', id:['H. Brandt', 'Y. Okafor'][k], k, x:230.8, y:41.6 + k * 1.2, h:Math.PI, speed:1.3 }); PICKERS.push(this); }
+  think() {
+    const [x, y, h] = PICK_FACES[(this.done * 2 + this.k * 3) % PICK_FACES.length];
+    this.task = 'picking an order';
+    this.walk([[x, y]], 'to the shelves').face(h).wait(2.2, 'picking parts').then(p => { p.carrying = 'parts'; })
+      .walk([[230.8, 41.6 + this.k * 1.2]], 'carrying parts to the bench').face(Math.PI).wait(3.2, 'packing a parcel')
+      .then(p => { p.carrying = null; p.done++; p.task = null; });
+  }
+  info() { return { kind:'Picker · Warehouse 01', title:this.id, status:this.status(),
+    rows:[['Task', this.task ?? 'between orders'], ['Carrying', this.carrying ? 'parts for an order' : 'nothing'], ['Parcels packed', String(this.done)]] }; }
+}
 export const SHOPPERS = () => sim.people.filter(p => p instanceof Shopper);
 export class Shopper extends Person {
   constructor(o = {}) {
