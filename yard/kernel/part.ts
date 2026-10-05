@@ -9,7 +9,9 @@ import { FILL, LINE, TEXT, TEXT_TOK, css } from '../theme';
 // ---- parts: boxes and flat detail, collected into a few draw calls ----
 export const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const TONE = { n:['body','deck','line'], k:['kob','kod','koline'], g:['glass','glass','line'], gr:['body','ground','line'], gs:['body','grass','line'],
-  l:['lamp','lamp','line'], w:['window','window','line'], s:['body','sand','line'] };
+  l:['lamp','lamp','line'], w:['window','window','line'], s:['body','sand','line'],
+  // one fill for every face: small moving parts (a person's limbs) cost two draw calls instead of three
+  nb:['body','body','line'], kb:['kob','kob','koline'] };
 export const TEX_PX = 64;
 export class Part {
   constructor() { this.fill = {}; this.lines = {}; this.texts = []; }

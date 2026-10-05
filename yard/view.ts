@@ -6,12 +6,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { $, DEBUG, REDUCED, canvas, hooks, noop, scene, stage } from './shared';
 import { W } from './kernel/iso';
 import { LINE, applyTheme, shade } from './theme';
-import { v3 } from './kernel/part';
+import { pose, v3 } from './kernel/part';
 import { clamp } from './kernel/math';
 import { Path } from './kernel/path';
 import { RACK, SHELF, WORLD } from './layout';
 import { ring } from './world/ground';
-import { STEP, clock, conveyor, hourAt, night, shift, sim } from './sim/core';
+import { PROTO, STEP, clock, conveyor, hourAt, night, shift, sim } from './sim/core';
 import { SPOTS } from './sim/cars';
 import { BUS_STOPS } from './sim/trucks';
 import { TINY, setTiny } from './sim/person';
@@ -257,7 +257,7 @@ if (DEBUG) {
     ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
-    sim, conveyor, shop, whGate, incident, bank, RACK, SHELF, SPOTS, BUS_STOPS, camera, controls, renderer, scene, hourAt, night,
+    sim, conveyor, shop, whGate, incident, bank, RACK, SHELF, SPOTS, BUS_STOPS, camera, controls, renderer, scene, hourAt, night, PROTO, pose,
     all:() => all().map(e => ({ id:e.id, kind:e.kind, status:e.info().status })),
     step:s => { for (let t = 0; t < s; t += STEP) sim.step(STEP); },
     skip:hours => { shift.goal += hours; shift.h = shift.goal; },

@@ -6,6 +6,8 @@ import { NAMES, STAFF, clock, kmh, night, sim } from './core';
 import { streetAt } from './roads';
 import { SPOTS } from './cars';
 import { Person } from './person';
+import { PARK_BENCHES } from '../world/ground';
+import { CAFE_TABLES } from '../world/town';
 
 let shopperSeq = 1, walkerSeq = 0;
 // the warehouse guard, created with the rest of the yard
@@ -207,6 +209,13 @@ export function nextPortal(from, avoid) {
 export const startPortal = () => { const pool = PORTALS.filter(q => q.kind === 'edge' || q.kind === 'home'); return pool[Math.floor(rng() * pool.length)]; };
 export const WALKERS = () => sim.people.filter(p => p instanceof Walker);
 export const walkSpawn = { t:0 };
+// seats: café chairs facing their table, park benches facing away from their backrests; z is the seat height
+const SEATS = { cafe:[], park:[] };
+for (const tx of CAFE_TABLES) for (const [dx, h] of [[-0.8, 0], [0.8, Math.PI]]) SEATS.cafe.push({ at:[tx + dx, 191.4], h, z:0.45, by:null });
+for (const [x, y, f] of PARK_BENCHES) for (const k of [-0.45, 0.45])
+  SEATS.park.push({ at:f === 'e' || f === 'w' ? [x, y + k] : [x + k, y], h:{ e:0, w:Math.PI, n:-Math.PI / 2, s:Math.PI / 2 }[f], z:0.48, by:null });
+const freeSeat = (kind, x, y) => (SEATS[kind] ?? []).filter(s => !s.by && Math.hypot(s.at[0] - x, s.at[1] - y) < 12)
+  .sort((a, b) => Math.hypot(a.at[0] - x, a.at[1] - y) - Math.hypot(b.at[0] - x, b.at[1] - y))[0];
 export class Walker extends Person {
   constructor(from, to, o = {}) {
     const jog = o.jog ?? (from.kind === 'edge' && rng() < 0.14);
@@ -222,7 +231,12 @@ export class Walker extends Person {
     if (t.kind === 'edge' || t.kind === 'home') { this.remove(); return; }   // indoors, or off the edge of the map
     if (t.kind === 'stop') { t.stop.queue.push(this); this.wait(150, 'waiting for the bus').then(p => p.giveUp()); return; }
     this.from = t;
-    this.wait(rand(14, 40), { cafe:'having a coffee', beach:'on the beach', park:'sitting in the park', pier:'looking out to sea' }[t.kind]).then(p => p.trip(nextPortal(t, t.kind)));
+    // take a free chair or bench nearby; on the beach sit on the sand, on the pier stand at the rail, both facing the sea
+    const seat = freeSeat(t.kind, this.x, this.y);
+    if (seat) { seat.by = this; this.walk([seat.at]).face(seat.h).then(p => p.sitOn(seat)); }
+    else if (t.kind === 'beach') this.face(Math.PI / 2).then(p => p.sitOn({ ground:true }));
+    else if (t.kind === 'pier') this.face(Math.PI / 2);
+    this.wait(rand(14, 40), { cafe:'having a coffee', beach:'on the beach', park:'sitting in the park', pier:'looking out to sea' }[t.kind]).then(p => { p.standUp(); p.trip(nextPortal(t, t.kind)); });
   }
   giveUp() { const q = this.to.stop.queue; q.splice(q.indexOf(this), 1); this.from = this.to; this.trip(nextPortal(this.to, 'stop')); }
   info() {

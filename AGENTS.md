@@ -63,6 +63,10 @@ The React component and the engine share a contract: the engine finds the plate'
 - **Look-inside buildings.** `group.userData.peek = { shell, cut, inside?, box:[x0,x1,y0,y1] }`, registered in `PEEK` in `view.ts`. The cut, a section drawing (walls cut low and hatched, roof as an outline), replaces the shell while the building, or anything whose bounds centre lies in `box`, is selected.
 - **Vehicles.** `Car` follows a `Path` with `stops` (arrive/release/left) and `yields`. `Truck` loops are a `Path` plus `holds` built with `holdOn(path, x, y, {…})`. Collision avoidance is `clearAhead`, and anything stuck for 25–30 s "ghosts" past.
 - **People.** `Person` runs a step queue (`walk`, `go` (pavement walk that waits at kerbs), `wait`, `face`, `then`). Walkers route over the `PED` pavement graph between `portal()`s, chosen by `nextPortal()`.
+  - Looks and outfits live in `OUTFITS` (`yard/models/people.ts`), and `PROTO.person[look][variant]` holds the built models.
+  - `lookOf(look, id)` picks the variant and height from the id, so the same name always looks the same and no `rng()` is spent.
+  - People use the single-fill tones `nb` / `kb`, which keeps them to about 12 draw calls each.
+  - Limbs are the `legL`, `legR`, `armL` and `armR` groups. `sitOn(seat)` and `standUp()` handle seating, using `SEATS` in `sim/people.ts`.
 - **Forklifts.** `dispatch()` picks a task, and `pickup()` / `dropAt()` turn it into steps. Slots come from `slotAt`, and the approach geometry from `LOC.*`.
 
 ## Code style
@@ -88,11 +92,12 @@ The React component and the engine share a contract: the engine finds the plate'
 
 ## Roadmap (agreed October 2026, in order)
 
-Done: Phase 0 (Next.js port with exact parity).
+Done:
+- Phase 0: Next.js port with exact parity.
+- Phase 1: night page frame, theme memory, WebGL context-loss handling.
+- Phase 2: people redesign, with outfits, swinging arms and seated poses.
 
 Next:
-1. Night page frame, theme memory, WebGL context-loss handling.
-2. People redesign: better shapes in the same monochrome style.
 3. Orchard Lane: new houses on the wooded plot behind Corner Market, plus interiors and residents for every house and villa.
 4. A realistic Warehouse 01: 48-slot racking on 3 levels, shelving, pickers.
 5. Courier PKG-1 with online orders from Corner Market and order tracking (Track button, the main camera follows).

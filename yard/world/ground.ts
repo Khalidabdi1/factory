@@ -34,6 +34,8 @@ export function lampPost(p, x, y, ax, ay, z = CURB) {
   p.box(hx - 0.3, hy - 0.18, z + 4.05, 0.6, 0.36, 0.18, 'l');
 }
 // a bench facing n, s, e or w: seat, backrest on the far side, two legs
+// Mill Park's benches; walkers who stop in the park sit on them
+export const PARK_BENCHES = [[11, 175, 'e'], [11, 225, 'e'], [39, 225, 'w'], [25, 252.4, 'n'], [25, 147.6, 's']];
 function bench(p, x, y, face = 's', z = CURB) {
   if (face === 'n' || face === 's') { const b = face === 's' ? -0.28 : 0.2;
     p.box(x - 0.9, y - 0.25, z + 0.4, 1.8, 0.5, 0.08); p.box(x - 0.9, y + b, z + 0.48, 1.8, 0.08, 0.45); for (const dx of [-0.75, 0.65]) p.box(x + dx, y - 0.2, z, 0.1, 0.4, 0.4); }
@@ -144,7 +146,7 @@ function buildTown(p, G, fence) {
   p.cylZ(25, 160, CURB, 2.8, 0.3, 8);
   for (let i = 0; i < 8; i++) { const a = (i + 0.5) / 8 * Math.PI * 2; p.box(25 + 2.4 * Math.cos(a) - 0.08, 160 + 2.4 * Math.sin(a) - 0.08, CURB + 0.3, 0.16, 0.16, 2.4); }
   p.geo(new THREE.ConeGeometry(3.2, 1.6, 8), new THREE.Matrix4().compose(W(25, 160, CURB + 3.5), yaw(Math.PI / 8), v3(1, 1, 1)));
-  for (const [x, y, f] of [[11, 175, 'e'], [11, 225, 'e'], [39, 225, 'w'], [25, 252.4, 'n'], [25, 147.6, 's']]) bench(p, x, y, f);
+  for (const [x, y, f] of PARK_BENCHES) bench(p, x, y, f);
   const inPark = (x, y) => ((x - 25) / 14) ** 2 + ((y - 200) / 29) ** 2 < 1 || Math.hypot(x - 25, y - 160) < 5.5 ||
     (y > 146 && y < 253 && (Math.abs(x - 8) < 3 || Math.abs(x - 42) < 3)) || (x > 4 && x < 46 && (Math.abs(y - 150) < 3 || Math.abs(y - 250) < 3)) || (Math.abs(y - 200) < 3 && (x < 9 || x > 40));
   for (let i = 0, n = 0; i < 200 && n < 30; i++) { const x = rand(2.5, 48), y = rand(143, 255); if (!inPark(x, y)) { tree(p, x, y, rand(0.8, 1.25), CURB); n++; } }

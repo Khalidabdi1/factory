@@ -48,6 +48,8 @@ export function buildBank() {
   g.add(new Part().box(x + w - 2.4, y + d + 0.02, z + h - 3.4, 1.2, 0.4, 0.7, 'k').build('alarm'));
   return g;
 }
+// the café's terrace tables (x), each with a chair either side
+export const CAFE_TABLES = [140, 147, 155, 162];
 export function buildCafe() {
   const p = new Part(), z = CURB, x = 136, y = 174, w = 30, d = 12, h = 4.6;
   p.box(x, y, z, w, d, h);
@@ -62,7 +64,7 @@ export function buildCafe() {
   windows(p, SIDE(x + w, y + d, z + h), d, h, { x0:1.5, ww:2, wh:1.8, dx:3.5, y0:1.2, lit:0.9 });
   // terrace: tables under umbrellas
   const um = new THREE.ConeGeometry(1.2, 0.5, 8);
-  for (const tx of [140, 147, 155, 162]) {
+  for (const tx of CAFE_TABLES) {
     p.cylZ(tx, 191.4, z, 0.5, 0.75, 8); p.seg('line', W(tx, 191.4, z + 0.75), W(tx, 191.4, z + 2.3));
     p.geo(um, new THREE.Matrix4().compose(W(tx, 191.4, z + 2.45), yaw(0.2), v3(1, 1, 1)), 'k');
     for (const dx of [-0.95, 0.65]) p.box(tx + dx, 191.2, z, 0.3, 0.4, 0.45);

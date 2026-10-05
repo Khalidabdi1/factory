@@ -13,7 +13,7 @@ import { buildRange, hillHeight } from './world/range';
 import { bayLamp, buildBooth, buildConveyor, buildFactory, buildGate, buildShop, buildShopBox, buildWarehouse, buildWhGate } from './world/industry';
 import { buildBank, buildCafe, buildFlats, buildHouse, buildPolice, buildTownHall, buildVilla } from './world/town';
 import { buildBus, buildCar, buildForklift, buildPallet, buildPoliceCar, buildTractor, buildTrailer, buildVan } from './models/vehicles';
-import { buildDog, buildPerson } from './models/people';
+import { LOOKS, OUTFITS, buildDog, buildPerson } from './models/people';
 import { buildLighthouse, buildMotorboat, buildSailboat } from './models/sea';
 import { DRIVERS, PROTO, Pallet, SKUS, STEP, WARMUP, clock, conveyor, hourAt, night, putIn, resetStats, sim } from './sim/core';
 import { roadVehicles } from './sim/roads';
@@ -45,8 +45,9 @@ await Promise.race([document.fonts.load(`500 ${TEX_PX}px ${css('--mono')}`), new
 PROTO.tractor = buildTractor(); PROTO.trailer = buildTrailer(); PROTO.forklift = buildForklift(); PROTO.van = buildVan(); PROTO.bus = buildBus(); PROTO.police = buildPoliceCar();
 PROTO.car = { n:buildCar(false, 'n'), k:buildCar(false, 'k') }; PROTO.carVan = { n:buildCar(true, 'n'), k:buildCar(true, 'k') };
 PROTO.pallet = [0, 1, 2].map(buildPallet);
-const LOOKS = ['staff', 'guard', 'shopper', 'walker', 'police', 'thief'];
-PROTO.person = Object.fromEntries(LOOKS.map(k => [k, buildPerson(k)])); PROTO.personLite = Object.fromEntries(LOOKS.map(k => [k, buildPerson(k, true)]));
+// every look in each of its outfits, full and lite
+PROTO.person = Object.fromEntries(LOOKS.map(k => [k, OUTFITS[k].map((_, i) => buildPerson(k, i))]));
+PROTO.personLite = Object.fromEntries(LOOKS.map(k => [k, OUTFITS[k].map((_, i) => buildPerson(k, i, true))]));
 PROTO.dog = buildDog();
 const world = buildWorld(), rangeG = buildRange();
 const factoryG = buildFactory(), conveyorG = buildConveyor(), gateG = buildGate(), whG = buildWarehouse(), whGateG = buildWhGate(), shopG = buildShop();
