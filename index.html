@@ -1177,13 +1177,15 @@ function buildPallet(v) {
 }
 // People: box legs that swing at the hip, a torso, arms, a head. Staff and police wear the two-tone shirt;
 // the guard and the police wear caps, the man trying the bank a dark hood.
-function buildPerson(look) {
+// lite: one part with the legs at rest and no carton, for when a person is only a few pixels tall
+function buildPerson(look, lite = false) {
   const tone = look === 'staff' || look === 'police' ? 'k' : 'n', p = new Part();
   p.box(-0.13, -0.25, 0.85, 0.26, 0.5, 0.62, tone);
   p.box(-0.1, 0.25, 0.92, 0.2, 0.12, 0.52, tone); p.box(-0.1, -0.37, 0.92, 0.2, 0.12, 0.52, tone);
   p.box(-0.12, -0.12, 1.5, 0.24, 0.24, 0.27, look === 'thief' ? 'k' : 'n');
   if (look === 'thief') p.box(-0.16, -0.15, 1.6, 0.22, 0.3, 0.24, 'k');
   if (look === 'guard' || look === 'police') { p.box(-0.15, -0.15, 1.77, 0.3, 0.3, 0.07, 'k'); p.box(0.15, -0.15, 1.77, 0.12, 0.3, 0.03, 'k'); }
+  if (lite) { for (const y of [0.04, -0.2]) p.box(-0.08, y, 0, 0.16, 0.16, 0.85); return p.build('personLite'); }
   const g = p.build('person');
   for (const [n, y] of [['legL', 0.12], ['legR', -0.12]]) { const l = new Part().box(-0.08, -0.08, -0.85, 0.16, 0.16, 0.85).build(n); l.position.copy(W(0, y, 0.85)); g.add(l); }
   const c = new Part(); c.box(0.16, -0.24, 0.95, 0.46, 0.48, 0.42, 'k'); c.draw(TOP(0.16, -0.24, 1.37), [0.23, 0, 0.23, 0.48], 'koline');
@@ -1792,6 +1794,7 @@ class Forklift {
   grab(p) {
     if (p.loc.type === 'conveyor') conveyor.items.splice(conveyor.items.indexOf(p), 1);
     if (p.loc.type === 'slot') p.loc.slot.pallet = null;
+    p.group.visible = true;   // it may have been tucked away in a closed warehouse
     this.carriage.attach(p.group); p.tweenTo(W(1.35, 0, -0.1));
     p.loc = { type:'forklift', f:this }; this.load = p;
   }
@@ -1864,11 +1867,14 @@ function dispatch(f) {
 }
 
 // ---- people ----
+// from far away everyone is drawn as one static part, a handful of draw calls instead of a dozen
+let TINY = false;
 class Person {
   constructor(o) {
     Object.assign(this, { kind:'person', isPerson:true, h:0, v:0, speed:1.5, steps:[], phase:0, label:'', carrying:null, done:0, t0:sim.t }, o);
     this.group = PROTO.person[this.look].clone(); this.legs = ['legL', 'legR'].map(n => this.group.getObjectByName(n));
     this.box = this.group.getObjectByName('carry'); this.box.visible = false; this.group.userData.entity = this; this.groups = [this.group]; this.pick = [0, 0, 1.25];
+    this.lite = PROTO.personLite[this.look].clone(); this.lite.userData.entity = this; this.groups.push(this.lite); scene.add(this.lite);
     if (this.dog) { this.dogG = PROTO.dog.clone(); this.dogG.userData.entity = this; this.groups.push(this.dogG); scene.add(this.dogG); }
     scene.add(this.group); sim.people.push(this); this.place();
   }
@@ -1916,7 +1922,9 @@ class Person {
     return true;
   }
   place() {
-    pose(this.group, this.x, this.y, this.h, zAt(this.x, this.y));
+    const z = zAt(this.x, this.y);
+    pose(this.group, this.x, this.y, this.h, z); pose(this.lite, this.x, this.y, this.h, z);
+    this.group.visible = !TINY; this.lite.visible = TINY; if (this.dogG) this.dogG.visible = !TINY;
     if (this.dogG) { const c = Math.cos(this.h), s = Math.sin(this.h), x = this.x - c * 0.9 - s * 0.55, y = this.y - s * 0.9 + c * 0.55; pose(this.dogG, x, y, this.h, zAt(x, y)); }
   }
   // where the person is still going: the walk legs left
@@ -2247,7 +2255,7 @@ const incident = {
     if (this.phase === 'quiet' && sim.t >= this.next) this.start();
     if (this.phase === 'alarm' && sim.t >= this.dispatchAt) this.dispatch();
     if ((this.phase === 'response' || this.phase === 'back') && !this.thief && this.cars.every(c => c.state === 'in') && !sim.people.some(p => p instanceof Officer)) {
-      this.phase = 'quiet'; this.next = sim.t + rand(140, 220);
+      this.phase = 'quiet'; this.next = sim.t + rand(60, 320);   // spread wide, so the next try can fall at any hour
     }
   },
   start() { this.phase = 'casing'; this.thief = new Thief(); },
@@ -2300,7 +2308,8 @@ await Promise.race([document.fonts.load(`500 ${TEX_PX}px "DM Mono"`), new Promis
 PROTO.tractor = buildTractor(); PROTO.trailer = buildTrailer(); PROTO.forklift = buildForklift(); PROTO.van = buildVan(); PROTO.bus = buildBus(); PROTO.police = buildPoliceCar();
 PROTO.car = { n:buildCar(false, 'n'), k:buildCar(false, 'k') }; PROTO.carVan = { n:buildCar(true, 'n'), k:buildCar(true, 'k') };
 PROTO.pallet = [0, 1, 2].map(buildPallet);
-PROTO.person = Object.fromEntries(['staff', 'guard', 'shopper', 'walker', 'police', 'thief'].map(k => [k, buildPerson(k)]));
+const LOOKS = ['staff', 'guard', 'shopper', 'walker', 'police', 'thief'];
+PROTO.person = Object.fromEntries(LOOKS.map(k => [k, buildPerson(k)])); PROTO.personLite = Object.fromEntries(LOOKS.map(k => [k, buildPerson(k, true)]));
 PROTO.dog = buildDog();
 const world = buildWorld(), rangeG = buildRange();
 const factoryG = buildFactory(), conveyorG = buildConveyor(), gateG = buildGate(), whG = buildWarehouse(), whGateG = buildWhGate(), shopG = buildShop();
@@ -2308,10 +2317,12 @@ whGateG.add(buildBooth());
 world.traverse(o => { o.raycast = noop; });   // ground, streets, trees: nothing to click, and the heaviest mesh to test on every hover
 scene.add(world, rangeG, factoryG, conveyorG, gateG, whG, whGateG, shopG, ...BAYS.map(bayLamp), ...DOCKS.map(bayLamp));
 whGate.panel = whGateG.getObjectByName('panel');
-const boxProto = buildShopBox();
-for (const s of SHELF) { s.mesh = boxProto.clone(); pose(s.mesh, s.x, s.y, 0, s.z); s.mesh.visible = false; shopG.add(s.mesh); }
+// the boxes on the shelves and in the stockroom are drawn only while the shop is open to view
+const boxProto = buildShopBox(), shopInside = new THREE.Group(); shopInside.name = 'shopInside'; shopInside.visible = false; shopG.add(shopInside);
+shopG.userData.peek.inside = shopInside;
+for (const s of SHELF) { s.mesh = boxProto.clone(); pose(s.mesh, s.x, s.y, 0, s.z); s.mesh.visible = false; shopInside.add(s.mesh); }
 shop.stockMeshes = []; for (let l = 0; l < 2; l++) for (let j = 0; j < 2; j++) for (let i = 0; i < 3; i++) {
-  const m = boxProto.clone(); pose(m, 363.6 + 1.1 * i, 95.6 + 1.0 * j, 0, 0.56 * l); shopG.add(m); shop.stockMeshes.push(m); }
+  const m = boxProto.clone(); pose(m, 363.6 + 1.1 * i, 95.6 + 1.0 * j, 0, 0.56 * l); shopInside.add(m); shop.stockMeshes.push(m); }
 // staff cars, nose in: the north row faces +y, the south row faces −y
 for (const [i, row, van] of [[0, 0, 0], [2, 0, 1], [5, 0, 0], [9, 0, 0], [1, 1, 0], [4, 1, 1], [7, 1, 0], [11, 1, 0]]) {
   const c = buildCar(!!van, rng() < 0.4 ? 'k' : 'n', false), x = 141.7 + 3.4 * i;
@@ -2375,15 +2386,16 @@ lighthouse.beam = lighthouse.groups[0].getObjectByName('beam');
 const range = entity(rangeG, { kind:'range', id:'Grey Peaks', pick:[228, -40, hillHeight(228, -40)],
   info() { return { kind:'Hills', title:'Grey Peaks', status:night() > 0.5 ? 'dark against the sky' : 'snow on the tops', rows:[['Highest point', '1,840 m'], ['Snow line', 'about 1,200 m'], ['Woods', 'pine on the lower slopes']] }; } });
 // bus shelters: a back wall behind where people wait, two side panels, a roof, a stop sign
+const shelters = new Part();
 for (const st of BUS_STOPS) {
-  const p = new Part(), [x, y] = st.wait, ew = Math.abs(st.at[1] - y) > 2, sg = ew ? Math.sign(y - st.at[1]) : Math.sign(x - st.at[0]);
+  const p = shelters, [x, y] = st.wait, ew = Math.abs(st.at[1] - y) > 2, sg = ew ? Math.sign(y - st.at[1]) : Math.sign(x - st.at[0]);
   if (ew) { const wy = y + sg * 0.9; p.box(x - 1.8, wy - 0.05, CURB, 3.6, 0.1, 2.2); for (const dx of [-1.8, 1.7]) p.box(x + dx, Math.min(wy, wy - sg * 1.2), CURB, 0.1, 1.2, 2.3);
     p.box(x - 2, Math.min(wy, wy - sg * 1.4), CURB + 2.3, 4, 1.4, 0.1); p.box(x + 2.6, y - 0.05, CURB, 0.1, 0.1, 2.6); p.box(x + 2.4, y - 0.25, CURB + 2.6, 0.5, 0.5, 0.5, 'k'); }
   else { const wx = x + sg * 0.9; p.box(wx - 0.05, y - 1.8, CURB, 0.1, 3.6, 2.2); for (const dy of [-1.8, 1.7]) p.box(Math.min(wx, wx - sg * 1.2), y + dy, CURB, 1.2, 0.1, 2.3);
     p.box(Math.min(wx, wx - sg * 1.4), y - 2, CURB + 2.3, 1.4, 4, 0.1); p.box(x - 0.05, y + 2.6, CURB, 0.1, 0.1, 2.6); p.box(x - 0.25, y + 2.4, CURB + 2.6, 0.5, 0.5, 0.5, 'k'); }
-  scene.add(p.build('shelter'));
   portal('stop', `the ${st.name} stop`, st.wait, { stop:st, w:1.5 });
 }
+scene.add(shelters.build('shelters'));
 
 const factory = {
   kind:'factory', id:'Plant 01', groups:[factoryG], pick:[54, 48, 10],
@@ -2616,7 +2628,8 @@ function updatePeek() {
   for (const [g, ent] of PEEK) { const pk = g.userData.peek, [x0, x1, y0, y1] = pk.box;
     const inside = p => !!p && p[0] > x0 && p[0] < x1 && p[1] > y0 && p[1] < y1;
     const on = selected === ent || inside(c) || !!routeNext && inside([routeNext.p.x, routeNext.p.z]);
-    if (pk.cut.visible !== on) { pk.cut.visible = on; pk.shell.visible = !on; } }
+    if (pk.cut.visible !== on) { pk.cut.visible = on; pk.shell.visible = !on; if (pk.inside) pk.inside.visible = on; }
+    if (ent === warehouse) for (const s of RACK) if (s.pallet) s.pallet.group.visible = on; }
 }
 
 let down = null, pointer = null, hoverDirty = false;
@@ -2673,6 +2686,7 @@ function frameLoop(now) {
   const t = controls.target; moveTarget(t.clone().addScaledVector(ISO, -t.y / ISO.y));
   moveTarget(v3(clamp(t.x, WORLD.x0, WORLD.x1), 0, clamp(t.z, WORLD.y0, WORLD.y1)));
   camera.updateMatrixWorld();
+  const tiny = camera.zoom < fitZoom * 2.2; if (tiny !== TINY) { TINY = tiny; for (const p of sim.people) p.place(); }
   updatePeek();
   if (hoverDirty && pointer) { hoverDirty = false; hovered = hit(...pointer); canvas.classList.toggle('over', !!hovered); }
   placeTag($('tagSel'), selected, selected ? `${selected.id} · ${selected.info().status}` : '');
