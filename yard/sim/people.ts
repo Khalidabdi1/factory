@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { hooks } from '../shared';
 import { ease, rand, rng } from '../kernel/math';
 import { Site, dedupe } from '../kernel/graph';
 import { BOXES, ORCHARD, SHELF, SHOP, STOCK_CAP, ZEBRA_X } from '../layout';
@@ -49,7 +50,8 @@ export const shop = {
     return { kind:'Shop', title:'Corner Market', status:t ? `delivery from ${t.id} · ${t.boxes} boxes to go` : 'open',
       bar:{ v:this.onShelf(), max:SHELF.length, label:`shelves ${this.onShelf()}/${SHELF.length} boxes` },
       rows:[['Stockroom', `${this.stock.length}/${STOCK_CAP} boxes`], ['Received', `${sim.stats.shopIn} boxes this session`], ['Sold', `${sim.stats.sold} boxes this session`],
-        ['Shoppers inside', String(SHOPPERS().filter(p => p.inside()).length)], ['Parked customers', String(SPOTS.filter(s => s.car?.parked).length)]] };
+        ['Shoppers inside', String(SHOPPERS().filter(p => p.inside()).length)], ['Parked customers', String(SPOTS.filter(s => s.car?.parked).length)],
+        ['Online orders', `${hooks.orders.delivered} delivered · ${hooks.orders.list.filter(o => o.state !== 'delivered').length} on the way`]] };
   },
   readout() { return `corner market · ${this.onShelf()}/${SHELF.length} on the shelves`; },
 };
@@ -67,6 +69,10 @@ export class Staff extends Person {
         .walk([SHOP.out, SHOP.in]).then(p => p.stockBox());
       return;
     }
+    // an online order, while the parcel van is in: pick it, pack it at the counter, carry it over to the van
+    const { courier, orders } = hooks;
+    const ord = courier?.state === 'base' && !orders.list.some(o => o.state === 'packing' || o.state === 'packed') && orders.list.find(o => o.state === 'placed');
+    if (ord && (shop.onShelf() || shop.stock.length)) { this.packOrder(ord); return; }
     const sh = shop.stock.length && shop.freeShelf();
     if (sh) {
       sh.reserved = this; this.task = 'restocking from the stockroom';
@@ -79,6 +85,21 @@ export class Staff extends Person {
     }
     this.task = null;
     this.walk([this.home], 'back to the counter').face(-Math.PI / 2).wait(rand(1.5, 3), 'waiting for a delivery');
+  }
+  packOrder(o) {
+    o.state = 'packing'; this.task = `packing ${o.id} for ${o.house.id}`;
+    const sh = SHELF.find(s => s.sku && !s.reserved), toCounter = from => [...shop.routeOut(from).slice(0, -1), [381.5, 111], SHOP.counter];
+    if (sh) { sh.reserved = this;
+      this.walk(shop.routeTo(sh.stand), `picking ${o.id}`).face(-Math.PI / 2).wait(0.8, `picking ${o.id}`)
+        .then(p => { p.carrying = o.sku = sh.sku; sh.sku = null; sh.reserved = null; sh.mesh.visible = false; }).walk(toCounter(sh.stand), `carrying ${o.id} to the counter`); }
+    else this.walk(shop.routeTo(SHOP.stockStand), `picking ${o.id}`).face(-Math.PI / 2).wait(0.6)
+      .then(p => { p.carrying = o.sku = shop.stock.pop(); shop.drawStock(); }).walk(toCounter(SHOP.stockStand), `carrying ${o.id} to the counter`);
+    // over the zebra to the van's kerb side in the shop parking, and back
+    const toVan = [[381.5, 111], SHOP.in, SHOP.out, [389, 115.4], [ZEBRA_X, 117.2], [ZEBRA_X, 122.6], [ZEBRA_X, 139.4], [ZEBRA_X, 143.9], [373.6, 143.9], [373.6, 142.4]];
+    this.face(-Math.PI / 2).wait(2.5, `packing ${o.id}`).then(() => { o.state = 'packed'; o.tPacked = sim.t; })
+      .go(toVan, `taking ${o.id} to the van`).face(-Math.PI / 2).wait(1.2, 'loading the van')
+      .then(p => { p.carrying = null; p.done++; hooks.courier.dispatch(o); p.task = null; })
+      .go([...toVan].reverse().slice(1), 'back to the shop');
   }
   stockBox() {
     const sh = shop.freeShelf();

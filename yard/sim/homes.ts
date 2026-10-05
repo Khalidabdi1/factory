@@ -53,7 +53,7 @@ function figure(name, kind, spot, floor) {
 
 export const homes = [];
 export function home(g, o) {
-  const e = entity(g, { kind:'house', household:pick(HOUSEHOLDS), built:Math.floor(rand(1926, 2019)), figures:[], figKey:'', ...o,
+  const e = entity(g, { kind:'house', household:pick(HOUSEHOLDS), built:Math.floor(rand(1926, 2019)), figures:[], figKey:'', parcels:[], ...o,
     // out walking from here, never more than live here
     out() { return Math.min(this.household.n, WALKERS().filter(w => w.from === this.portal).length); },
     // who is home and what each is doing, in residents' order
@@ -64,16 +64,18 @@ export function home(g, o) {
       return home;
     },
     info() {
-      const hh = this.household, now = this.plan(), out = this.out(), doing = [...new Set(now.map(p => p.label))].join(', ');
+      const hh = this.household, now = this.plan(), out = this.out(), doing = [...new Set(now.map(p => p.label))].join(', '), ord = hooks.orderFor?.(this);
       return { kind:this.villa ? 'Villa' : 'House', title:this.id, status:now.length ? lightsText() : 'nobody home',
         rows:[['Street', this.street], ['Household', hh.text], ['Who', this.residents.join(', ')],
           ['At home', now.length ? `${now.length} of ${hh.n} · ${doing}` : hh.nights && !out ? 'at the hospital' : 'nobody'],
-          ['Out and about', out ? `${out} from here` : 'nobody'], ['Built', String(this.built)]],
-        actions:[['Look inside', () => hooks.lookInside(this)]] };
+          ['Out and about', out ? `${out} from here` : 'nobody'], ...(ord ? [ord.row] : []), ['Built', String(this.built)]],
+        actions:[...(ord?.actions ?? []), ['Look inside', () => hooks.lookInside(this)]] };
     },
     // while the home is open, the people in it are drawn where they are; redrawn when that changes
     whileOpen() {
-      const now = this.plan(), key = now.map(p => `${p.name}:${p.kind}`).join('|');
+      // parcels wait inside the door until someone unpacks them, a couple of hours later
+      this.parcels = this.parcels.filter(q => sim.t - q.t < 35);
+      const now = this.plan(), key = now.map(p => `${p.name}:${p.kind}`).join('|') + `|${this.parcels.length}`;
       if (key === this.figKey) return;
       this.clearFigures(); this.figKey = key;
       const used = { sofa:0, dine:0, cook:0, bed:0 }, floor = this.floor, S = this.spots;
@@ -87,6 +89,8 @@ export function home(g, o) {
           readout() { return `${this.id} · ${this.doing}`.toLowerCase(); } };
         grp.userData.entity = r; this.groups[0].add(grp); this.figures.push(r);
       }
+      this.parcels.forEach((q, i) => { const b = PROTO.shopBox.clone(); pose(b, S.parcel.at[0] + (i % 2) * 0.95, S.parcel.at[1], 0.3 * (i % 3), floor + Math.floor(i / 2) * 0.55);
+        this.groups[0].add(b); this.figures.push({ groups:[b] }); });
       if (this.household.pet && S.pet) {
         const pet = PROTO.dog.clone(); if (this.household.pet === 'cat') pet.scale.setScalar(0.62);
         pose(pet, S.pet.at[0], S.pet.at[1], S.pet.h, floor + 0.02); this.groups[0].add(pet); this.figures.push({ groups:[pet] });

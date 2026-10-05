@@ -11,4 +11,5 @@ export const scene = new THREE.Scene();
 // set once the renderer exists: texture anisotropy for text drawn on faces
 export const gfx = { aniso:1 };
 // late-bound calls into the view, so the simulation never imports it
-export const hooks = { forget:noop, lookInside:noop, closedAt:() => false };
+// and a few things the simulation reaches without importing them (they import it): the courier and its orders
+export const hooks = { forget:noop, lookInside:noop, track:noop, closedAt:() => false, orderFor:() => null, courier:null, orders:{ list:[], delivered:0 } };

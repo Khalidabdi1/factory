@@ -20,6 +20,7 @@ A live isometric seaside town drawn with three.js/WebGL in the hairline style of
 | `npm run dev` | Dev server on <http://localhost:3000>. On the owner's machine port 3000 is often taken by another app, so use `npm run dev -- --port 3100`. |
 | `npm run build` | Type check and static export to `out/`, because `next.config.ts` sets `output: 'export'`. There is no server and there are no API routes. |
 | `npm run preview` | Serves `out/`. |
+| `npm run check` | Scope and load-order check of `yard/`, since the ported modules skip type checking. Run it after every edit. It catches missing imports and "cannot access X before initialization" cycles. |
 
 There is no test runner. Verify in a real browser; see "Checking changes" below.
 
@@ -67,6 +68,14 @@ The React component and the engine share a contract: the engine finds the plate'
   - Gardens of all homes share one static part (the `gardens` object in `index.ts`). Only the shells are per-home.
 - **Card actions.** `info()` may return `actions:[[label, fn]]`. They render as buttons in the card footer; "Look inside" calls `hooks.lookInside(ent)`.
 - **Vehicles.** `Car` follows a `Path` with `stops` (arrive/release/left) and `yields`. `Truck` loops are a `Path` plus `holds` built with `holdOn(path, x, y, {…})`. Collision avoidance is `clearAhead`, and anything stuck for 25–30 s "ghosts" past.
+- **Street routing: `yard/sim/roadnet.ts`.**
+  - The streets are right-hand lanes between junctions, the roundabout is its one-way movements, and the end of Orchard Lane is a turning loop.
+  - `trip(from {x,y,h}, kerbStop(x, y))` returns points to drive. It never U-turns, except round the loop.
+  - The courier uses it; the fire engine and police will too.
+- **Courier: `yard/sim/courier.ts`.**
+  - The flow is `orders` → `Staff.packOrder` → `Courier.dispatch` → `Courierman` → `house.parcels`.
+  - A home's card gets an Order row and a Track action through `hooks.orderFor`; `hooks.track(ent)` selects, follows and zooms.
+- **Cycles.** The simulation reaches things that import it (the courier, its orders) through `hooks` in `shared.ts`, not imports, so load order stays sound (`npm run check`).
 - **People.** `Person` runs a step queue (`walk`, `go` (pavement walk that waits at kerbs), `wait`, `face`, `then`). Walkers route over the `PED` pavement graph between `portal()`s, chosen by `nextPortal()`.
   - Looks and outfits live in `OUTFITS` (`yard/models/people.ts`), and `PROTO.person[look][variant]` holds the built models.
   - `lookOf(look, id)` picks the variant and height from the id, so the same name always looks the same and no `rng()` is spent.
@@ -103,13 +112,13 @@ Done:
 - Phase 1: night page frame, theme memory, WebGL context-loss handling.
 - Phase 2: people redesign, with outfits, swinging arms and seated poses.
 - Phase 3: Orchard Lane (`yard/world/orchard.ts`, `ORCHARD` in `layout.ts`), plus sections and residents for every house and villa.
+- Phase 5: courier PKG-1, with online orders and tracking.
 - Phase 4: Warehouse 01.
   - `RACK` now has rows A and B, three levels, 48 slots. `LOC.rack` faces by row, and forklifts have a telescoping `mast2`.
   - Shelving, a packing bench and pickers (`Picker`).
   - People inside a shut building are hidden via `hooks.closedAt`.
 
 Next:
-5. Courier PKG-1 with online orders from Corner Market and order tracking (Track button, the main camera follows).
 6. A bank siege you can see inside: four officers surround the bank, arrest inside or a back-door chase.
 7. Sunset Pier amusement pier: Ferris wheel, carousel, coaster.
 8. Fishing boat Kestrel and a pier angler.

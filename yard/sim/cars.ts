@@ -79,7 +79,8 @@ export const LOOPS = [
 ];
 for (const L of LOOPS) { L.path = new Path(L.pts, 6, true); L.ys = L.yields.map(([x, y, x0, x1, ly]) => ({ s:L.path.project(x, y), clear:v => !roadBusy(v, x0, x1, ly) })); }
 // customer parking: three spots in the parking lane opposite the shop, entered from the eastbound lane
-export const SPOTS = [348, 358, 368].map(S => ({ S, car:null }));
+// two spots for customers; the third (x 368) is the parcel van's
+export const SPOTS = [348, 358].map(S => ({ S, car:null }));
 export const custNext = { t:6 };
 export function customerCar(spot) {
   const S = spot.S, path = new Path([[-8, 134.5], [S - 7, 134.5], [S + 1, 140.3], [S + 8, 140.3], [S + 16, 134.5], [404, 134.5], [RAB.x, 143], [434, RAB.y], [RAB.x, 119], [404, 127.5], [-8, 127.5]], 6);

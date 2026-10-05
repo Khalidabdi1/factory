@@ -143,6 +143,24 @@ export function buildCar(van, tone, lit = true) {
   if (lit) lights(p, 0, [0.6, -0.6], van ? 0.6 : 0.58, 0.2, 0.36);
   return p.build(van ? 'van' : 'car');
 }
+// Corner Market's parcel van: a tall box van with a two-tone band and PARCELS on both sides, and hazard lamps at the
+// corners that blink while the courier is at a door
+export function buildParcelVan() {
+  const p = new Part();
+  p.box(-5.4, -1.05, 0.35, 5.4, 2.1, 2.35);
+  p.box(-4.3, -1.0, 2.7, 3.2, 2.0, 0.12, 'k');
+  for (const [y, s] of [[1.05, 1], [-1.05, -1]]) {
+    const M = FRONT(-5.4, y, 2.7);
+    p.fill2(M, 0.15, 1.55, 5.1, 0.3, 'kob', 0.03 * s).text(M, 'PARCELS', 1.0, 1.15, 0.5, 'ink', 'start', 0.035 * s).draw(M, [1.3, 0, 1.3, 2.35], 'detail', 0.04 * s);
+  }
+  const f = SIDE(0, 1.05, 2.7); p.fill2(f, 0.2, 0.25, 1.7, 0.8).rect2(f, 0.2, 0.25, 1.7, 0.8, 'line');
+  for (const x of [-0.9, -4.5]) { p.cylY(x, 0.72, 0.36, 0.36, 0.32, 10); p.cylY(x, -1.04, 0.36, 0.36, 0.32, 10); }
+  lights(p, 0, [0.6, -0.6], 0.6, 0.2, 0.36);
+  const g = p.build('parcelVan');
+  const h = new Part(); for (const [x, y] of [[0.0, 0.88], [0.0, -1.06], [-5.47, 0.8], [-5.47, -1.05]]) h.box(x, y, 1.0, 0.07, 0.25, 0.16, 'l');
+  g.add(h.build('hazard'));
+  return g;
+}
 export function buildPallet(v) {
   const p = new Part();
   p.box(-1.2, -1.2, 0, 2.4, 2.4, 0.35);

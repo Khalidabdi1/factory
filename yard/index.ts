@@ -12,7 +12,7 @@ import { buildWorld } from './world/ground';
 import { buildRange, hillHeight } from './world/range';
 import { bayLamp, buildBooth, buildConveyor, buildFactory, buildGate, buildShop, buildShopBox, buildWarehouse, buildWhGate } from './world/industry';
 import { buildBank, buildCafe, buildFlats, buildHouse, buildPolice, buildTownHall, buildVilla } from './world/town';
-import { buildBus, buildCar, buildForklift, buildPallet, buildPoliceCar, buildTractor, buildTrailer, buildVan } from './models/vehicles';
+import { buildBus, buildCar, buildForklift, buildPallet, buildParcelVan, buildPoliceCar, buildTractor, buildTrailer, buildVan } from './models/vehicles';
 import { LOOKS, OUTFITS, buildDog, buildPerson } from './models/people';
 import { buildLighthouse, buildMotorboat, buildSailboat } from './models/sea';
 import { DRIVERS, PROTO, Pallet, SKUS, STEP, WARMUP, clock, conveyor, hourAt, night, putIn, resetStats, sim } from './sim/core';
@@ -25,6 +25,7 @@ import { Guard, PICKERS, Picker, SHOPPERS, Shopper, Staff, WALKERS, Walker, next
 import { PoliceCar, bank, incident, policeStation } from './sim/police';
 import { BOATS, Boat } from './sim/boats';
 import { entity, home, homes, lightsText } from './sim/homes';
+import { Courier, tickOrders } from './sim/courier';
 import { initView } from './view';
 
 applyTheme();
@@ -43,7 +44,7 @@ gfx.aniso = renderer.capabilities.getMaxAnisotropy();
 
 // ---- assemble ----
 await Promise.race([document.fonts.load(`500 ${TEX_PX}px ${css('--mono')}`), new Promise(r => setTimeout(r, 2500))]).catch(noop);
-PROTO.tractor = buildTractor(); PROTO.trailer = buildTrailer(); PROTO.forklift = buildForklift(); PROTO.van = buildVan(); PROTO.bus = buildBus(); PROTO.police = buildPoliceCar();
+PROTO.tractor = buildTractor(); PROTO.trailer = buildTrailer(); PROTO.forklift = buildForklift(); PROTO.van = buildVan(); PROTO.bus = buildBus(); PROTO.police = buildPoliceCar(); PROTO.parcelVan = buildParcelVan();
 PROTO.car = { n:buildCar(false, 'n'), k:buildCar(false, 'k') }; PROTO.carVan = { n:buildCar(true, 'n'), k:buildCar(true, 'k') };
 PROTO.pallet = [0, 1, 2].map(buildPallet);
 // every look in each of its outfits, full and lite
@@ -57,7 +58,7 @@ world.traverse(o => { o.raycast = noop; });   // ground, streets, trees: nothing
 scene.add(world, rangeG, factoryG, conveyorG, gateG, whG, whGateG, shopG, ...BAYS.map(bayLamp), ...DOCKS.map(bayLamp));
 whGate.panel = whGateG.getObjectByName('panel');
 // the boxes on the shelves and in the stockroom are drawn only while the shop is open to view
-const boxProto = buildShopBox(), shopInside = new THREE.Group(); shopInside.name = 'shopInside'; shopInside.visible = false; shopG.add(shopInside);
+const boxProto = PROTO.shopBox = buildShopBox(), shopInside = new THREE.Group(); shopInside.name = 'shopInside'; shopInside.visible = false; shopG.add(shopInside);
 shopG.userData.peek.inside = shopInside;
 for (const s of SHELF) { s.mesh = boxProto.clone(); pose(s.mesh, s.x, s.y, 0, s.z); s.mesh.visible = false; shopInside.add(s.mesh); }
 shop.stockMeshes = []; for (let l = 0; l < 2; l++) for (let j = 0; j < 2; j++) for (let i = 0; i < 3; i++) {
@@ -75,12 +76,12 @@ const gardens = new Part();
 for (let i = 0; i < 4; i++) {
   const lx = 309.6 + 25.2 * i, o = { x:lx + 3, y:172, w:11, d:12, h:i % 2 ? 5.6 : 4.4, rh:i === 2 ? 3.6 : 3, ridgeY:i === 1, door:i === 3 ? 7.4 : 2,
     lotX0:lx, lotX1:lx + 25.2, lotY1:195.4, car:i === 2 ? null : [lx + 18, 190], gardens };
-  home(buildHouse(o), { id:`No. ${12 + i * 2} Market St`, street:'Market St', door:[o.x + o.door + 0.55, 184.6] });
+  home(buildHouse(o), { id:`No. ${12 + i * 2} Market St`, street:'Market St', door:[o.x + o.door + 0.55, 184.6], kerb:[o.x + o.door + 0.55, 197] });
 }
 for (let i = 0; i < 5; i++) {
   const lx = 69.6 + 20.16 * i, o = { x:lx + 2.5, y:226, w:11.5, d:11, h:i === 2 ? 5.6 : 4.4, rh:3, ridgeY:i % 2 === 0, door:i === 4 ? 7.6 : 2,
     lotX0:lx, lotX1:lx + 20.16, lotY1:257.4, car:i % 2 ? [lx + 17, 252] : null, gardens };
-  home(buildHouse(o), { id:`No. ${1 + i * 2} Coast Rd`, street:'Coast Rd', door:[o.x + o.door + 0.55, 237.6] });
+  home(buildHouse(o), { id:`No. ${1 + i * 2} Coast Rd`, street:'Coast Rd', door:[o.x + o.door + 0.55, 237.6], kerb:[o.x + o.door + 0.55, 259] });
 }
 const VILLAS = [['Villa Aster', 189.6, 50.4, 22, 13, [189.6 + 30, 236, 12, 6], [[189.6 + 46, 232], [192, 250], [189.6 + 44, 251]]],
   ['Villa Brisa', 240.4, 50, 22, 13, [240.4 + 30, 236, 12, 6], [[240.4 + 46, 232], [243, 250], [240.4 + 44, 251]]],
@@ -89,7 +90,7 @@ const VILLAS = [['Villa Aster', 189.6, 50.4, 22, 13, [189.6 + 30, 236, 12, 6], [
   ['Villa Eira', 376.8, 33.6, 18, 12, [376.8 + 4, 240, 11.5, 5.5], [[376.8 + 29.5, 228], [376.8 + 28, 251]]]];
 for (const [id, x, w, bw, bd, pool, palms] of VILLAS) {
   const g = buildVilla({ x, y:214.6, w, bw, bd, pool, palms, lotY1:257.4, gardens });
-  home(g, { id, villa:true, street:'Coast Rd', door:[x + 3 + bw - 3.2, 214.6 + 7 + bd + 0.6] });
+  home(g, { id, villa:true, street:'Coast Rd', door:[x + 3 + bw - 3.2, 214.6 + 7 + bd + 0.6], kerb:[x + 3 + bw - 3.2, 259] });
 }
 // Orchard Lane: six houses facing south over the lane, three with a garage and a car on the drive, porches, dormers
 const ORCHARD_HOUSES = [{ w:9, h:4.4, door:2, garage:3.2, dormer:true }, { w:10, h:5.6, ridgeY:true, door:6.6, porch:true }, { w:10.5, h:4.4, door:2, porch:true },
@@ -97,7 +98,7 @@ const ORCHARD_HOUSES = [{ w:9, h:4.4, door:2, garage:3.2, dormer:true }, { w:10,
 ORCHARD.lots.forEach(([lx, lw], i) => {
   const s = ORCHARD_HOUSES[i], x = lx + 1, y = 42.5, d = 9.5;
   const o = { ...s, x, y, d, rh:3, lotX0:lx, lotX1:lx + lw, lotY1:ORCHARD.lotY1, car:s.garage ? [x + s.w + 0.2 + s.garage / 2, 57.6] : null, gardens };
-  home(buildHouse(o), { id:`No. ${1 + 2 * i} Orchard Ln`, street:'Orchard Ln', door:[x + s.door + 0.55, y + d + 0.6] });
+  home(buildHouse(o), { id:`No. ${1 + 2 * i} Orchard Ln`, street:'Orchard Ln', door:[x + s.door + 0.55, y + d + 0.6], kerb:[x + s.door + 0.55, ORCHARD.pave] });
 });
 const gardensG = gardens.build('gardens'); gardensG.traverse(o => { o.raycast = noop; }); scene.add(gardensG);
 const flats = [['Market Court', 72, 146, 24, 44, 15, 12], ['Harbour View', 266, 144, 24, 46, 18, 12]].map(([id, x, y, w, d, h, door]) => {
@@ -206,6 +207,7 @@ shop.drawStock();
 // town traffic, the police, the boats, the waves
 for (const L of LOOPS) for (let k = 0; k < L.n; k++) new Car({ role:'local', loop:L, path:L.path, yields:L.ys, s:(k + rng() * 0.4) * L.path.length / L.n, vmax:rand(9, 12) });
 incident.cars = [new PoliceCar('POL-1', 229), new PoliceCar('POL-2', 239)];
+const courier = new Courier();
 PROTO.sail = buildSailboat(); PROTO.motor = buildMotorboat();
 new Boat({ id:'Gull', sail:true, skipper:'E. Lund', proto:PROTO.sail, speed:2.6, path:new Path([[200, 317], [370, 317], [370, 323], [40, 323], [40, 317], [200, 317]], 2.8, true) });
 new Boat({ id:'Marlin', skipper:'R. Lopes', proto:PROTO.motor, speed:6.5, s:300, path:new Path([[220, 333], [30, 333], [30, 327], [420, 327], [420, 333], [220, 333]], 2.8, true) });
@@ -219,7 +221,7 @@ const entryClear = (x, y) => !roadVehicles().some(o => o.points.some(p => Math.h
 sim.step = dt => {
   sim.t += dt;
   const late = night() > 0.5;
-  conveyor.update(dt);
+  conveyor.update(dt); tickOrders(dt);
   if ((ROAD.next -= dt) <= 0 && entryClear(-8, 134.5)) { new Car({ path:ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
   if ((COAST.nextE -= dt) <= 0 && entryClear(-8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(10, 20) : rand(4, 9); }
   if ((COAST.nextW -= dt) <= 0 && entryClear(448, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(10, 20) : rand(4, 9); }
@@ -247,4 +249,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

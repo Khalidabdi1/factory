@@ -25,6 +25,7 @@ export const OUTFITS = {
   guard:[civ('k', 'k', 'trousers', 'short', 'police', null, false)],
   police:[civ('k', 'n', 'trousers', 'short', 'police', null, false), civ('k', 'n', 'trousers', 'bun', 'police', null, true)],
   thief:[civ('k', 'k', 'trousers', 'none', 'hood', 'backpack', false)],
+  courier:[civ('k', 'n', 'trousers', 'short', 'cap', null, false)],
 };
 OUTFITS.shopper = OUTFITS.walker;
 export const LOOKS = Object.keys(OUTFITS);

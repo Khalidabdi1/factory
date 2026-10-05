@@ -18,8 +18,10 @@ import { TINY, setTiny } from './sim/person';
 import { shop, whGate } from './sim/people';
 import { bank, incident, policeStation } from './sim/police';
 import { BOATS } from './sim/boats';
+import { orders, placeOrder } from './sim/courier';
+import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -118,6 +120,8 @@ function refresh() {
   $('cardFollow').hidden = !followable(selected); foot.hidden = !followable(selected) && !acts.length;
 }
 let cardActs = [];
+// Track: select a vehicle, follow it and come in close
+hooks.track = ent => { select(ent); setFollow(true); goal = { zoom:Math.max(camera.zoom, fitZoom * 5.5) }; };
 // Look inside: frame the building close enough to see its rooms (it is open while it is selected)
 hooks.lookInside = ent => { const [x0, x1, y0, y1] = ent.groups[0].userData.peek.box; setFollow(false); goal = frame(stage.clientWidth, stage.clientHeight, [x0 - 4, x1 + 4, y0 - 4, y1 + 4], [0, 5]); };
 // a closed building says it can be opened
@@ -184,7 +188,7 @@ canvas.addEventListener('pointermove', e => {
   if (e.pointerType === 'mouse' && !e.buttons) { pointer = [e.clientX, e.clientY]; hoverDirty = true; }
 });
 canvas.addEventListener('pointerleave', () => { pointer = null; hovered = null; canvas.classList.remove('over'); });
-const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.cars].sort((a, b) => a.id.localeCompare(b.id));
+const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.cars, courier].sort((a, b) => a.id.localeCompare(b.id));
 function cycle(d) { const v = vehicles(), i = v.indexOf(selected); if (v.length) select(v[i < 0 ? (d > 0 ? 0 : v.length - 1) : (i + d + v.length) % v.length]); }
 let paused = false;
 function togglePause() { paused = !paused; $('pause').setAttribute('aria-pressed', paused); $('pause').setAttribute('aria-label', paused ? 'Resume' : 'Pause');
@@ -285,6 +289,8 @@ if (DEBUG) {
     select:id => select(find(id) ?? null), selected:() => selected?.id ?? null, find,
     // run one frame now (works in a hidden window, where the browser holds animation frames) and count its draw calls
     drawCalls:() => { tick(performance.now()); return renderer.info.render.calls; },
+    // place an online order now (for a home by id, or any): returns the order
+    order:id => placeOrder(id ? find(id) : homes[Math.floor(Math.random() * homes.length)]), orders, courier, roadnet:{ trip, locate, kerbStop, EDGES },
     screenOf:id => { const e = find(id); scene.updateMatrixWorld(); camera.updateMatrixWorld(); const p = e.groups[0].localToWorld(W(...(e.pick ?? [0, 0, 1]))).project(camera), r = canvas.getBoundingClientRect();
       return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; },
   };

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "preview": "npx serve out"
+    "preview": "npx serve out",
+    "check": "node scripts/check-yard.mjs"
   },
   "dependencies": {
     "next": "16.3.8",
@@ -15,6 +16,8 @@
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.9",
+    "@babel/traverse": "^7.29.8",
     "@types/node": "^22",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
