@@ -1,6 +1,6 @@
 # Factory Yard
 
-A live isometric town in one HTML file, drawn with WebGL in the hairline style of [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill).
+A live isometric town drawn with WebGL in the hairline style of [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill).
 
 Goods go from a factory to a warehouse and on to a shop, along the main road of a small seaside town:
 - Behind the town are hills; in front of it, the sea.
@@ -11,13 +11,31 @@ Goods go from a factory to a warehouse and on to a shop, along the main road of 
 
 ## Open it
 
-Open `index.html` in a browser. It loads three.js from jsDelivr and the DM Mono font from Google Fonts, so it needs a network connection. If you'd rather serve the folder:
+It's a Next.js app that builds to a static site. You need Node 20 or later.
 
 ```
-python3 -m http.server
+npm install
+npm run dev
 ```
 
-Then go to <http://localhost:8000>.
+Then go to <http://localhost:3000>.
+
+To build the site, run `npm run build`. It writes plain HTML and JS to `out/`, so you can host it anywhere. To try the built copy locally, run `npm run preview`.
+
+## How the code is laid out
+
+| Folder | What's in it |
+| --- | --- |
+| `app/` | The page, the layout (which self-hosts DM Mono) and `globals.css` with the colour tokens |
+| `components/YardFigure.tsx` | The plate around the map: caption, buttons, tags and the card. It loads the engine in the browser. |
+| `yard/kernel/` | The iso projection, `Part` (boxes, faces, hairlines, text), `Path`, the corridor graph and the seeded random numbers |
+| `yard/theme.ts` | Tokens → materials, and the day/night blend |
+| `yard/models/`, `yard/world/` | Vehicles, people, boats, and the static town |
+| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, the shop, the police |
+| `yard/view.ts` | Camera, selection, card, routes, peeking into buildings, the frame loop, keys |
+| `yard/index.ts` | Builds everything in a fixed order and starts the view |
+
+The engine runs once per page load. React draws the plate, and the engine drives it from then on.
 
 ## The places
 
@@ -91,7 +109,7 @@ ai-iso-skill draws SVG figures with a small projection kernel. This page keeps t
 - **The look.** It uses two greys for lines and one `--live` colour, reserved for what is live: the selection and its route, a busy bay's lamp, a forklift's beacon, the police light bars, the bank alarm and the lighthouse beam. Goods and uniforms use the two-tone fill.
 - **The frame.** The page is a plate with `Fig 1` and the clock, the places, the instruction and a live readout in the four corners.
 
-The one rule it breaks is "no external scripts": three.js comes from a CDN.
+three.js and the font are bundled with the site, so it runs without loading anything from elsewhere.
 
 ## For testing
 

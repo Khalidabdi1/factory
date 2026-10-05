@@ -1,0 +1,24 @@
+{
+  "name": "factory-yard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A live isometric seaside town drawn with WebGL in the hairline style of ai-iso-skill.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "preview": "npx serve out"
+  },
+  "dependencies": {
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.186.0",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,70 @@
+// @ts-nocheck
+import { clamp, wrap } from '../kernel/math';
+import { RAB } from '../layout';
+import { sim } from './core';
+
+// ---- road rules ----
+// Room along v's heading before it reaches the body of another road vehicle in its corridor, or a person
+// on the road, less a gap. Vehicles that wait on each other in a ring would wait forever, so the senior one
+// (police first, then trucks, then whoever came first) looks past the one in front for a moment and drives on.
+let roadSeq = 0;
+export const nextRoadSeq = () => roadSeq++;
+const rank = v => (v.kind === 'police' ? -1e7 : v.kind === 'truck' ? 0 : 1e6) + v.seq;
+export const roadVehicles = () => sim.cars.concat(sim.trucks);
+export function clearAhead(v, look, gap, dt) {
+  if (v.blocker && !v.blocker.isPerson) {
+    const ring = [v]; let o = v.blocker;
+    while (o && !o.isPerson && o !== v && ring.length < 8) { ring.push(o); o = o.blocker; }
+    if (o === v && ring.every(r => rank(v) <= rank(r))) { v.ignore = v.blocker; v.ignoreT = 3; }
+  }
+  if ((v.ignoreT = (v.ignoreT ?? 0) - dt) <= 0) v.ignore = null;
+  v.ghostT = Math.max(0, (v.ghostT ?? 0) - dt);
+  const { x, y, h } = v.front, c = Math.cos(h), s = Math.sin(h);
+  let best = Infinity, who = null;
+  if (!v.ghostT) for (const o of roadVehicles()) if (o !== v && o !== v.ignore && !o.parked) for (const p of o.points) {
+    const dx = p[0] - x, dy = p[1] - y, f = dx * c + dy * s;
+    if (f > 0 && f < look && Math.abs(dy * c - dx * s) < v.halfW + 1.2 && f - o.halfW < best) { best = f - o.halfW; who = o; }
+  }
+  for (const p of sim.peds) { const dx = p.x - x, dy = p.y - y, f = dx * c + dy * s;
+    if (f > -0.3 && f < look && Math.abs(dy * c - dx * s) < v.halfW + 0.7 && f - 0.6 < best) { best = Math.max(0, f - 0.6); who = p; } }
+  v.blocker = best - gap < 0.3 ? who : null;
+  return best - gap;
+}
+export const roadBusy = (v, x0, x1, y, skip) => roadVehicles().some(o => o !== v && !o.parked && !skip?.(o) && o.points.some(p => Math.abs(p[1] - y) < 2.6 && p[0] > x0 && p[0] < x1));
+export const gapW = (t, x0, x1, skip) => !roadBusy(t, x0, x1, 127.5, skip), gapE = (t, x0, x1, skip) => !roadBusy(t, x0, x1, 134.5, skip);
+// a flatbed already turning in at the plant gate is no reason for one at the exit to wait
+export const turningIn = o => o.model === 'flatbed' && o.nextHold().name === 'bay' && o.front.x > 112 && o.front.x < 136 && o.front.y < 129;
+// slow down for bends: the speed allowed now, given the first bend within reach
+export function bendLimit(path, s, vBend = 6.5) {
+  const h0 = path.at(s).h;
+  for (let d = 2; d <= 24; d += 2) if (Math.abs(wrap(path.at(s + d).h - h0)) > 0.3) return Math.sqrt(vBend ** 2 + 8 * (d - 2));
+  return Infinity;
+}
+const segDist = (x, y, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], t = clamp(((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+  return Math.hypot(a[0] + dx * t - x, a[1] + dy * t - y); };
+// may a walker step out from a to b? nothing moving will reach the crossing in the next 3 s, nothing stands on it
+export function crossClear(a, b) {
+  for (const v of roadVehicles()) {
+    if (v.parked) continue;
+    if (v.points.some(([x, y]) => segDist(x, y, a, b) < 1.6)) return false;
+    if (v.v < 0.3) continue;
+    const f = v.front, c = Math.cos(f.h), s = Math.sin(f.h);
+    for (let k = 0; k <= 1; k += 0.25) { const d = (v.v * 3 + 3) * k; if (segDist(f.x + c * d, f.y + s * d, a, b) < 2.6) return false; }
+  }
+  return true;
+}
+export const compass = h => { const c = Math.cos(h), s = Math.sin(h); return c > 0.7 ? 'eastbound' : c < -0.7 ? 'westbound' : s > 0.7 ? 'southbound' : s < -0.7 ? 'northbound' : 'turning'; };
+export function streetAt(x, y) {
+  if (Math.hypot(x - RAB.x, y - RAB.y) < 16) return 'the roundabout';
+  if (y > 138 && y < 142.7 && x > 345 && x < 384) return 'the shop parking';
+  if (y > 117 && y < 140) return x > 136 && x < 198 && y < 124 ? 'the truck park' : x > 344 && x < 384 && y < 124 ? 'the delivery lay-by' : 'Riverside Rd';
+  if (y > 196 && y < 214 && x > 50) return 'Market St';
+  if (y > 258 && y < 274) return 'Coast Rd';
+  if (y >= 274) return y < 279 ? 'the promenade' : y < 296 ? 'the beach' : 'the sea';
+  if (y < -4) return 'the hills';
+  const av = [['Park Av', 60], ['Mill Av', 180], ['Harbour Av', 300], ['Hill Av', 420]].find(([, a]) => Math.abs(x - a) < 9);
+  if (av && y > 138) return av[0];
+  if (x > 218 && x < 263 && y > 176 && y < 199) return 'the police yard';
+  if (y < 118) return x < 200 ? 'the Plant 01 yard' : x < 358 ? 'the Warehouse 01 yard' : 'the shop forecourt';
+  return 'town';
+}
