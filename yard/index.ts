@@ -26,6 +26,7 @@ import { PoliceCar, bank, incident, policeStation } from './sim/police';
 import { BOATS, Boat } from './sim/boats';
 import { entity, home, homes, lightsText } from './sim/homes';
 import { Courier, tickOrders } from './sim/courier';
+import { buildFair } from './sim/fair';
 import { initView } from './view';
 
 applyTheme();
@@ -208,9 +209,11 @@ shop.drawStock();
 for (const L of LOOPS) for (let k = 0; k < L.n; k++) new Car({ role:'local', loop:L, path:L.path, yields:L.ys, s:(k + rng() * 0.4) * L.path.length / L.n, vmax:rand(9, 12) });
 incident.cars = [new PoliceCar('POL-1', 229), new PoliceCar('POL-2', 239)];
 const courier = new Courier();
+// Sunset Pier and its rides
+const fairSys = buildFair();
 PROTO.sail = buildSailboat(); PROTO.motor = buildMotorboat();
-new Boat({ id:'Gull', sail:true, skipper:'E. Lund', proto:PROTO.sail, speed:2.6, path:new Path([[200, 317], [370, 317], [370, 323], [40, 323], [40, 317], [200, 317]], 2.8, true) });
-new Boat({ id:'Marlin', skipper:'R. Lopes', proto:PROTO.motor, speed:6.5, s:300, path:new Path([[220, 333], [30, 333], [30, 327], [420, 327], [420, 333], [220, 333]], 2.8, true) });
+new Boat({ id:'Gull', sail:true, skipper:'E. Lund', proto:PROTO.sail, speed:2.6, path:new Path([[200, 320], [370, 320], [370, 326], [40, 326], [40, 320], [200, 320]], 2.8, true) });   // south of Sunset Pier
+new Boat({ id:'Marlin', skipper:'R. Lopes', proto:PROTO.motor, speed:6.5, s:300, path:new Path([[220, 334.5], [30, 334.5], [30, 329], [420, 329], [420, 334.5], [220, 334.5]], 2.8, true) });
 const waves = [0, 1].map(() => { const p = new Part();
   for (let i = 0; i < 80; i++) { const x = rand(-10, 450), y = rand(299, 335), l = rand(1.5, 3.6); p.seg('detail', W(x, y, SEA_Z + 0.03), W(x + l, y, SEA_Z + 0.03)); }
   const g = p.build('waves'); scene.add(g); return g; });
@@ -221,7 +224,7 @@ const entryClear = (x, y) => !roadVehicles().some(o => o.points.some(p => Math.h
 sim.step = dt => {
   sim.t += dt;
   const late = night() > 0.5;
-  conveyor.update(dt); tickOrders(dt);
+  conveyor.update(dt); tickOrders(dt); fairSys.update(dt);
   if ((ROAD.next -= dt) <= 0 && entryClear(-8, 134.5)) { new Car({ path:ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
   if ((COAST.nextE -= dt) <= 0 && entryClear(-8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(10, 20) : rand(4, 9); }
   if ((COAST.nextW -= dt) <= 0 && entryClear(448, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(10, 20) : rand(4, 9); }
@@ -249,4 +252,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

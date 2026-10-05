@@ -118,13 +118,15 @@ Done:
   - Tellers keep its hours, and walkers visit through the `bank` portal.
   - The incident runs through the phases quiet → casing → alarm → siege → chase → done.
   - Four officers hold the posts left, right, back and east; front pair go in after a stand-off. Debug `yard.robbery()`.
+- Phase 7: Sunset Pier (`yard/world/pier.ts` for models and the static pier, `yard/sim/fair.ts` for the rides and visitors).
+  - People stand on pier decks via `DECKS` in `zAt`. A rider's walker is `hidden` while a small figure rides.
+  - Rides close outside 10:00–23:00 and when `hooks.raining()`. Day-trippers come up off the beach.
 - Phase 4: Warehouse 01.
   - `RACK` now has rows A and B, three levels, 48 slots. `LOC.rack` faces by row, and forklifts have a telescoping `mast2`.
   - Shelving, a packing bench and pickers (`Picker`).
   - People inside a shut building are hidden via `hooks.closedAt`.
 
 Next:
-7. Sunset Pier amusement pier: Ferris wheel, carousel, coaster.
 8. Fishing boat Kestrel and a pier angler.
 9. Weather: rain and sea fog.
 10. Fire station and ENG-1, with chimney fires.

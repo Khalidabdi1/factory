@@ -163,7 +163,7 @@ function buildTown(p, G, fence) {
   for (const x of [92, 142, 212, 262, 330, 382]) lampPost(p, x, 212.6, 0, -1);
   for (const y of [152, 178, 226, 248]) { lampPost(p, 52.4, y, 1, 0); lampPost(p, 187.6, y, -1, 0); lampPost(p, 307.6, y, -1, 0); lampPost(p, 412.4, y, 1, 0); }
   // the promenade: a rail on the beach side (gaps for the stairs and the pier), palms, lamps and benches
-  for (const [a, b] of [[0, 98.5], [103.5, 195.5], [202.5, 298.5], [303.5, 440]]) fence(a, 278.7, b, 278.7, CURB, 1.0);
+  for (const [a, b] of [[0, 98.5], [103.5, 195.5], [202.5, 298.5], [303.5, 325.6], [334.4, 440]]) fence(a, 278.7, b, 278.7, CURB, 1.0);
   for (let x = 10; x < 440; x += 22) palm(p, x, 275.1, rand(0.85, 1.05), CURB);
   for (let x = 21; x < 440; x += 44) lampPost(p, x, 274.8, 0, -1);
   for (const x of [40, 140, 250, 350]) bench(p, x, 277.8, 's');
@@ -179,7 +179,7 @@ function buildCoast(p, G) {
   for (const x of [99, 299]) for (let i = 0; i < 3; i++) p.box(x + 0.5, 279 + i * 0.5, 0, 4, 0.5, CURB * (3 - i) / 3);
   // beach umbrellas and towels
   const um = new THREE.ConeGeometry(1.5, 0.6, 8);
-  for (const [x, y] of [[30, 284], [52, 286], [118, 283.5], [160, 286], [232, 284], [262, 286.5], [330, 284.5], [372, 286]]) {
+  for (const [x, y] of [[30, 284], [52, 286], [118, 283.5], [160, 286], [232, 284], [262, 286.5], [346, 284.5], [372, 286]]) {
     p.seg('line', W(x, y, 0), W(x, y, 2.1));
     p.geo(um, new THREE.Matrix4().compose(W(x, y, 2.3), yaw(rand(0, 1)), v3(1, 1, 1)), 'k');
     p.fill2(TOP(x + 0.6, y + 0.4, 0), 0, 0, 0.9, 1.8, 'kod', 0.03);
@@ -188,7 +188,7 @@ function buildCoast(p, G) {
   for (const [dx, dy] of [[0, 0], [1.6, 0], [0, 1.6], [1.6, 1.6]]) p.box(250 + dx, 290 + dy, 0, 0.14, 0.14, 2.2);
   p.box(249.8, 289.8, 2.2, 2.1, 2.1, 1.4); p.box(249.6, 289.6, 3.6, 2.5, 2.5, 0.16);
   // the town pier: a deck on piles, rails, a lamp at the end, a dinghy tied up
-  p.box(196, 279, 0.9, 6, 34, 0.25);
+  p.box(196, 281, 0.9, 6, 32, 0.25).extrude([[196, 278.7, 0.15], [196, 281, 1.15], [196, 281, 0.9], [196, 278.7, 0.01]], [6, 0, 0]);   // a ramp up from the promenade
   for (let y = 281; y < 313; y += 4.5) for (const x of [196.2, 201.5]) p.box(x, y, SEA_Z - 0.4, 0.3, 0.3, 1.5 - SEA_Z);
   for (const x of [196.1, 201.9]) { p.seg('line', W(x, 279, 2.05), W(x, 313, 2.05)); for (let y = 279; y <= 313; y += 3.4) p.seg('line', W(x, y, 1.15), W(x, y, 2.05)); }
   lampPost(p, 201.3, 312.4, -1, 0, 1.15);

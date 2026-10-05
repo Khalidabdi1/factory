@@ -81,7 +81,8 @@ export class Person {
     pose(this.group, this.x, this.y, this.h, z); pose(this.lite, this.x, this.y, this.h, z);
     // inside a building that is shut, nobody is drawn (its walls hide them anyway)
     const away = hooks.closedAt(this.x, this.y);
-    this.group.visible = !TINY && !away; this.lite.visible = TINY && !away; if (this.dogG) this.dogG.visible = !TINY && !away;
+    const gone = away || this.hidden;   // hidden: on a ride, drawn by the ride instead
+    this.group.visible = !TINY && !gone; this.lite.visible = TINY && !gone; if (this.dogG) this.dogG.visible = !TINY && !gone;
     if (this.dogG) { const c = Math.cos(this.h), s = Math.sin(this.h), x = this.x - c * 0.9 - s * 0.55, y = this.y - s * 0.9 + c * 0.55; pose(this.dogG, x, y, this.h, zAt(x, y)); }
   }
   // where the person is still going: the walk legs left

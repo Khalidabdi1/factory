@@ -15,13 +15,13 @@ import { PROTO, STEP, clock, conveyor, hourAt, night, shift, sim } from './sim/c
 import { SPOTS } from './sim/cars';
 import { BUS_STOPS } from './sim/trucks';
 import { TINY, setTiny } from './sim/person';
-import { shop, whGate } from './sim/people';
+import { PORTALS, nextPortal, shop, whGate } from './sim/people';
 import { bank, incident, policeStation } from './sim/police';
 import { BOATS } from './sim/boats';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -97,7 +97,7 @@ function select(ent) {
 }
 hooks.forget = forget;
 function forget(ent) { if (selected === ent) select(null); if (hovered === ent) hovered = null; }
-const STILL = ['factory', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'building', 'house', 'range', 'lighthouse', 'resident'];
+const STILL = ['factory', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride'];
 const followable = ent => !!ent && !STILL.includes(ent.kind);
 function setFollow(on) { follow = on && followable(selected); $('cardFollow').setAttribute('aria-pressed', follow); }
 function refresh() {
@@ -278,10 +278,10 @@ window.__yardReady = true;
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
   const all = () => [factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, cafe, townHall, lighthouse, range, ...flats, ...homes,
-    ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
+    fairSys.pier, ...fairSys.rides, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
-    sim, conveyor, shop, whGate, incident, bank, RACK, SHELF, SPOTS, BUS_STOPS, camera, controls, renderer, scene, hourAt, night, PROTO, pose,
+    sim, conveyor, shop, whGate, incident, bank, RACK, SHELF, SPOTS, BUS_STOPS, camera, controls, renderer, scene, hourAt, night, PROTO, pose, hooks, PORTALS, nextPortal,
     all:() => all().map(e => ({ id:e.id, kind:e.kind, status:e.info().status })),
     step:s => { for (let t = 0; t < s; t += STEP) sim.step(STEP); },
     skip:hours => { shift.goal += hours; shift.h = shift.goal; },

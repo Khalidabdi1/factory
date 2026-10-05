@@ -231,7 +231,7 @@ const PED = (() => {
   return new Site({ name:'pavements', nodes, segs });
 })();
 export const pedRoute = (a, b) => dedupe([a, ...PED.route(PED.at(...a), PED.at(...b)), b]);
-const PORTALS = [];
+export const PORTALS = [];
 export const portal = (kind, name, p, o = {}) => { const q = { kind, name, p, w:1, ...o }; PORTALS.push(q); return q; };
 for (const [n, p, w] of [['the west end of the promenade', [-4, PROM], 3], ['the east end of the promenade', [444, PROM], 3], ['the park gate', [-4, 200], 2], ['Hill Av', [444, 200], 1]])
   portal('edge', n, p, { w });
@@ -243,7 +243,7 @@ const LEISURE = ['cafe', 'pier', 'beach', 'park'];
 // somewhere to go next: by night mostly home, by day anywhere
 export function nextPortal(from, avoid) {
   const n = night() > 0.5, pool = PORTALS.filter(q => q !== from && q.kind !== avoid);
-  const w = q => q.w * (n && q.kind === 'home' ? 4 : 1) * (n && LEISURE.includes(q.kind) ? 0.1 : 1) * (q.kind === 'bank' && !hooks.bankOpen() ? 0 : 1);
+  const w = q => q.w * (n && q.kind === 'home' ? 4 : 1) * (n && LEISURE.includes(q.kind) ? 0.1 : 1) * (q.kind === 'bank' && !hooks.bankOpen() ? 0 : 1) * (q.kind === 'fair' && !hooks.fairOpen() ? 0 : 1);
   let r = rng() * pool.reduce((s, q) => s + w(q), 0);
   for (const q of pool) if ((r -= w(q)) <= 0) return q;
   return pool[0];
@@ -273,6 +273,7 @@ export class Walker extends Person {
     if (t.kind === 'edge' || t.kind === 'home') { this.remove(); return; }   // indoors, or off the edge of the map
     if (t.kind === 'stop') { t.stop.queue.push(this); this.wait(150, 'waiting for the bus').then(p => p.giveUp()); return; }
     if (t.kind === 'bank') { this.from = t; hooks.bankVisit(this); return; }
+    if (t.kind === 'fair') { this.from = t; hooks.fairVisit(this); return; }
     this.from = t;
     // take a free chair or bench nearby; on the beach sit on the sand, on the pier stand at the rail, both facing the sea
     const seat = freeSeat(t.kind, this.x, this.y);
