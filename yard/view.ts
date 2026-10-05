@@ -118,12 +118,18 @@ function placeAt(el, [x, y], text) {
   el.style.left = `${clamp(x, hw, stage.clientWidth - hw)}px`; el.style.top = `${clamp(y, el.offsetHeight + 16, stage.clientHeight)}px`;
 }
 function placeTag(el, ent, text) { if (!ent) el.hidden = true; else placeAt(el, anchorOf(ent), text); }
+// the corners are rebuilt only when the selection's footprint changes size; moving it is a translation
+let retKey = '';
 function updateReticle() {
   if (!selected) { retLine.visible = false; return; }
-  const b = bounds(selected), x0 = b.min.x - 0.8, x1 = b.max.x + 0.8, z0 = b.min.z - 0.8, z1 = b.max.z + 0.8, y = Math.max(0, b.min.y) + 0.06;
-  const L = Math.min(3, (x1 - x0) / 3, (z1 - z0) / 3), s = [];
-  for (const [x, dx] of [[x0, 1], [x1, -1]]) for (const [z, dz] of [[z0, 1], [z1, -1]]) s.push(x, y, z, x + dx * L, y, z, x, y, z, x, y, z + dz * L);
-  retLine.geometry.dispose(); retLine.geometry = new LineSegmentsGeometry().setPositions(s); retLine.visible = true;
+  const b = bounds(selected), x0 = b.min.x - 0.8, z0 = b.min.z - 0.8, y = Math.max(0, b.min.y) + 0.06;
+  const w = b.max.x + 0.8 - x0, d = b.max.z + 0.8 - z0, key = `${w.toFixed(1)}|${d.toFixed(1)}`;
+  if (key !== retKey) {
+    retKey = key; const L = Math.min(3, w / 3, d / 3), s = [];
+    for (const [x, dx] of [[0, 1], [w, -1]]) for (const [z, dz] of [[0, 1], [d, -1]]) s.push(x, 0, z, x + dx * L, 0, z, x, 0, z, x, 0, z + dz * L);
+    retLine.geometry.dispose(); retLine.geometry = new LineSegmentsGeometry().setPositions(s);
+  }
+  retLine.position.set(x0, y, z0); retLine.visible = true;
 }
 // the selection's route: dashes ahead of it (a whole loop for loop vehicles) and a ring at its next stop
 let routeNext = null;
@@ -166,8 +172,25 @@ function togglePause() { paused = !paused; $('pause').setAttribute('aria-pressed
   $('pause').innerHTML = paused ? '<svg viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z"/></svg>' : '<svg viewBox="0 0 16 16"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>'; refresh(); }
 function toggleTheme() {
   const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-  document.documentElement.dataset.theme = cur === 'light' ? 'dark' : 'light'; applyTheme();
+  const next = cur === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = next; applyTheme();
+  try { localStorage.setItem('factory-yard-theme', next); } catch { /* private window: the choice lasts this visit */ }
 }
+// After dark the page around the map turns dark too (in a light theme it would otherwise frame a black town),
+// and the caption says it is night. Hysteresis keeps it from flickering at the turn.
+let afterDark = false, turnT = 0;
+function markNight(n) {
+  if (afterDark ? n > 0.45 : n < 0.55) return;
+  afterDark = !afterDark; const root = document.documentElement;
+  root.classList.add('turning'); root.classList.toggle('after-dark', afterDark);
+  clearTimeout(turnT); turnT = setTimeout(() => root.classList.remove('turning'), 1300);
+  $('phase').textContent = afterDark ? ' · night' : '';
+}
+// The GPU can drop the context (driver reset, memory pressure, a GPU switch). three.js restores it by itself;
+// meanwhile say so instead of leaving a blank plate, then re-tint everything once it is back.
+let lost = false;
+canvas.addEventListener('webglcontextlost', () => { lost = true; const n = $('note'); n.hidden = false; n.textContent = 'Redrawing the figure…'; console.warn('Factory Yard: WebGL context lost'); });
+canvas.addEventListener('webglcontextrestored', () => { lost = false; $('note').hidden = true; applyTheme(); resize(); console.warn('Factory Yard: WebGL context restored'); });
 matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme);
 $('zoomIn').onclick = () => zoomBy(1.4); $('zoomOut').onclick = () => zoomBy(1 / 1.4); $('home').onclick = resetView;
 $('pause').onclick = togglePause; $('theme').onclick = toggleTheme; $('time').onclick = skipTime;
@@ -185,11 +208,17 @@ window.addEventListener('keydown', e => {
 
 // ---- loop ----
 let last = performance.now(), acc = 0, cardT = 0;
+// one bad frame is logged (once per message) and skipped; it never stops the loop
+const reported = new Set();
 function frameLoop(now) {
+  requestAnimationFrame(frameLoop);
+  try { tick(now); } catch (err) { const k = String(err?.stack ?? err); if (!reported.has(k)) { reported.add(k); console.error('Factory Yard frame error', err); } }
+}
+function tick(now) {
   const dt = Math.min(0.1, (now - last) / 1000); last = now;
   if (!paused) { acc += dt; while (acc >= STEP) { sim.step(STEP); acc -= STEP; } }
   if (shift.h < shift.goal) shift.h = Math.min(shift.goal, shift.h + dt * (REDUCED ? 60 : 5));
-  shade(night());
+  shade(night()); markNight(night());
   const k = REDUCED ? 1 : 1 - Math.exp(-dt * 6);
   if (follow && selected) { const b = bounds(selected); moveTarget(controls.target.clone().lerp(v3((b.min.x + b.max.x) / 2, 0, (b.min.z + b.max.z) / 2), k)); }
   if (goal) {
@@ -216,10 +245,9 @@ function frameLoop(now) {
   const sp = routeNext?.stop && screenAt(routeNext.p), sa = sp && anchorOf(selected);
   if (sp && sp[0] > 0 && sp[0] < stage.clientWidth && sp[1] > 30 && sp[1] < stage.clientHeight && Math.hypot(sp[0] - sa[0], sp[1] - sa[1]) > 70) placeAt($('tagStop'), sp, `next · ${routeNext.stop}`);
   else $('tagStop').hidden = true;
-  renderer.render(scene, camera);
-  requestAnimationFrame(frameLoop);
+  if (!lost) renderer.render(scene, camera);
 }
-refresh();
+refresh(); markNight(night());
 requestAnimationFrame(frameLoop);
 window.__yardReady = true;
 

@@ -15,7 +15,7 @@ export default function YardFigure() {
   return (
     <figure>
       <div className="cap">
-        <span className="hi">Fig 1 · <span id="clock">10:00</span></span>
+        <span className="hi">Fig 1 · <span id="clock">10:00</span><span id="phase" /></span>
         <nav className="sites" aria-label="Places">
           <button data-view="0" title="Factory (1)">Factory</button>
           <button data-view="1" title="Warehouse (2)">Warehouse</button>
