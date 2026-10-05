@@ -124,13 +124,16 @@ Done:
 - Phase 8: fishing (`yard/sim/fishing.ts`).
   - Kestrel is a state machine: moored → out → fishing → home → unloading. Her skipper is the resident of the "a fisherman" household.
   - The angler is a `Person` on the town pier.
+- Phase 9: weather.
+  - `yard/sim/weather.ts` holds the state: `kind` coming, `look` showing, `amount` easing. `hooks.raining()` is what the sim reads.
+  - The visuals are in `yard/world/weatherfx.ts`: rain sized to the view, fog sheets.
+  - Umbrellas are a person sub-group. Boats moor in rain, and debug `yard.weather(kind, secs)` sets the weather.
 - Phase 4: Warehouse 01.
   - `RACK` now has rows A and B, three levels, 48 slots. `LOC.rack` faces by row, and forklifts have a telescoping `mast2`.
   - Shelving, a packing bench and pickers (`Picker`).
   - People inside a shut building are hidden via `hooks.closedAt`.
 
 Next:
-9. Weather: rain and sea fog.
 10. Fire station and ENG-1, with chimney fires.
 10b. Car Works: a car factory on a terrace cut into the foothills, which you can see inside.
     - Inside: a press shop, a body-in-white robot welding line (after the owner's reference photo), a paint booth, assembly and an end-of-line test.

@@ -28,6 +28,7 @@ import { entity, home, homes, lightsText } from './sim/homes';
 import { Courier, tickOrders } from './sim/courier';
 import { buildFair } from './sim/fair';
 import { buildFishing } from './sim/fishing';
+import { weather } from './sim/weather';
 import { initView } from './view';
 
 applyTheme();
@@ -115,11 +116,11 @@ const cafe = entity(buildCafe(), { kind:'building', id:'Café Mira', pick:[151, 
   info() { const h = hourAt(sim.t), open = h >= 7 && h < 22, n = WALKERS().filter(w => w.to?.kind === 'cafe' && w.steps[0]?.do === 'wait').length;
     return { kind:'Café', title:'Café Mira', status:open ? 'open' : 'closed', rows:[['Hours', '07:00–22:00'], ['On the terrace', `${n} ${n === 1 ? 'guest' : 'guests'}`], ['Street', 'Market St']] }; } });
 const townHall = entity(buildTownHall(), { kind:'building', id:'Town Hall', pick:[241, 172, 6],
-  info() { return { kind:'Town hall', title:'Town Hall', status:`the clock says ${clock(sim.t)}`, rows:[['Built', '1911'], ['Clock', 'two faces, south and east'], ['Street', 'Riverside Rd']] }; } });
+  info() { return { kind:'Town hall', title:'Town Hall', status:`the clock says ${clock(sim.t)}`, rows:[['Built', '1911'], ['Clock', 'two faces, south and east'], ['Weather', weather.word() || 'fair'], ['Showers today', String(weather.showers)], ['Street', 'Riverside Rd']] }; } });
 const hands = ['hourF', 'minF', 'hourS', 'minS'].map(n => townHall.groups[0].getObjectByName(n));
 portal('home', 'Town Hall', [241, 173.6], { w:1 });
 const lighthouse = entity(buildLighthouse(), { kind:'lighthouse', id:'Harbour Light', pick:[402, 312.9, 6],
-  info() { return { kind:'Lighthouse', title:'Harbour Light', status:this.beam.visible ? 'beam on · one turn every 7 s' : 'off for the day', rows:[['Height', '14 m'], ['Range', '18 nautical miles'], ['Lit', 'dusk to dawn']] }; } });
+  info() { return { kind:'Lighthouse', title:'Harbour Light', status:weather.fog() > 0.3 ? 'beam on · fog signal sounding' : this.beam.visible ? 'beam on · one turn every 7 s' : 'off for the day', rows:[['Height', '14 m'], ['Range', '18 nautical miles'], ['Lit', 'dusk to dawn']] }; } });
 lighthouse.beam = lighthouse.groups[0].getObjectByName('beam');
 const range = entity(rangeG, { kind:'range', id:'Grey Peaks', pick:[228, -40, hillHeight(228, -40)],
   info() { return { kind:'Hills', title:'Grey Peaks', status:night() > 0.5 ? 'dark against the sky' : 'snow on the tops', rows:[['Highest point', '1,840 m'], ['Snow line', 'about 1,200 m'], ['Woods', 'pine on the lower slopes']] }; } });
@@ -215,8 +216,8 @@ const fairSys = buildFair();
 // Kestrel and her skipper, and the angler on the town pier
 const fishingSys = buildFishing();
 PROTO.sail = buildSailboat(); PROTO.motor = buildMotorboat();
-new Boat({ id:'Gull', sail:true, skipper:'E. Lund', proto:PROTO.sail, speed:2.6, path:new Path([[200, 320], [370, 320], [370, 326], [40, 326], [40, 320], [200, 320]], 2.8, true) });   // south of Sunset Pier
-new Boat({ id:'Marlin', skipper:'R. Lopes', proto:PROTO.motor, speed:6.5, s:300, path:new Path([[220, 334.5], [30, 334.5], [30, 329], [420, 329], [420, 334.5], [220, 334.5]], 2.8, true) });
+new Boat({ id:'Gull', sail:true, skipper:'E. Lund', moor:[190.5, 300], proto:PROTO.sail, speed:2.6, path:new Path([[200, 320], [370, 320], [370, 326], [40, 326], [40, 320], [200, 320]], 2.8, true) });   // south of Sunset Pier
+new Boat({ id:'Marlin', skipper:'R. Lopes', moor:[190.5, 308.5], proto:PROTO.motor, speed:6.5, s:300, path:new Path([[220, 334.5], [30, 334.5], [30, 329], [420, 329], [420, 334.5], [220, 334.5]], 2.8, true) });
 const waves = [0, 1].map(() => { const p = new Part();
   for (let i = 0; i < 80; i++) { const x = rand(-10, 450), y = rand(299, 335), l = rand(1.5, 3.6); p.seg('detail', W(x, y, SEA_Z + 0.03), W(x + l, y, SEA_Z + 0.03)); }
   const g = p.build('waves'); scene.add(g); return g; });
@@ -227,7 +228,7 @@ const entryClear = (x, y) => !roadVehicles().some(o => o.points.some(p => Math.h
 sim.step = dt => {
   sim.t += dt;
   const late = night() > 0.5;
-  conveyor.update(dt); tickOrders(dt); fairSys.update(dt); fishingSys.update(dt);
+  conveyor.update(dt); tickOrders(dt); fairSys.update(dt); fishingSys.update(dt); weather.update(dt);
   if ((ROAD.next -= dt) <= 0 && entryClear(-8, 134.5)) { new Car({ path:ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
   if ((COAST.nextE -= dt) <= 0 && entryClear(-8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(10, 20) : rand(4, 9); }
   if ((COAST.nextW -= dt) <= 0 && entryClear(448, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(10, 20) : rand(4, 9); }
@@ -247,7 +248,7 @@ sim.step = dt => {
   glow(lightG, sim.t % 1.6 < 0.18);
   glow(bankAlarm, bank.alarm && sim.t % 0.5 < 0.25);
   for (const f of fans) f.rotation.y += dt * 5;
-  lighthouse.beam.visible = night() > 0.15; lighthouse.beam.rotation.y -= dt * 0.9;
+  lighthouse.beam.visible = night() > 0.15 || weather.fog() > 0.3; lighthouse.beam.rotation.y -= dt * 0.9;
   waves.forEach((g, k) => { g.position.x = Math.sin(sim.t * 0.21 + k * 2) * 3; g.position.z = Math.cos(sim.t * 0.17 + k) * 0.8; });
   const h = hourAt(sim.t), ah = (h % 12) / 12 * Math.PI * 2, am = (h % 1) * Math.PI * 2;
   hands[0].rotation.z = -ah; hands[1].rotation.z = -am; hands[2].rotation.x = -ah; hands[3].rotation.x = -am;

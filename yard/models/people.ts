@@ -93,6 +93,9 @@ export function buildPerson(look, variant = 0, lite = false) {
   const sitG = sit.build('sitLegs'); sitG.visible = false; g.add(sitG);
   const c = new Part(); c.box(0.16, -0.24, 0.95, 0.46, 0.48, 0.42, 'k'); c.draw(TOP(0.16, -0.24, 1.37), [0.23, 0, 0.23, 0.48], 'koline');
   g.add(c.build('carry'));
+  // an umbrella, held up in rain
+  const u = new Part(); u.geo(new THREE.ConeGeometry(0.66, 0.3, 8), new THREE.Matrix4().compose(W(0.08, -0.22, 2.2), new THREE.Quaternion(), v3(1, 1, 1)), 'kb').seg('koline', W(0.08, -0.22, 1.25), W(0.08, -0.22, 2.06));
+  const ug = u.build('umbrella'); ug.visible = false; g.add(ug);
   return g;
 }
 export const HIP_H = HIP;

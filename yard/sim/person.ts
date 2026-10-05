@@ -18,7 +18,7 @@ export class Person {
     const { variant, scale } = lookOf(this.look, this.id); this.scale = scale;
     this.group = PROTO.person[this.look][variant].clone(); this.group.scale.setScalar(scale);
     [this.legs, this.arms] = [['legL', 'legR'], ['armL', 'armR']].map(ns => ns.map(n => this.group.getObjectByName(n)));
-    this.sitLegs = this.group.getObjectByName('sitLegs');
+    this.sitLegs = this.group.getObjectByName('sitLegs'); this.umbrella = this.group.getObjectByName('umbrella');
     this.box = this.group.getObjectByName('carry'); this.box.visible = false; this.group.userData.entity = this; this.groups = [this.group]; this.pick = [0, 0, 1.25];
     this.lite = PROTO.personLite[this.look][variant].clone(); this.lite.scale.setScalar(scale); this.lite.userData.entity = this; this.groups.push(this.lite); scene.add(this.lite);
     if (this.dog) { this.dogG = PROTO.dog.clone(); this.dogG.userData.entity = this; this.groups.push(this.dogG); scene.add(this.dogG); }
@@ -54,6 +54,8 @@ export class Person {
     const arm = this.carrying ? 1.15 : this.sit ? 0.35 : -sw * 0.7;
     this.arms[0].rotation.z = arm; this.arms[1].rotation.z = this.carrying || this.sit ? arm : sw * 0.7;
     this.box.visible = !!this.carrying;
+    // out of doors in rain, an umbrella (not for the police, nor for a man on the run)
+    this.umbrella.visible = hooks.raining() && !this.sit && !this.carrying && this.look !== 'police' && this.look !== 'thief' && !hooks.inBuilding(this.x, this.y);
     this.place();
   }
   run(st, dt) {

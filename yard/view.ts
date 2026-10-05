@@ -18,6 +18,8 @@ import { TINY, setTiny } from './sim/person';
 import { PORTALS, nextPortal, shop, whGate } from './sim/people';
 import { bank, incident, policeStation } from './sim/police';
 import { BOATS } from './sim/boats';
+import { weather } from './sim/weather';
+import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
@@ -56,6 +58,8 @@ function resize() {
 }
 const overlay = () => { const l = new LineSegments2(new LineSegmentsGeometry(), LINE.live); l.raycast = noop; l.frustumCulled = false; l.visible = false; scene.add(l); return l; };
 const retLine = overlay(), routeLine = overlay();
+// rain and fog
+const rain = buildRain(), fog = buildFog(); scene.add(rain.group, fog.group);
 function moveTarget(to) { const d = to.clone().sub(controls.target); controls.target.add(d); camera.position.add(d); }
 new ResizeObserver(resize).observe(stage); resize();
 canvas.addEventListener('wheel', () => { goal = null; }, { passive:true });
@@ -163,6 +167,7 @@ function drawRoute() {
 // A closed building opens up while it, or something inside it, is selected. Homes draw their section (and are told
 // to show who is in) the first time they open.
 const PEEK = [[whG, warehouse], [shopG, shop], [bank.groups[0], bank], ...homes.map(h => [h.groups[0], h])];
+hooks.inBuilding = (x, y) => PEEK.some(([g]) => { const b = g.userData.peek.box; return x > b[0] && x < b[1] && y > b[2] && y < b[3]; });
 hooks.closedAt = (x, y) => { for (const [g] of PEEK) { const pk = g.userData.peek, b = pk.box; if (x > b[0] && x < b[1] && y > b[2] && y < b[3]) return !pk.cut?.visible; } return false; };
 function updatePeek() {
   let c = null; if (selected) { const b = bounds(selected); c = [(b.min.x + b.max.x) / 2, (b.min.z + b.max.z) / 2]; }
@@ -203,12 +208,15 @@ function toggleTheme() {
 // After dark the page around the map turns dark too (in a light theme it would otherwise frame a black town),
 // and the caption says it is night. Hysteresis keeps it from flickering at the turn.
 let afterDark = false, turnT = 0;
+// the caption after the clock: night, and the weather
+let phaseKey = null;
+function phaseText() { const t = [afterDark ? 'night' : '', weather.word()].filter(Boolean).map(w => ` · ${w}`).join(''); if (t !== phaseKey) { phaseKey = t; $('phase').textContent = t; } }
 function markNight(n) {
   if (afterDark ? n > 0.45 : n < 0.55) return;
   afterDark = !afterDark; const root = document.documentElement;
   root.classList.add('turning'); root.classList.toggle('after-dark', afterDark);
   clearTimeout(turnT); turnT = setTimeout(() => root.classList.remove('turning'), 1300);
-  $('phase').textContent = afterDark ? ' · night' : '';
+  phaseText();
 }
 // The GPU can drop the context (driver reset, memory pressure, a GPU switch). three.js restores it by itself;
 // meanwhile say so instead of leaving a blank plate, then re-tint everything once it is back.
@@ -242,7 +250,9 @@ function tick(now) {
   const dt = Math.min(0.1, (now - last) / 1000); last = now;
   if (!paused) { acc += dt; while (acc >= STEP) { sim.step(STEP); acc -= STEP; } }
   if (shift.h < shift.goal) shift.h = Math.min(shift.goal, shift.h + dt * (REDUCED ? 60 : 5));
-  shade(night()); markNight(night());
+  // rain and fog dim the town a little (windows half-light), and are drawn round the view
+  shade(Math.max(night(), 0.32 * weather.rain() + 0.15 * weather.fog())); markNight(night());
+  rain.update(dt, controls.target, stage.clientWidth / camera.zoom, weather.rain()); fog.update(dt, sim.t, weather.fog()); phaseText();
   const k = REDUCED ? 1 : 1 - Math.exp(-dt * 6);
   if (follow && selected) { const b = bounds(selected); moveTarget(controls.target.clone().lerp(v3((b.min.x + b.max.x) / 2, 0, (b.min.z + b.max.z) / 2), k)); }
   if (goal) {
@@ -294,6 +304,8 @@ if (DEBUG) {
     order:id => placeOrder(id ? find(id) : homes[Math.floor(Math.random() * homes.length)]), orders, courier, roadnet:{ trip, locate, kerbStop, EDGES },
     // start the bank job now (when the town is quiet)
     robbery:() => { if (incident.phase === 'quiet') incident.next = sim.t; return incident.phase; },
+    // weather now: 'rain', 'fog' or 'clear', for some seconds
+    weather:(kind = 'rain', secs = 60) => { if (kind === 'clear') { weather.kind = 'clear'; } else weather.set(kind, secs); return weather.kind; }, weatherState:weather,
     screenOf:id => { const e = find(id); scene.updateMatrixWorld(); camera.updateMatrixWorld(); const p = e.groups[0].localToWorld(W(...(e.pick ?? [0, 0, 1]))).project(camera), r = canvas.getBoundingClientRect();
       return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; },
   };
