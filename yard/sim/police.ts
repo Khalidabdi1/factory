@@ -34,10 +34,21 @@ const zone = ([x, y]) => !(x > B.x0 && x < B.x1 && y > B.y0 && y < B.y1) ? 'out'
 // back door, never through a wall or over the counter
 function route(a, b) {
   const za = zone(a), zb = zone(b);
-  if (za === zb) return [b];
+  if (za === zb) return za === 'office' ? officeWay(a, b) : [b];
   const legs = { 'out>hall':[B.door, IN_FRONT], 'hall>out':[IN_FRONT, B.door], 'hall>office':[HALL_GAP, OFFICE_GAP], 'office>hall':[OFFICE_GAP, HALL_GAP],
-    'out>office':[BACK_OUT, BACK_IN], 'office>out':[BACK_IN, BACK_OUT] };
-  return [...legs[`${za}>${zb}`], b];
+    'out>office':[BACK_OUT, BACK_IN], 'office>out':[BACK_IN, BACK_OUT] }[`${za}>${zb}`];
+  const first = za === 'office' ? officeWay(a, legs[0]) : [legs[0]];
+  return [...first, ...legs.slice(1, -1), ...(zb === 'office' ? officeWay(legs[legs.length - 1], b) : [legs[legs.length - 1], b])];
+}
+// behind the counter, keep to the corridor along it (y 176.6): the manager's glass office and the vault lie north of
+// it, and the vault is entered through its door
+const inVault = ([x, y]) => x > 119.5 && y < 174.6;
+function officeWay(a, b) {
+  const pts = [];
+  if (inVault(a)) pts.push([122.2, 173.6], [122.2, 176.6]); else if (a[1] < 175.8) pts.push([a[0], 176.6]);
+  if (inVault(b)) pts.push([122.2, 176.6], [122.2, 173.6]); else if (b[1] < 175.8) pts.push([b[0], 176.6]);
+  pts.push(b);
+  return pts.filter((p, i) => Math.hypot(p[0] - (i ? pts[i - 1] : a)[0], p[1] - (i ? pts[i - 1] : a)[1]) > 0.05);
 }
 export const officers = () => sim.people.filter(p => p instanceof Officer);
 
