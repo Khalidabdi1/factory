@@ -4,6 +4,7 @@ import { FRONT, TOP, W } from '../kernel/iso';
 import { Part, v3 } from '../kernel/part';
 import { rand } from '../kernel/math';
 import { AV, BAYS, BLOCKS, CURB, DOCKS, RAB, SEA_Z, STAGE, WORLD, ZEBRA_X } from '../layout';
+import { buildOrchard, orchardClear } from './orchard';
 
 // ---- static scene ----
 export const crown = new THREE.IcosahedronGeometry(1, 0), cone = new THREE.ConeGeometry(1, 1, 7), roof4 = new THREE.ConeGeometry(1, 1, 4);
@@ -69,7 +70,7 @@ export function buildWorld() {
   for (const a of AV) dashes(a, a === 420 ? 146 : 139, a, 260, (x, y) => y > 197 && y < 213);
   const outer = ring(RAB.x, RAB.y, 14.5, 0.05, 48); for (let i = 0; i < outer.length; i += 2) {
     const m = outer[i].clone().add(outer[i + 1]).multiplyScalar(0.5);
-    if (m.x < kx + 0.5 && Math.abs(m.z - RAB.y) < 7.2 || m.z > RAB.y + 6 && m.x > 412.5 && m.x < 427.5) continue; p.seg('line', outer[i], outer[i + 1]); }
+    if (m.x < kx + 0.5 && Math.abs(m.z - RAB.y) < 7.2 || m.z > RAB.y + 6 && m.x > 412.5 && m.x < 427.5 || m.z < RAB.y - 6 && m.x > 416.5 && m.x < 427.5) continue; p.seg('line', outer[i], outer[i + 1]); }
   for (let a = 0; a < Math.PI * 2; a += Math.PI / 12) { const r0 = 8.5, r1 = 10; p.draw(G, [RAB.x + r0 * Math.cos(a), RAB.y + r0 * Math.sin(a), RAB.x + r1 * Math.cos(a + 0.12), RAB.y + r1 * Math.sin(a + 0.12)], 'detail', 0.05); }
   p.cylZ(RAB.x, RAB.y, 0, 5, 0.35, 24); tree(p, RAB.x, RAB.y, 1.1);
   p.text(G, 'DELIVERIES', 348, 123.3, 1.1, 'paint').text(G, 'TRUCKS', 146, 123.3, 1.1, 'paint');
@@ -119,9 +120,11 @@ export function buildWorld() {
   // yard-side trees
   for (const [x, y] of [[136, 46], [146, 46], [190, 46], [192, 10], [134, 8], [121, 22], [124, 8], [8, 70], [8, 30], [184, 108], [140, 108], [160, 110],
     [201, 30], [201, 80], [220, 8], [342, 12], [350, 32], [344, 52], [350, 72], [342, 92], [359.5, 86], [372, 86], [388, 84], [402, 98], [414, 104], [432, 100], [436, 86]]) tree(p, x, y, rand(0.8, 1.1));
-  for (let i = 0; i < 26; i++) tree(p, rand(362, 436), rand(6, 78), rand(0.75, 1.15));
+  // the wood behind the shop, less what Orchard Lane cleared (a cleared tree still draws its yaw, keeping the random sequence)
+  for (let i = 0; i < 26; i++) { const x = rand(362, 436), y = rand(6, 78), s = rand(0.75, 1.15); if (orchardClear(x, y)) rand(0, 3); else tree(p, x, y, s); }
   for (let x = 8; x < 196; x += rand(9, 14)) tree(p, x, rand(-2.4, 1.6), rand(0.8, 1.05));
   buildTown(p, G, fence);
+  buildOrchard(p, G, dashes, fence, bench);
   buildCoast(p, G);
   return p.build('world');
 }

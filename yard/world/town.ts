@@ -6,6 +6,7 @@ import { rand, rng } from '../kernel/math';
 import { CURB } from '../layout';
 import { palm, roof4, tree, yaw } from './ground';
 import { buildCar } from '../models/vehicles';
+import { houseSection, villaSection } from './interiors';
 
 // ---- town buildings ----
 // windows on one face, in rows from the top; at night only some of them light up
@@ -121,25 +122,43 @@ export function buildTownHall() {
   }
   return g;
 }
-// a house with a gabled roof, its front to the south; a garden with a path, a fence, a tree, sometimes a car
+// a house with a gabled roof, its front to the south; a garden with a path, a fence, a tree, sometimes a car;
+// on Orchard Lane also a garage, a porch or a dormer. The walls and roof are its shell; opening the house swaps them
+// for its section (cut walls, furnished rooms), drawn the first time it is opened. Gardens go into o.gardens, one
+// part shared by every home, so a street of homes costs a few draw calls more than its shells.
 export function buildHouse(o) {
-  const { x, y, w, d, h, rh = 3, ridgeY = false, door = 2, lotY1, lotX0, lotX1, car } = o, p = new Part(), z = CURB, ov = 0.5;
-  p.box(x, y, z, w, d, h);
+  const { x, y, w, d, h, rh = 3, ridgeY = false, door = 2, lotY1, lotX0, lotX1, car, garage = 0, porch = false, dormer = false } = o, z = CURB, ov = 0.5;
+  const p = o.gardens ?? new Part(), s = new Part();
+  s.box(x, y, z, w, d, h);
   if (ridgeY) {
-    p.extrude([[x - ov, y - ov, z + h - 0.12], [x + w / 2, y - ov, z + h + rh], [x + w + ov, y - ov, z + h - 0.12]], [0, d + 2 * ov, 0]);
-    for (let t = 0.2; t < 1; t += 0.2) { const xx = x + w / 2 + t * (w / 2 + ov), zz = z + h + rh - t * (rh + 0.12); p.seg('detail', W(xx, y - ov, zz), W(xx, y + d + ov, zz)); }
+    s.extrude([[x - ov, y - ov, z + h - 0.12], [x + w / 2, y - ov, z + h + rh], [x + w + ov, y - ov, z + h - 0.12]], [0, d + 2 * ov, 0]);
+    for (let t = 0.2; t < 1; t += 0.2) { const xx = x + w / 2 + t * (w / 2 + ov), zz = z + h + rh - t * (rh + 0.12); s.seg('detail', W(xx, y - ov, zz), W(xx, y + d + ov, zz)); }
     const gf = FRONT(x, y + d + ov, z + h);
-    p.fill2(gf, w / 2 - 0.6, -1.6, 1.2, 1.0, rng() < 0.5 ? 'window' : 'glass').rect2(gf, w / 2 - 0.6, -1.6, 1.2, 1.0, 'line');
+    s.fill2(gf, w / 2 - 0.6, -1.6, 1.2, 1.0, rng() < 0.5 ? 'window' : 'glass').rect2(gf, w / 2 - 0.6, -1.6, 1.2, 1.0, 'line');
   } else {
-    p.extrude([[x - ov, y - ov, z + h - 0.12], [x - ov, y + d / 2, z + h + rh], [x - ov, y + d + ov, z + h - 0.12]], [w + 2 * ov, 0, 0]);
-    for (let t = 0.2; t < 1; t += 0.2) { const yy = y + d / 2 + t * (d / 2 + ov), zz = z + h + rh - t * (rh + 0.12); p.seg('detail', W(x - ov, yy, zz), W(x + w + ov, yy, zz)); }
+    s.extrude([[x - ov, y - ov, z + h - 0.12], [x - ov, y + d / 2, z + h + rh], [x - ov, y + d + ov, z + h - 0.12]], [w + 2 * ov, 0, 0]);
+    for (let t = 0.2; t < 1; t += 0.2) { const yy = y + d / 2 + t * (d / 2 + ov), zz = z + h + rh - t * (rh + 0.12); s.seg('detail', W(x - ov, yy, zz), W(x + w + ov, yy, zz)); }
   }
-  p.box(x + w * 0.72, y + d * 0.3, z + h + rh * 0.35, 0.7, 0.7, rh * 0.85);
+  s.box(x + w * 0.72, y + d * 0.3, z + h + rh * 0.35, 0.7, 0.7, rh * 0.85);
   const F = FRONT(x, y + d, z + h), S = SIDE(x + w, y + d, z + h);
-  p.fill2(F, door, h - 2.2, 1.1, 2.2).rect2(F, door, h - 2.2, 1.1, 2.2, 'line');
-  for (let u = 0.9; u + 1.3 < w - 0.4; u += 2.6) { if (Math.abs(u - door) < 1.6) continue; p.fill2(F, u, h - 1.9, 1.3, 1.1, rng() < 0.55 ? 'window' : 'glass').rect2(F, u, h - 1.9, 1.3, 1.1, 'line'); }
-  if (h > 4.5) for (let u = 0.9; u + 1.3 < w - 0.4; u += 2.6) p.fill2(F, u, 0.8, 1.3, 1.1, rng() < 0.4 ? 'window' : 'glass').rect2(F, u, 0.8, 1.3, 1.1, 'line');
-  for (let u = 1.2; u + 1.3 < d - 0.4; u += 3) p.fill2(S, u, h - 1.9, 1.3, 1.1, rng() < 0.5 ? 'window' : 'glass').rect2(S, u, h - 1.9, 1.3, 1.1, 'line');
+  s.fill2(F, door, h - 2.2, 1.1, 2.2).rect2(F, door, h - 2.2, 1.1, 2.2, 'line');
+  for (let u = 0.9; u + 1.3 < w - 0.4; u += 2.6) { if (Math.abs(u - door) < 1.6) continue; s.fill2(F, u, h - 1.9, 1.3, 1.1, rng() < 0.55 ? 'window' : 'glass').rect2(F, u, h - 1.9, 1.3, 1.1, 'line'); }
+  if (h > 4.5) for (let u = 0.9; u + 1.3 < w - 0.4; u += 2.6) s.fill2(F, u, 0.8, 1.3, 1.1, rng() < 0.4 ? 'window' : 'glass').rect2(F, u, 0.8, 1.3, 1.1, 'line');
+  for (let u = 1.2; u + 1.3 < d - 0.4; u += 3) s.fill2(S, u, h - 1.9, 1.3, 1.1, rng() < 0.5 ? 'window' : 'glass').rect2(S, u, h - 1.9, 1.3, 1.1, 'line');
+  // a dormer on the front slope of the roof, with a lit window at night
+  if (dormer && !ridgeY) {
+    const roofAt = yy => z + h + rh - (yy - y - d / 2) / (d / 2 + ov) * (rh + 0.12), yf = y + d * 0.8, dx = x + w * 0.3 - 0.9, zb = roofAt(yf), zt = z + h + rh - 0.35;
+    s.box(dx, y + d / 2 + 0.3, zb, 1.8, yf - y - d / 2 - 0.3, zt - zb).box(dx - 0.15, y + d / 2 + 0.2, zt, 2.1, yf - y - d / 2 - 0.1, 0.12);
+    s.fill2(FRONT(dx, yf, zt), 0.4, 0.25, 1.0, zt - zb - 0.5, 'window').rect2(FRONT(dx, yf, zt), 0.4, 0.25, 1.0, zt - zb - 0.5, 'line');
+  }
+  // a porch roof on two posts over the front door
+  if (porch) { p.box(x + door - 0.5, y + d, z + 2.45, 2.1, 1.5, 0.12); for (const dx of [-0.4, 1.4]) p.box(x + door + dx, y + d + 1.3, z, 0.12, 0.12, 2.45); }
+  // a flat-roofed garage beside the house, its roller door to the street
+  if (garage) {
+    const gx = x + w + 0.2, G = FRONT(gx, y + d, z + 2.8);
+    p.box(gx, y + 1.5, z, garage, d - 1.5, 2.8).box(gx - 0.1, y + 1.4, z + 2.8, garage + 0.2, d - 1.3, 0.12);
+    p.rect2(G, 0.35, 0.5, garage - 0.7, 2.3, 'line'); for (let v = 0.8; v < 2.8; v += 0.3) p.draw(G, [0.35, v, garage - 0.35, v]);
+  }
   // garden: a path to the pavement, a picket fence with a gap, a hedge at the back, a tree
   const px = x + door + 0.55, L = TOP(0, 0, z);
   p.fill2(L, px - 0.6, y + d, 1.2, lotY1 - y - d, 'deck', 0.03);
@@ -151,25 +170,29 @@ export function buildHouse(o) {
   }
   p.box(lotX0 + 0.4, y - 7.5, z, lotX1 - lotX0 - 0.8, 0.9, 1.2, 'gs');
   tree(p, rand(lotX0 + 2.5, lotX1 - 2.5), y - 3.5, rand(0.8, 1.1), z);
-  if (car) { const c = buildCar(rng() < 0.3, rng() < 0.4 ? 'k' : 'n'); p.fill2(L, car[0] - 1.6, car[1] - 5.6, 3.2, lotY1 - car[1] + 5.6, 'road', 0.03);
-    const g = p.build('house'); pose(c, car[0], car[1], Math.PI / 2, z); g.add(c); return g; }
-  return p.build('house');
+  let c = null;
+  if (car) { c = buildCar(rng() < 0.3, rng() < 0.4 ? 'k' : 'n'); p.fill2(L, car[0] - 1.6, car[1] - 5.6, 3.2, lotY1 - car[1] + 5.6, 'road', 0.03); }
+  const g = new THREE.Group(); g.name = 'house';
+  const shell = s.build('houseShell'); g.add(shell); if (!o.gardens) g.add(p.build('houseBase'));
+  if (c) { pose(c, car[0], car[1], Math.PI / 2, z); g.add(c); }
+  g.userData.peek = { shell, box:[x, x + w, y, y + d], section:extra => houseSection({ x, y, z, w, d, h, rh, ov, ridgeY, door, ...extra }) };
+  return g;
 }
-// a villa: two flat-roofed storeys, glass bands, a pool, palms
+// a villa: two flat-roofed storeys, glass bands, a pool, palms; like a house, it opens to its ground floor
 export function buildVilla(o) {
-  const { x, y, w, bw, bd, pool, lotY1 } = o, p = new Part(), z = CURB;
+  const { x, y, w, bw, bd, pool, lotY1 } = o, p = o.gardens ?? new Part(), s = new Part(), z = CURB;
   const bx = x + 3, by = y + 7;
-  p.box(bx, by, z, bw, bd, 3.6);
-  p.box(bx - 0.4, by - 0.4, z + 3.6, bw + 0.8, bd + 0.8, 0.3);
-  p.box(bx + 5, by + 1.5, z + 3.9, bw - 8, bd - 4, 3.1);
-  p.box(bx + 4.6, by + 1.1, z + 7.0, bw - 7.2, bd - 3.2, 0.3);
+  s.box(bx, by, z, bw, bd, 3.6);
+  s.box(bx - 0.4, by - 0.4, z + 3.6, bw + 0.8, bd + 0.8, 0.3);
+  s.box(bx + 5, by + 1.5, z + 3.9, bw - 8, bd - 4, 3.1);
+  s.box(bx + 4.6, by + 1.1, z + 7.0, bw - 7.2, bd - 3.2, 0.3);
   const F1 = FRONT(bx, by + bd, z + 3.6), F2 = FRONT(bx + 5, by + 1.5 + bd - 4, z + 7.0);
-  p.fill2(F1, 1.2, 0.5, bw - 6, 2.7, 'window').rect2(F1, 1.2, 0.5, bw - 6, 2.7, 'line');
-  for (let u = 3.2; u < bw - 5; u += 2) p.draw(F1, [u, 0.5, u, 3.2], 'line');
-  p.fill2(F1, bw - 3.6, 0.9, 1.4, 2.7).rect2(F1, bw - 3.6, 0.9, 1.4, 2.7, 'line');
-  p.fill2(F2, 1, 0.5, bw - 10, 2.0, rng() < 0.6 ? 'window' : 'glass').rect2(F2, 1, 0.5, bw - 10, 2.0, 'line');
+  s.fill2(F1, 1.2, 0.5, bw - 6, 2.7, 'window').rect2(F1, 1.2, 0.5, bw - 6, 2.7, 'line');
+  for (let u = 3.2; u < bw - 5; u += 2) s.draw(F1, [u, 0.5, u, 3.2], 'line');
+  s.fill2(F1, bw - 3.6, 0.9, 1.4, 2.7).rect2(F1, bw - 3.6, 0.9, 1.4, 2.7, 'line');
+  s.fill2(F2, 1, 0.5, bw - 10, 2.0, rng() < 0.6 ? 'window' : 'glass').rect2(F2, 1, 0.5, bw - 10, 2.0, 'line');
   const S1 = SIDE(bx + bw, by + bd, z + 3.6);
-  p.fill2(S1, 1.5, 0.6, bd - 3, 1.6, rng() < 0.5 ? 'window' : 'glass').rect2(S1, 1.5, 0.6, bd - 3, 1.6, 'line');
+  s.fill2(S1, 1.5, 0.6, bd - 3, 1.6, rng() < 0.5 ? 'window' : 'glass').rect2(S1, 1.5, 0.6, bd - 3, 1.6, 'line');
   // terrace and pool
   const L = TOP(0, 0, z);
   p.box(pool[0] - 0.8, pool[1] - 0.8, z, pool[2] + 1.6, pool[3] + 1.6, 0.12);
@@ -181,5 +204,8 @@ export function buildVilla(o) {
   p.box(x + 0.4, lotY1 - 0.7, z, bw - 3.8 + 2.6, 0.35, 0.8); p.box(bx + bw - 1.9, lotY1 - 0.7, z, x + w - 0.4 - (bx + bw - 1.9), 0.35, 0.8);
   for (const [px, py] of o.palms) palm(p, px, py, rand(0.9, 1.15), z);
   p.box(x + 0.4, y + 1.2, z, w - 0.8, 0.9, 1.3, 'gs');
-  return p.build('villa');
+  const g = new THREE.Group(); g.name = 'villa';
+  const shell = s.build('villaShell'); g.add(shell); if (!o.gardens) g.add(p.build('villaBase'));
+  g.userData.peek = { shell, box:[bx, bx + bw, by, by + bd], section:() => villaSection({ bx, by, z, bw, bd }) };
+  return g;
 }

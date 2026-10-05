@@ -20,6 +20,8 @@ import { scene } from './shared';
 // Coast Rd        | 0–440          | 260–274    | eastbound lane y 270.5, westbound 263.5; promenade 274–279, beach to 296
 // town blocks     | 67–413         | 138–198    | B1 flats, bank, café · B2 police, town hall, flats · B3 houses
 // south blocks    | 67–413         | 212–260    | C1 houses · C2, C3 villas · Mill Park at x 0–53
+// Orchard Lane    | 358–440        | 4–117      | north from the roundabout (x 417–427), west along y 61–71 to a turning circle at (373,66);
+//                 |                |            | six houses on lots y 4–61 facing it, a playground y 71–92, a footway up from the shop zebra at x 407
 const SLAB = { w:440, d:150 };
 export const WORLD = { x0:0, x1:440, y0:-84, y1:336 };
 export const RAB = { x:422, y:131 };   // roundabout centre
@@ -38,11 +40,16 @@ export const SHOP = { in:[378, 109.6], out:[378, 114.2], counter:[387, 111], sto
 export const ZEBRA_X = 394.5;
 export const CURB = 0.15, SEA_Z = -0.6;
 export const AV = [60, 180, 300, 420];
+// Orchard Lane: the lane's two arms, its turning circle, the pavement its houses open onto, and the six lots (x0, width)
+export const ORCHARD = { ax:422, ay0:71, ay1:117, ey:66, ex0:373, ex1:427, turn:{ x:373, y:66, r:5.5 }, pave:60.2, lotY1:59.4, walkX:407,
+  lots:[0, 1, 2, 3, 4, 5].map(i => [358.4 + 13.6 * i, 13.6]) };
 // asphalt people only cross: a walker on it is an obstacle to traffic, and waits for a gap before stepping out
 const ROADS = [[0, 404, 124, 138], [53, 67, 138, 274], [173, 187, 138, 274], [293, 307, 138, 274], [413, 427, 138, 274], [405, 413, 138, 142.6],
-  [53, 427, 198, 212], [0, 440, 260, 274], [345, 384, 138, 142.6], [219, 262, 178, 198]];
-export const onRoad = (x, y) => ROADS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) || Math.hypot(x - RAB.x, y - RAB.y) < 14.5;
+  [53, 427, 198, 212], [0, 440, 260, 274], [345, 384, 138, 142.6], [219, 262, 178, 198], [417, 427, 71, 117], [373, 427, 61, 71]];
+export const onRoad = (x, y) => ROADS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) || Math.hypot(x - RAB.x, y - RAB.y) < 14.5
+  || Math.hypot(x - ORCHARD.turn.x, y - ORCHARD.turn.y) < ORCHARD.turn.r;
 // raised blocks: a pavement round the edge, lots inside; the promenade is one too
 export const BLOCKS = [[67, 173, 138, 198], [187, 293, 138, 178], [187, 219, 178, 198], [262, 293, 178, 198], [307, 413, 142.6, 198], [307, 345, 138, 142.6], [384, 405, 138, 142.6],
-  [67, 173, 212, 260], [187, 293, 212, 260], [307, 413, 212, 260], [427, 440, 146, 260], [0, 53, 138, 260], [0, 440, 274, 279]];
+  [67, 173, 212, 260], [187, 293, 212, 260], [307, 413, 212, 260], [427, 440, 146, 260], [0, 53, 138, 260], [0, 440, 274, 279],
+  [358, 440, 4, 61], [358, 417, 71, 92], [427, 440, 71, 117]];
 export const zAt = (x, y) => BLOCKS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) ? CURB : 0;

@@ -7,7 +7,7 @@ import { Part, TEX_PX, glow, pose } from './kernel/part';
 import { clamp, ease, pick, rand, rng } from './kernel/math';
 import { Path } from './kernel/path';
 import './kernel/graph';
-import { BAYS, CURB, DOCKS, RACK, SEA_Z, SHELF, STAGE, onRoad } from './layout';
+import { BAYS, CURB, DOCKS, ORCHARD, RACK, SEA_Z, SHELF, STAGE, onRoad } from './layout';
 import { buildWorld } from './world/ground';
 import { buildRange, hillHeight } from './world/range';
 import { bayLamp, buildBooth, buildConveyor, buildFactory, buildGate, buildShop, buildShopBox, buildWarehouse, buildWhGate } from './world/industry';
@@ -24,6 +24,7 @@ import './sim/person';
 import { Guard, SHOPPERS, Shopper, Staff, WALKERS, Walker, nextPortal, portal, setGuard, shop, startPortal, walkSpawn, whGate } from './sim/people';
 import { PoliceCar, bank, incident, policeStation } from './sim/police';
 import { BOATS, Boat } from './sim/boats';
+import { entity, home, homes, lightsText } from './sim/homes';
 import { initView } from './view';
 
 applyTheme();
@@ -68,30 +69,17 @@ for (const [i, row, van] of [[0, 0, 0], [2, 0, 1], [5, 0, 0], [9, 0, 0], [1, 1, 
   scene.add(c);
 }
 
-// every building you can click: a name, a status, a few rows
-const entity = (g, o) => { const e = { groups:[g], readout() { return `${this.id} · ${this.info().status}`.toLowerCase(); }, ...o }; g.userData.entity = e; scene.add(g); return e; };
-const HOUSEHOLDS = ['two adults, two children', 'a retired couple', 'three students', 'a family of five', 'one adult and a cat', 'two adults', 'a young couple and a baby',
-  'a nurse on night shifts', 'two brothers', 'a painter and her dog', 'a fisherman', 'grandparents and a grandson', 'a doctor and a teacher', 'two flatmates'];
-const lightsText = () => { const h = hourAt(sim.t), n = night(); return n < 0.3 ? 'quiet' : h > 0.5 && h < 5.5 ? 'asleep · lights out' : 'lights on'; };
-const homes = [];
-function home(g, o) {
-  const e = entity(g, { kind:'house', household:pick(HOUSEHOLDS), built:Math.floor(rand(1926, 2019)), ...o,
-    info() {
-      const out = WALKERS().filter(w => w.from === this.portal).length;
-      return { kind:this.villa ? 'Villa' : 'House', title:this.id, status:lightsText(),
-        rows:[['Street', this.street], ['Household', this.household], ['Built', String(this.built)], ['Out and about', out ? `${out} from here` : 'everyone home']] };
-    } });
-  e.pick = [o.door[0], o.door[1] - 2, 2.5]; e.portal = portal('home', e.id, o.door, { w:1.2 }); homes.push(e); return e;
-}
+// the homes' gardens, pools and garages share one part
+const gardens = new Part();
 // B3, facing Market St: four houses with driveways; C1, facing Coast Rd: five more
 for (let i = 0; i < 4; i++) {
   const lx = 309.6 + 25.2 * i, o = { x:lx + 3, y:172, w:11, d:12, h:i % 2 ? 5.6 : 4.4, rh:i === 2 ? 3.6 : 3, ridgeY:i === 1, door:i === 3 ? 7.4 : 2,
-    lotX0:lx, lotX1:lx + 25.2, lotY1:195.4, car:i === 2 ? null : [lx + 18, 190] };
+    lotX0:lx, lotX1:lx + 25.2, lotY1:195.4, car:i === 2 ? null : [lx + 18, 190], gardens };
   home(buildHouse(o), { id:`No. ${12 + i * 2} Market St`, street:'Market St', door:[o.x + o.door + 0.55, 184.6] });
 }
 for (let i = 0; i < 5; i++) {
   const lx = 69.6 + 20.16 * i, o = { x:lx + 2.5, y:226, w:11.5, d:11, h:i === 2 ? 5.6 : 4.4, rh:3, ridgeY:i % 2 === 0, door:i === 4 ? 7.6 : 2,
-    lotX0:lx, lotX1:lx + 20.16, lotY1:257.4, car:i % 2 ? [lx + 17, 252] : null };
+    lotX0:lx, lotX1:lx + 20.16, lotY1:257.4, car:i % 2 ? [lx + 17, 252] : null, gardens };
   home(buildHouse(o), { id:`No. ${1 + i * 2} Coast Rd`, street:'Coast Rd', door:[o.x + o.door + 0.55, 237.6] });
 }
 const VILLAS = [['Villa Aster', 189.6, 50.4, 22, 13, [189.6 + 30, 236, 12, 6], [[189.6 + 46, 232], [192, 250], [189.6 + 44, 251]]],
@@ -100,9 +88,18 @@ const VILLAS = [['Villa Aster', 189.6, 50.4, 22, 13, [189.6 + 30, 236, 12, 6], [
   ['Villa Dune', 343.2, 33.6, 18, 12, [343.2 + 4, 240, 11.5, 5.5], [[343.2 + 29.5, 228], [343.2 + 28, 251]]],
   ['Villa Eira', 376.8, 33.6, 18, 12, [376.8 + 4, 240, 11.5, 5.5], [[376.8 + 29.5, 228], [376.8 + 28, 251]]]];
 for (const [id, x, w, bw, bd, pool, palms] of VILLAS) {
-  const g = buildVilla({ x, y:214.6, w, bw, bd, pool, palms, lotY1:257.4 });
+  const g = buildVilla({ x, y:214.6, w, bw, bd, pool, palms, lotY1:257.4, gardens });
   home(g, { id, villa:true, street:'Coast Rd', door:[x + 3 + bw - 3.2, 214.6 + 7 + bd + 0.6] });
 }
+// Orchard Lane: six houses facing south over the lane, three with a garage and a car on the drive, porches, dormers
+const ORCHARD_HOUSES = [{ w:9, h:4.4, door:2, garage:3.2, dormer:true }, { w:10, h:5.6, ridgeY:true, door:6.6, porch:true }, { w:10.5, h:4.4, door:2, porch:true },
+  { w:9, h:5.6, door:5.8, garage:3.2, dormer:true }, { w:10, h:4.4, ridgeY:true, door:2 }, { w:9, h:4.4, door:2.2, garage:3.2, porch:true }];
+ORCHARD.lots.forEach(([lx, lw], i) => {
+  const s = ORCHARD_HOUSES[i], x = lx + 1, y = 42.5, d = 9.5;
+  const o = { ...s, x, y, d, rh:3, lotX0:lx, lotX1:lx + lw, lotY1:ORCHARD.lotY1, car:s.garage ? [x + s.w + 0.2 + s.garage / 2, 57.6] : null, gardens };
+  home(buildHouse(o), { id:`No. ${1 + 2 * i} Orchard Ln`, street:'Orchard Ln', door:[x + s.door + 0.55, y + d + 0.6] });
+});
+const gardensG = gardens.build('gardens'); gardensG.traverse(o => { o.raycast = noop; }); scene.add(gardensG);
 const flats = [['Market Court', 72, 146, 24, 44, 15, 12], ['Harbour View', 266, 144, 24, 46, 18, 12]].map(([id, x, y, w, d, h, door]) => {
   const e = entity(buildFlats(id, x, y, w, d, h, door), { kind:'building', id, floors:h / 3, flats:Math.round(h / 3) * 6,
     info() { return { kind:'Flats', title:this.id, status:lightsText(), rows:[['Floors', String(this.floors)], ['Flats', String(this.flats)], ['Street', 'Riverside Rd']] }; } });

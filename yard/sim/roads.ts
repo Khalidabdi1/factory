@@ -65,6 +65,7 @@ export function streetAt(x, y) {
   const av = [['Park Av', 60], ['Mill Av', 180], ['Harbour Av', 300], ['Hill Av', 420]].find(([, a]) => Math.abs(x - a) < 9);
   if (av && y > 138) return av[0];
   if (x > 218 && x < 263 && y > 176 && y < 199) return 'the police yard';
+  if (x > 356 && (y < 93 || x > 404 && y < 117)) return x > 360 && x < 403 && y > 72 && y < 91 ? 'Orchard Green' : 'Orchard Ln';
   if (y < 118) return x < 200 ? 'the Plant 01 yard' : x < 358 ? 'the Warehouse 01 yard' : 'the shop forecourt';
   return 'town';
 }

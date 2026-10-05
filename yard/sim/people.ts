@@ -1,13 +1,14 @@
 // @ts-nocheck
 import { ease, rand, rng } from '../kernel/math';
 import { Site, dedupe } from '../kernel/graph';
-import { BOXES, SHELF, SHOP, STOCK_CAP, ZEBRA_X } from '../layout';
+import { BOXES, ORCHARD, SHELF, SHOP, STOCK_CAP, ZEBRA_X } from '../layout';
 import { NAMES, STAFF, clock, kmh, night, sim } from './core';
 import { streetAt } from './roads';
 import { SPOTS } from './cars';
 import { Person } from './person';
 import { PARK_BENCHES } from '../world/ground';
 import { CAFE_TABLES } from '../world/town';
+import { PLAY_BENCHES } from '../world/orchard';
 
 let shopperSeq = 1, walkerSeq = 0;
 // the warehouse guard, created with the rest of the yard
@@ -177,7 +178,11 @@ const PED = (() => {
   const link = (a, b) => segs.push([add(...a), add(...b)]);
   // along each row, inside the blocks and over the avenues (B3's north side is set back, block E starts further south)
   for (const y of PR) for (let i = 0; i < PC.length - 1; i++) { if (y === 139.3 && PC[i] >= 308.3) continue; link([PC[i], y], [PC[i + 1], y]); }
-  link([308.3, 139.3], [308.3, 143.9]); link([308.3, 143.9], [411.7, 143.9]); link([411.7, 143.9], [428.3, 147.3]);
+  link([308.3, 139.3], [308.3, 143.9]); link([308.3, 143.9], [ZEBRA_X, 143.9]); link([ZEBRA_X, 143.9], [411.7, 143.9]); link([411.7, 143.9], [428.3, 147.3]);
+  // up to Orchard Lane: over Riverside Rd at the shop's zebra, up the footway, over the lane to the houses' pavement
+  const O = ORCHARD;
+  for (const [a, b] of [[[ZEBRA_X, 143.9], [ZEBRA_X, 117.2]], [[ZEBRA_X, 117.2], [O.walkX, 117.2]], [[O.walkX, 117.2], [O.walkX, 72.6]], [[O.walkX, 72.6], [O.walkX, O.pave]],
+    [[O.walkX, O.pave], [360, O.pave]], [[O.walkX, O.pave], [438, O.pave]]]) link(a, b);
   // down each column, over Market St and Coast Rd
   for (const x of PC) {
     link([x, x === 308.3 || x === 411.7 ? 143.9 : x === 428.3 ? 147.3 : 139.3], [x, 196.7]);
@@ -197,6 +202,7 @@ for (const [n, p, w] of [['the west end of the promenade', [-4, PROM], 3], ['the
 portal('cafe', 'Café Mira', [151, 193.2], { w:2 }); portal('pier', 'the pier', [199, 309]);
 for (const x of [40, 92, 136, 226, 280, 336, 384]) portal('beach', 'the beach', [x, 285.5]);
 for (const p of [[12.3, 175], [12.3, 225], [37.7, 225], [25, 251.4]]) portal('park', 'Mill Park', p);
+portal('park', 'Orchard Green', [401.4, 79.5]);
 const LEISURE = ['cafe', 'pier', 'beach', 'park'];
 // somewhere to go next: by night mostly home, by day anywhere
 export function nextPortal(from, avoid) {
@@ -212,7 +218,7 @@ export const walkSpawn = { t:0 };
 // seats: café chairs facing their table, park benches facing away from their backrests; z is the seat height
 const SEATS = { cafe:[], park:[] };
 for (const tx of CAFE_TABLES) for (const [dx, h] of [[-0.8, 0], [0.8, Math.PI]]) SEATS.cafe.push({ at:[tx + dx, 191.4], h, z:0.45, by:null });
-for (const [x, y, f] of PARK_BENCHES) for (const k of [-0.45, 0.45])
+for (const [x, y, f] of [...PARK_BENCHES, ...PLAY_BENCHES]) for (const k of [-0.45, 0.45])
   SEATS.park.push({ at:f === 'e' || f === 'w' ? [x, y + k] : [x + k, y], h:{ e:0, w:Math.PI, n:-Math.PI / 2, s:Math.PI / 2 }[f], z:0.48, by:null });
 const freeSeat = (kind, x, y) => (SEATS[kind] ?? []).filter(s => !s.by && Math.hypot(s.at[0] - x, s.at[1] - y) < 12)
   .sort((a, b) => Math.hypot(a.at[0] - x, a.at[1] - y) - Math.hypot(b.at[0] - x, b.at[1] - y))[0];

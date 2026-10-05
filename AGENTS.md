@@ -61,6 +61,11 @@ The React component and the engine share a contract: the engine finds the plate'
 - **Time.** `hourAt(t)` maps sim time to the clock. The skip button eases `shift.h` toward `shift.goal`. `night()` is 0 by day, 1 by night, and eases through dusk (18:30–20:30) and dawn (05:00–07:00).
 - **Entities.** Anything clickable has `kind`, `id`, `groups` (three.js groups with `userData.entity = this`), `pick` (a local anchor) and `info()`, which returns `{ kind, title, status, rows:[[k,v]…], bar?:{v,max,label} }`. They also have `readout()`, and optionally `route()` for the dashed route. Kinds in `STILL` (`view.ts`) can't be followed. When something leaves the scene, call `hooks.forget(this)`.
 - **Look-inside buildings.** `group.userData.peek = { shell, cut, inside?, box:[x0,x1,y0,y1] }`, registered in `PEEK` in `view.ts`. The cut, a section drawing (walls cut low and hatched, roof as an outline), replaces the shell while the building, or anything whose bounds centre lies in `box`, is selected.
+  - **Homes build their section lazily.** `peek.section(extra)` comes from `yard/world/interiors.ts` and returns the cut, the inside and the furniture's `spots`.
+  - On open and close, the view calls `ent.peeked(on)`, and calls `ent.whileOpen()` every frame while the building is open.
+  - `yard/sim/homes.ts` uses these hooks to place the residents who are home, posed by the hour.
+  - Gardens of all homes share one static part (the `gardens` object in `index.ts`). Only the shells are per-home.
+- **Card actions.** `info()` may return `actions:[[label, fn]]`. They render as buttons in the card footer; "Look inside" calls `hooks.lookInside(ent)`.
 - **Vehicles.** `Car` follows a `Path` with `stops` (arrive/release/left) and `yields`. `Truck` loops are a `Path` plus `holds` built with `holdOn(path, x, y, {…})`. Collision avoidance is `clearAhead`, and anything stuck for 25–30 s "ghosts" past.
 - **People.** `Person` runs a step queue (`walk`, `go` (pavement walk that waits at kerbs), `wait`, `face`, `then`). Walkers route over the `PED` pavement graph between `portal()`s, chosen by `nextPortal()`.
   - Looks and outfits live in `OUTFITS` (`yard/models/people.ts`), and `PROTO.person[look][variant]` holds the built models.
@@ -80,6 +85,7 @@ The React component and the engine share a contract: the engine finds the plate'
 1. Run `npm run dev -- --port 3100` and open `http://localhost:3100/?debug=1` in Chrome. `window.yard` gives you:
    - `step(s)`, `skip(h)`, `select(id)`, `selected()`, `find(id)`, `all()`;
    - `look(x, y, zoomK)`, `view(i)`, `screenOf(id)`;
+   - `drawCalls()`, which runs one frame and counts it (use it when the window is hidden, since Chrome holds animation frames there);
    - `sim`, `renderer`, `camera`, `controls`, `incident`, `bank`, `shop`, `whGate`, `RACK`, `SHELF`, `SPOTS`, `BUS_STOPS`.
 2. To compare runs, pause (click `#pause`), then step `sim.step(1/60)` until `sim.t` reaches a target. The same seed always gives the same state.
 3. Check the console for errors, and check draw calls and that nothing gets stuck after a long `step()`. Test both themes, day and night (`skip(12)`), and a 390 px wide window.
@@ -96,9 +102,9 @@ Done:
 - Phase 0: Next.js port with exact parity.
 - Phase 1: night page frame, theme memory, WebGL context-loss handling.
 - Phase 2: people redesign, with outfits, swinging arms and seated poses.
+- Phase 3: Orchard Lane (`yard/world/orchard.ts`, `ORCHARD` in `layout.ts`), plus sections and residents for every house and villa.
 
 Next:
-3. Orchard Lane: new houses on the wooded plot behind Corner Market, plus interiors and residents for every house and villa.
 4. A realistic Warehouse 01: 48-slot racking on 3 levels, shelving, pickers.
 5. Courier PKG-1 with online orders from Corner Market and order tracking (Track button, the main camera follows).
 6. A bank siege you can see inside: four officers surround the bank, arrest inside or a back-door chase.
@@ -106,7 +112,10 @@ Next:
 8. Fishing boat Kestrel and a pier angler.
 9. Weather: rain and sea fog.
 10. Fire station and ENG-1, with chimney fires.
-11. Freight train FRT-7 collecting pallets from Plant 01.
+10b. Car Works: a car factory on a terrace cut into the foothills, which you can see inside.
+    - Inside: a press shop, a body-in-white robot welding line (after the owner's reference photo), a paint booth, assembly and an end-of-line test.
+    - Every car on the line can be followed with the camera.
+11. Freight train FRT-7 collecting pallets from Plant 01 and finished cars from Car Works.
 12. README, debug hooks, push to `main`.
 
 The full plan is in the owner's `~/.claude/plans/` file for this work. A shared road router (`ROADNET`), card `actions`, and a peek helper are planned infrastructure for phases 3–10.

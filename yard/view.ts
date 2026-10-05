@@ -95,7 +95,7 @@ function select(ent) {
 }
 hooks.forget = forget;
 function forget(ent) { if (selected === ent) select(null); if (hovered === ent) hovered = null; }
-const STILL = ['factory', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'building', 'house', 'range', 'lighthouse'];
+const STILL = ['factory', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'building', 'house', 'range', 'lighthouse', 'resident'];
 const followable = ent => !!ent && !STILL.includes(ent.kind);
 function setFollow(on) { follow = on && followable(selected); $('cardFollow').setAttribute('aria-pressed', follow); }
 function refresh() {
@@ -108,8 +108,20 @@ function refresh() {
   const bar = $('cardBar'); bar.hidden = !i.bar;
   if (i.bar) { bar.querySelector('span').textContent = i.bar.label; bar.querySelector('i').style.width = `${clamp(i.bar.v / i.bar.max, 0, 1) * 100}%`; }
   const dl = $('cardRows'); dl.replaceChildren(...i.rows.flatMap(([k, v]) => { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; return [dt, dd]; }));
-  $('cardFoot').hidden = !followable(selected);
+  // the card's own buttons (Look inside, Track …), rebuilt only when they change so a click is never lost
+  const acts = i.actions ?? [], foot = $('cardFoot'), key = acts.map(a => a[0]).join('|');
+  cardActs = acts;
+  if (foot.dataset.acts !== key) {
+    foot.dataset.acts = key; foot.querySelectorAll('.act').forEach(b => b.remove());
+    for (const [label] of acts) { const b = document.createElement('button'); b.className = 'act'; b.textContent = label; b.onclick = () => cardActs.find(a => a[0] === label)?.[1](); foot.append(b); }
+  }
+  $('cardFollow').hidden = !followable(selected); foot.hidden = !followable(selected) && !acts.length;
 }
+let cardActs = [];
+// Look inside: frame the building close enough to see its rooms (it is open while it is selected)
+hooks.lookInside = ent => { const [x0, x1, y0, y1] = ent.groups[0].userData.peek.box; setFollow(false); goal = frame(stage.clientWidth, stage.clientHeight, [x0 - 4, x1 + 4, y0 - 4, y1 + 4], [0, 5]); };
+// a closed building says it can be opened
+const hoverText = e => { const pk = e?.groups?.[0]?.userData.peek; return e ? `${e.id}${pk && !pk.cut?.visible ? ' · look inside' : ''}` : ''; };
 const screenAt = v => { tmp.copy(v).project(camera); return [(tmp.x + 1) / 2 * stage.clientWidth, (1 - tmp.y) / 2 * stage.clientHeight]; };
 function anchorOf(ent) { const b = bounds(ent); return screenAt(v3((b.min.x + b.max.x) / 2, b.max.y, (b.min.z + b.max.z) / 2)); }
 function placeAt(el, [x, y], text) {
@@ -143,14 +155,20 @@ function drawRoute() {
   if (r.next) { const rr = selected.isPerson ? 1.1 : 3.2; for (const v of ring(r.next[0], r.next[1], rr, z, 32)) s.push(v.x, v.y, v.z); }
   routeLine.geometry.dispose(); routeLine.geometry = new LineSegmentsGeometry().setPositions(s); routeLine.visible = true;
 }
-// a closed building opens up while it, or something inside it, is selected
-const PEEK = [[whG, warehouse], [shopG, shop]];
+// A closed building opens up while it, or something inside it, is selected. Homes draw their section (and are told
+// to show who is in) the first time they open.
+const PEEK = [[whG, warehouse], [shopG, shop], ...homes.map(h => [h.groups[0], h])];
 function updatePeek() {
   let c = null; if (selected) { const b = bounds(selected); c = [(b.min.x + b.max.x) / 2, (b.min.z + b.max.z) / 2]; }
   for (const [g, ent] of PEEK) { const pk = g.userData.peek, [x0, x1, y0, y1] = pk.box;
     const inside = p => !!p && p[0] > x0 && p[0] < x1 && p[1] > y0 && p[1] < y1;
     const on = selected === ent || inside(c) || !!routeNext && inside([routeNext.p.x, routeNext.p.z]);
-    if (pk.cut.visible !== on) { pk.cut.visible = on; pk.shell.visible = !on; if (pk.inside) pk.inside.visible = on; }
+    if (on && !pk.cut) {
+      const s = pk.section({ twoBeds:ent.household?.n >= 3 }); s.cut.visible = s.inside.visible = false;
+      g.add(s.cut, s.inside); Object.assign(pk, { cut:s.cut, inside:s.inside }); ent.spots = s.spots;
+    }
+    if (pk.cut && pk.cut.visible !== on) { pk.cut.visible = on; pk.shell.visible = !on; if (pk.inside) pk.inside.visible = on; ent.peeked?.(on); }
+    if (on) ent.whileOpen?.();
     if (ent === warehouse) for (const s of RACK) if (s.pallet) s.pallet.group.visible = on; }
 }
 
@@ -235,7 +253,7 @@ function tick(now) {
   updatePeek();
   if (hoverDirty && pointer) { hoverDirty = false; hovered = hit(...pointer); canvas.classList.toggle('over', !!hovered); }
   placeTag($('tagSel'), selected, selected ? `${selected.id} · ${selected.info().status}` : '');
-  placeTag($('tagHover'), hovered !== selected ? hovered : null, hovered?.id ?? '');
+  placeTag($('tagHover'), hovered !== selected ? hovered : null, hoverText(hovered));
   updateReticle();
   if ((cardT -= dt) <= 0) {
     cardT = 0.25; refresh(); drawRoute();
@@ -264,6 +282,8 @@ if (DEBUG) {
     look:(x, y, k) => { goal = null; setFollow(false); moveTarget(W(x, y, 0)); camera.zoom = fitZoom * k; camera.updateProjectionMatrix(); },
     view:i => { const v = frame(stage.clientWidth, stage.clientHeight, VIEWS[i]); goal = null; moveTarget(v.target); camera.zoom = v.zoom; camera.updateProjectionMatrix(); },
     select:id => select(find(id) ?? null), selected:() => selected?.id ?? null, find,
+    // run one frame now (works in a hidden window, where the browser holds animation frames) and count its draw calls
+    drawCalls:() => { tick(performance.now()); return renderer.info.render.calls; },
     screenOf:id => { const e = find(id); scene.updateMatrixWorld(); camera.updateMatrixWorld(); const p = e.groups[0].localToWorld(W(...(e.pick ?? [0, 0, 1]))).project(camera), r = canvas.getBoundingClientRect();
       return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; },
   };
