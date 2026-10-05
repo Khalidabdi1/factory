@@ -58,7 +58,7 @@ export const BLOCKS = [[67, 173, 138, 198], [187, 293, 138, 178], [187, 219, 178
   [67, 173, 212, 260], [187, 293, 212, 260], [307, 413, 212, 260], [427, 440, 146, 260], [0, 53, 138, 260], [0, 440, 274, 279],
   [358, 440, 4, 61], [358, 417, 71, 92], [427, 440, 71, 117]];
 // the piers' decks, people walk on them: [x0, x1, y0, y1, height, ramp] (a ramp rises from the promenade over its first 2.3 m)
-export const PIER = { neck:[326, 334], y0:278.7, platform:[308, 352, 297, 317], deck:1.2, wheel:{ x:344, y:307.5, z:10.6, r:8 }, carousel:{ x:322, y:304, r:4.2 } };
+export const PIER = { neck:[326, 334], y0:278.7, platform:[308, 352, 297, 317], deck:1.2, wheel:{ x:344, y:307.5, z:11.85, r:8 }, carousel:{ x:322, y:304, r:4.2 } };
 export const DECKS = [[196, 202, 278.7, 313, 1.15, true], [326, 334, 278.7, 297.1, 1.2, true], [308, 352, 297, 317, 1.2, false]];
 export const zAt = (x, y) => {
   for (const [x0, x1, y0, y1, z, ramp] of DECKS) if (x > x0 && x < x1 && y > y0 && y < y1) return ramp ? Math.min(z, CURB + (y - y0) * 0.45) : z;

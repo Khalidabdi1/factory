@@ -5,7 +5,7 @@ import { rand } from '../kernel/math';
 import { Path } from '../kernel/path';
 import { BANK } from '../world/town';
 import { PROTO, clock, hourAt, kmh, sim } from './core';
-import { streetAt } from './roads';
+import { laneClear, streetAt } from './roads';
 import { Car } from './cars';
 import { Person } from './person';
 import { nextPortal, pedRoute, portal } from './people';
@@ -188,14 +188,22 @@ export class PoliceCar extends Car {
     this.path = new Path([[this.front.x, this.front.y], ...pts], 5); this.s = 0; this.si = 0; this.at = null;
     this.stops = [{ s:this.path.length, name, label:name, release:() => false, arrive }];
   }
-  dispatch(x, posts) { this.state = 'out'; this.calls++; this.drive([[223, 184], [223, 201.5], [x, 201.5]], 'Harbour Bank', () => { this.state = 'scene'; posts.forEach((p, k) => new Officer(this, p, k)); }); }
+  // out of the yard, west along Market St, and in to the kerb in front of the bank, out of the traffic's way
+  dispatch(x, posts) {
+    this.state = 'out'; this.calls++;
+    this.drive([[223, 184], [223, 201.5], [x + 17, 201.5], [x + 8, 199.3], [x, 199.3]], 'Harbour Bank', () => { this.state = 'scene'; this.parked = true; posts.forEach((p, k) => new Officer(this, p, k)); });
+  }
   update(dt) {
     const on = this.state === 'out' || this.state === 'scene', ph = sim.t % 0.5 < 0.25;
     glow(this.barL, on && ph); glow(this.barR, on && !ph);
     // back to the yard once it is over and both officers are in (behind the other car, after it has gone)
+    // pulling out from the kerb into the lane (a few metres on), once nothing is coming along it
     if (this.state === 'scene' && incident.phase === 'done' && this.crew === 2 && !(this.ahead?.state === 'scene')) {
-      const pts = trip({ x:this.front.x, y:this.front.y, h:this.front.h }, locate(...YARD[0].map((v, i) => v + [6, 0][i]), Math.PI));
-      this.state = 'back'; this.homeT = 0; this.drive([...(pts ?? []), ...YARD, [this.yardX, 184]], 'the police yard', () => this.home());
+      const h = Math.PI, m = [this.front.x - 8, 201.5];
+      if (laneClear(this, m[0], m[1], h)) {
+        const pts = trip({ x:m[0], y:m[1], h }, locate(...YARD[0].map((v, i) => v + [6, 0][i]), Math.PI));
+        this.state = 'back'; this.parked = false; this.homeT = 0; this.drive([m, ...(pts ?? []).slice(1), ...YARD, [this.yardX, 184]], 'the police yard', () => this.home());
+      }
     }
     super.update(dt);
     // the second car home stops behind the first one, short of its path's end: that counts as parked too

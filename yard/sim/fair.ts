@@ -56,18 +56,18 @@ class Wheel extends Ride {
   update(dt) {
     if (!fair.open()) { if (this.riders.length || this.queue.length) this.leaveAll(); this.state = 'closed'; return; }
     this.rotor.updateMatrixWorld(true);
-    const [i, lo] = this.bottom(), atBottom = lo < D + 1.55;
+    const [i, lo] = this.bottom(), atBottom = lo < PIER.wheel.z - PIER.wheel.r + 0.15;
     if (this.hold > 0) { this.hold -= dt; this.state = 'stopped to load'; }
     else {
       const r = this.riders.find(q => q.i === i), next = this.queue.find(p => p.queued);
       if (atBottom && r && this.turned[i] > Math.PI * 1.7) { this.alight(r); this.seats[i] = null; this.hold = 2.2; }
-      else if (atBottom && !this.seats[i] && next && this.turned[i] > 0.6) { this.board(next, this.gond[i], new THREE.Vector3(0, -1.33, 0)); this.riders[this.riders.length - 1].i = i; this.seats[i] = next; this.turned[i] = 0; this.hold = 2.2; }
+      else if (atBottom && !this.seats[i] && next && this.turned[i] > 0.6) { this.board(next, this.gond[i], new THREE.Vector3(0, -2.23, 0)); this.riders[this.riders.length - 1].i = i; this.seats[i] = next; this.turned[i] = 0; this.hold = 2.2; }
       else { const w = 0.12 * dt; this.th += w; this.turned = this.turned.map(t => t + w); this.state = 'turning'; }
     }
     this.rotor.rotation.x = this.th; for (const q of this.gond) q.rotation.x = -this.th;
   }
   status() { return this.state === 'closed' ? 'closed' : `${this.state} · ${this.riders.length} riding`; }
-  rows() { return [['Height', '19 m'], ['Gondolas', String(GONDOLAS)]]; }
+  rows() { return [['Height', '21 m'], ['Gondolas', String(GONDOLAS)]]; }
 }
 // The carousel loads for a few seconds, then turns for twenty, the horses rising and falling.
 class Carousel extends Ride {

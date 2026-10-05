@@ -8,6 +8,12 @@ import { Car } from './cars';
 import { Person } from './person';
 import { homes } from './homes';
 import { kerbStop, locate, trip } from './roadnet';
+import { kerbward, laneClear } from './roads';
+
+// the last few metres of a drive, swung in to the kerb
+const pullIn = pts => { const n = pts.length, P = pts[n - 1], Q = pts[n - 2], h = Math.atan2(P[1] - Q[1], P[0] - Q[0]), c = Math.cos(h), s = Math.sin(h);
+  const k = Math.min(7, Math.hypot(P[0] - Q[0], P[1] - Q[1]) * 0.6);   // swing in over the last straight, never back round a corner
+  return [...pts.slice(0, -1), [P[0] - c * k, P[1] - s * k], kerbward([P[0] - c * k * 0.35, P[1] - s * k * 0.35], h, 1.9), kerbward(P, h, 1.9)]; };   // ending parallel to the kerb
 
 // Online orders from Corner Market. A home orders; a shop assistant picks the boxes, packs the parcel at the counter and
 // carries it over the zebra to the parcel van in the shop parking; the van drives to the house, the courier walks it to
@@ -50,29 +56,38 @@ export class Courier extends Car {
   }
   park() { this.stops = [{ s:this.path.length, name:'Corner Market', label:'parked at Corner Market', release:() => false }]; this.si = 0; this.at = null; }
   drive(pts, name, arrive) { this.path = new Path(pts, 5); this.s = 0; this.si = 0; this.at = null; this.stops = [{ s:this.path.length, name, label:name, release:() => false, arrive }]; }
-  // a packed parcel is in the van: out of the parking, into the eastbound lane, through town to the house's kerb
+  // a packed parcel is in the van: it waits for a gap, pulls out of the parking into the eastbound lane, drives through
+  // town to the house, and pulls in to the kerb there, out of the traffic's way
   dispatch(o) {
     const h = o.house; h.stop ??= kerbStop(...h.kerb);
     const pts = trip({ x:OUT[2][0], y:OUT[2][1], h:0 }, h.stop);
     if (!pts) { o.state = 'placed'; return; }
-    this.order = o; o.state = 'out'; o.tOut = sim.t; this.state = 'out'; this.parked = false;
-    this.drive([...OUT, ...pts.slice(1)], h.id, () => { this.state = 'delivering'; o.state = 'arriving'; new Courierman(this, o); });
+    this.order = o; o.state = 'out'; o.tOut = sim.t; this.state = 'leaving'; this.pending = [...OUT, ...pullIn(pts).slice(1)];
   }
-  // the parcel is in; back to the shop round whichever streets are shortest, into the spot again
-  done() {
-    const back = trip({ x:this.front.x, y:this.front.y, h:this.front.h }, locate(...IN[0], 0));
-    this.state = 'back'; this.order = null;
-    this.drive([...(back ?? [[this.front.x, this.front.y]]), ...IN.slice(1)], 'Corner Market', () => this.home());
+  // the parcel is in: wait for a gap, back into the lane, back to the shop round whichever streets are shortest
+  done() { this.state = 'waiting'; this.order = null; }
+  merge() {
+    const f = this.front, m = kerbward([f.x + Math.cos(f.h) * 7, f.y + Math.sin(f.h) * 7], f.h, -1.9);
+    if (!laneClear(this, m[0], m[1], f.h)) return;
+    const back = trip({ x:m[0], y:m[1], h:f.h }, locate(...IN[0], 0));
+    this.state = 'back'; this.parked = false;
+    this.drive([[f.x, f.y], m, ...(back ?? []).slice(1), ...IN.slice(1)], 'Corner Market', () => this.home());
   }
   home() { this.state = 'base'; this.parked = true; this.path = new Path([[SPOT[0] - 6, SPOT[1]], SPOT]); this.s = this.path.length; this.park(); this.place(); }
   eta() { const left = this.path.length - this.s; return this.state === 'out' ? left / AVG + 2 : 0; }
   update(dt) {
-    glow(this.hazard, this.state === 'delivering' && sim.t % 0.8 < 0.4);
+    glow(this.hazard, (this.state === 'delivering' || this.state === 'waiting') && sim.t % 0.8 < 0.4);
+    if (this.state === 'leaving' && laneClear(this, OUT[2][0], OUT[2][1], 0)) {
+      const o = this.order; this.state = 'out'; this.parked = false;
+      this.drive(this.pending, o.house.id, () => { this.state = 'delivering'; this.parked = true; o.state = 'arriving'; new Courierman(this, o); });
+    }
+    if (this.state === 'waiting') this.merge();
     super.update(dt);
   }
   status() {
     const o = this.order, waiting = orders.list.filter(q => q.state === 'placed' || q.state === 'packing' || q.state === 'packed').length;
-    return { base:waiting ? `at Corner Market · ${waiting} ${waiting > 1 ? 'orders' : 'order'} to go` : 'at Corner Market · waiting for orders',
+    return { leaving:'pulling out · waiting for a gap', waiting:'pulling out · waiting for a gap',
+      base:waiting ? `at Corner Market · ${waiting} ${waiting > 1 ? 'orders' : 'order'} to go` : 'at Corner Market · waiting for orders',
       out:`out for delivery · ${o?.house.id}`, delivering:`at ${o?.house.id} · delivering`, back:'returning to Corner Market' }[this.state];
   }
   info() {

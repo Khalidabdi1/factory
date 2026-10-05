@@ -32,6 +32,12 @@ export function clearAhead(v, look, gap, dt) {
 }
 export const roadBusy = (v, x0, x1, y, skip) => roadVehicles().some(o => o !== v && !o.parked && !skip?.(o) && o.points.some(p => Math.abs(p[1] - y) < 2.6 && p[0] > x0 && p[0] < x1));
 export const gapW = (t, x0, x1, skip) => !roadBusy(t, x0, x1, 127.5, skip), gapE = (t, x0, x1, skip) => !roadBusy(t, x0, x1, 134.5, skip);
+// may a vehicle at the kerb pull out into the lane at (x, y), heading h? nothing moving in the lane from back metres
+// behind that point to ahead metres past it
+export const laneClear = (v, x, y, h, back = 28, ahead = 8) => { const c = Math.cos(h), s = Math.sin(h);
+  return !roadVehicles().some(o => o !== v && !o.parked && o.points.some(([px, py]) => { const dx = px - x, dy = py - y, f = dx * c + dy * s; return Math.abs(dy * c - dx * s) < 2.6 && f > -back && f < ahead; })); };
+// the kerb side of a lane: right of the way it runs, by k metres
+export const kerbward = ([x, y], h, k) => [x - Math.sin(h) * k, y + Math.cos(h) * k];
 // a flatbed already turning in at the plant gate is no reason for one at the exit to wait
 export const turningIn = o => o.model === 'flatbed' && o.nextHold().name === 'bay' && o.front.x > 112 && o.front.x < 136 && o.front.y < 129;
 // slow down for bends: the speed allowed now, given the first bend within reach

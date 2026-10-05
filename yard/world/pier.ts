@@ -88,11 +88,12 @@ export function buildWheel() {
     r.box(-0.12, y - 0.12, z - 0.12, 0.24, 0.24, 0.24, 'l'); }
   r.geo(new THREE.CylinderGeometry(0.7, 0.7, 1.4, 12), new THREE.Matrix4().compose(W(0, 0, 0), new THREE.Quaternion().setFromAxisAngle(v3(0, 0, 1), Math.PI / 2), v3(1, 1, 1)), 'k');
   rotor.add(r.build('rim'));
+  // an open cabin tall enough to stand in (2.1 m inside), hanging from its pivot on the rim
   const cab = new Part();
-  cab.box(-0.65, -0.65, -1.45, 1.3, 1.3, 0.12, 'kb').box(-0.75, -0.75, -0.3, 1.5, 1.5, 0.1, 'kb');
-  for (const [x, y] of [[-0.6, -0.6], [0.6, -0.6], [0.6, 0.6], [-0.6, 0.6]]) cab.seg('koline', W(x, y, -1.33), W(x, y, -0.3));
-  cab.seg('koline', W(0, 0, -0.2), W(0, 0, 0));
-  for (const z of [-0.95]) for (const [a, b] of [[[-0.6, -0.6], [0.6, -0.6]], [[0.6, -0.6], [0.6, 0.6]], [[0.6, 0.6], [-0.6, 0.6]], [[-0.6, 0.6], [-0.6, -0.6]]]) cab.seg('koline', W(a[0], a[1], z), W(b[0], b[1], z));
+  cab.box(-0.65, -0.65, -2.35, 1.3, 1.3, 0.12, 'kb').box(-0.75, -0.75, -0.35, 1.5, 1.5, 0.1, 'kb');
+  for (const [x, y] of [[-0.6, -0.6], [0.6, -0.6], [0.6, 0.6], [-0.6, 0.6]]) cab.seg('koline', W(x, y, -2.23), W(x, y, -0.35));
+  cab.seg('koline', W(0, 0, -0.25), W(0, 0, 0));
+  for (const z of [-1.3]) for (const [a, b] of [[[-0.6, -0.6], [0.6, -0.6]], [[0.6, -0.6], [0.6, 0.6]], [[0.6, 0.6], [-0.6, 0.6]], [[-0.6, 0.6], [-0.6, -0.6]]]) cab.seg('koline', W(a[0], a[1], z), W(b[0], b[1], z));
   const proto = cab.build('gondola');
   for (let i = 0; i < GONDOLAS; i++) { const a = i / GONDOLAS * Math.PI * 2, q = proto.clone(); q.name = `gondola${i}`; q.position.copy(W(0, R * Math.cos(a), R * Math.sin(a))); rotor.add(q); }
   g.add(rotor);

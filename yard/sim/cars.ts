@@ -43,7 +43,7 @@ export class Car {
     if (st && st.s - this.s < 0.08) { this.s = st.s; this.v = 0; this.at = st; st.arrive?.(this); }
     // stuck for a long time, a car slips past whatever holds it rather than freeze the town
     this.stopT = this.v < 0.1 && !this.at ? this.stopT + dt : 0;
-    if (this.stopT > 25) { this.ghostT = 2; this.stopT = 0; }
+    if (this.stopT > 40) { this.ghostT = 2; this.stopT = 0; }
     this.place();
     if (!this.path.closed && this.s - this.len > this.path.length) this.remove();
   }

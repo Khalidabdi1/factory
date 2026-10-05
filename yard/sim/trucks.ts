@@ -88,7 +88,7 @@ export class Truck {
     if (this.target - this.s < 0.08) { this.s = this.target; this.v = 0; this.at = h; this.calm = 0; h.arrive?.(this); }
     // the same last resort as for cars: held up for half a minute, slip past whatever is in the way
     this.stopT = this.v < 0.1 && !this.at ? (this.stopT ?? 0) + dt : 0;
-    if (this.stopT > 30) { this.ghostT = 2; this.stopT = 0; }
+    if (this.stopT > 45) { this.ghostT = 2; this.stopT = 0; }
     this.place();
   }
   pass() {
@@ -147,15 +147,15 @@ export function flatVariant(bay, dock) {
       wait:t => t.loaded() === 6 && t.dock.truck !== t && DOCKS.every(d => d.truck) ? 'loaded · waiting for a free dock' : null,
       left:t => { sim.stats.plantOut++; t.bay.truck = null; } }),
     holdOn(path, 118, 121, { name:'plantGate', stop:'the plant gate', toward:'to the plant gate', label:'waiting for a gap in traffic',
-      release:t => gapW(t, 110, 144, turningIn) && gapE(t, 90, 124, turningIn) }),
+      release:t => gapW(t, 108, 162, turningIn) && gapE(t, 66, 126, turningIn) }),   // look well along the road both ways: a flatbed is slow to clear it
     holdOn(path, 326, 120.5, { name:'gateIn', stop:'the warehouse gate', gate:whGate, toward:'to Warehouse 01', label:'waiting at the warehouse gate', release:() => whGate.isOpen() }),
     holdOn(path, dock.bx, 80, { name:'dock', stop:`Warehouse 01 · dock ${dock.id}`, toward:`to dock ${dock.id}`, label:`unloading · dock ${dock.id}`,
       release:(t, dt) => t.loaded() === 0 && settled(t, WH, dt), left:t => { t.trips++; sim.stats.flatTrips++; t.dock.truck = null; } }),
     holdOn(path, 320, 116, { name:'gateOut', stop:'the warehouse gate', gate:whGate, toward:'to the warehouse gate', label:'waiting at the warehouse gate',
-      release:t => whGate.isOpen() && gapW(t, 316, 352) }),
+      release:t => whGate.isOpen() && gapW(t, 316, 374) }),
     holdOn(path, 150, 121, { name:'park', soft:30, stop:'the truck park', toward:'back to Plant 01', label:'in the truck park · waiting for a free bay',
       release:t => { if (t.bay.truck === t) return true; const b = BAYS.find(b => !b.truck); if (!b) return false; b.truck = t; t.reroute(b, t.dock); return true; } }),
-    holdOn(path, 150, 121, { name:'parkOut', soft:12, stop:'the truck park', toward:'back to Plant 01', label:'waiting for a gap in traffic', release:t => gapW(t, 140, 184) }),
+    holdOn(path, 150, 121, { name:'parkOut', soft:12, stop:'the truck park', toward:'back to Plant 01', label:'waiting for a gap in traffic', release:t => gapW(t, 138, 204) }),
   ];
   holds.sort((a, b) => a.s - b.s);
   const v = { path, holds }; FLAT.set(key, v); return v;
@@ -176,7 +176,7 @@ export function vanHolds() {
       release:(t, dt) => { if (t.loaded() < 4 || !settled(t, WH, dt) || shop.room() < BOXES * 4) return false; t.doorsTo = 0; return t.doors === 0; },
       wait:t => t.loaded() === 4 && shop.room() < BOXES * 4 ? 'loaded · waiting until the shop has room' : null }),
     holdOn(P, 320, 116, { name:'gateOut', stop:'the warehouse gate', gate:whGate, toward:'to the warehouse gate', label:'waiting at the warehouse gate',
-      release:t => whGate.isOpen() && gapW(t, 312, 352) && gapE(t, 286, 326) }),
+      release:t => whGate.isOpen() && gapW(t, 312, 374) && gapE(t, 268, 328) }),
   ];
 }
 // Line 1 runs round the two southern blocks, stopping for 5 s at each shelter (longer while people board).
