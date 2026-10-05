@@ -21,7 +21,7 @@ import { BOATS } from './sim/boats';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -278,7 +278,7 @@ window.__yardReady = true;
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
   const all = () => [factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, cafe, townHall, lighthouse, range, ...flats, ...homes,
-    fairSys.pier, ...fairSys.rides, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
+    fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
     sim, conveyor, shop, whGate, incident, bank, RACK, SHELF, SPOTS, BUS_STOPS, camera, controls, renderer, scene, hourAt, night, PROTO, pose, hooks, PORTALS, nextPortal,

@@ -14,7 +14,9 @@ const BROWSER = new Set(['window', 'document', 'location', 'performance', 'reque
 let bad = 0;
 const exportsOf = new Map();
 for (const f of files) {
-  const ast = parse(fs.readFileSync(f, 'utf8'), { sourceType:'module', plugins:['typescript'], allowAwaitOutsideFunction:true });
+  let ast;
+  try { ast = parse(fs.readFileSync(f, 'utf8'), { sourceType:'module', plugins:['typescript'], allowAwaitOutsideFunction:true }); }
+  catch (e) { console.log(`${path.relative(ROOT, f)}:${e.loc?.line}:${e.loc?.column} syntax error · ${e.message}`); process.exit(1); }
   const names = new Set();
   for (const st of ast.program.body) if (st.type === 'ExportNamedDeclaration' && st.declaration) {
     const d = st.declaration; if (d.declarations) d.declarations.forEach(x => names.add(x.id.name)); else if (d.id) names.add(d.id.name);

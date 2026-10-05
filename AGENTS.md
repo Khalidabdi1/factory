@@ -121,13 +121,15 @@ Done:
 - Phase 7: Sunset Pier (`yard/world/pier.ts` for models and the static pier, `yard/sim/fair.ts` for the rides and visitors).
   - People stand on pier decks via `DECKS` in `zAt`. A rider's walker is `hidden` while a small figure rides.
   - Rides close outside 10:00–23:00 and when `hooks.raining()`. Day-trippers come up off the beach.
+- Phase 8: fishing (`yard/sim/fishing.ts`).
+  - Kestrel is a state machine: moored → out → fishing → home → unloading. Her skipper is the resident of the "a fisherman" household.
+  - The angler is a `Person` on the town pier.
 - Phase 4: Warehouse 01.
   - `RACK` now has rows A and B, three levels, 48 slots. `LOC.rack` faces by row, and forklifts have a telescoping `mast2`.
   - Shelving, a packing bench and pickers (`Picker`).
   - People inside a shut building are hidden via `hooks.closedAt`.
 
 Next:
-8. Fishing boat Kestrel and a pier angler.
 9. Weather: rain and sea fog.
 10. Fire station and ENG-1, with chimney fires.
 10b. Car Works: a car factory on a terrace cut into the foothills, which you can see inside.

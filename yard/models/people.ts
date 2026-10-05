@@ -25,6 +25,7 @@ export const OUTFITS = {
   guard:[civ('k', 'k', 'trousers', 'short', 'police', null, false)],
   police:[civ('k', 'n', 'trousers', 'short', 'police', null, false), civ('k', 'n', 'trousers', 'bun', 'police', null, true)],
   thief:[civ('k', 'k', 'trousers', 'none', 'hood', 'backpack', false)],
+  fisher:[civ('n', 'k', 'coat', 'short', 'hat', null, false), civ('k', 'n', 'trousers', 'short', 'cap', 'bag', false)],
   courier:[civ('k', 'n', 'trousers', 'short', 'cap', null, false)],
   teller:[civ('n', 'k', 'trousers', 'short', null, null, false), civ('k', 'n', 'skirt', 'bun', null, null, true)],
 };

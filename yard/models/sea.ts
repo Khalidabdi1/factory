@@ -23,6 +23,32 @@ export function buildMotorboat() {
   for (const y of [-0.9, 0.9]) p.seg('detail', W(-3.2, y, -0.3), W(-9, y * 3.2, -0.3));
   return p.build('motorboat');
 }
+// Kestrel, a small inshore fishing boat: a wheelhouse forward with a lit window, a mast with a lamp, fish boxes and a
+// net drum aft, her name on the bow. The rod set (rod, line, float) and a fish are separate groups the sim moves.
+export function buildFishingBoat() {
+  const p = new Part();
+  p.extrude([[-3.4, -1.25, -0.35], [2.0, -1.25, -0.35], [3.9, 0, -0.35], [2.0, 1.25, -0.35], [-3.4, 1.25, -0.35]], [0, 0, 0.85]);
+  p.box(0.2, -0.9, 0.5, 1.8, 1.8, 1.5).box(0.05, -1.0, 2.0, 2.1, 2.0, 0.12, 'k');
+  const f = SIDE(2.0, 0.9, 2.0); p.fill2(f, 0.2, 0.25, 1.4, 0.6, 'window').rect2(f, 0.2, 0.25, 1.4, 0.6, 'line');
+  p.fill2(FRONT(0.2, 0.9, 2.0), 0.4, 0.3, 0.9, 0.5, 'window').rect2(FRONT(0.2, 0.9, 2.0), 0.4, 0.3, 0.9, 0.5, 'line');
+  p.box(1.0, -0.06, 2.12, 0.12, 0.12, 2.6).box(0.92, -0.14, 4.7, 0.28, 0.28, 0.25, 'l');
+  for (const [x, y] of [[-2.6, -0.8], [-2.6, 0.05], [-1.8, -0.8]]) p.box(x, y, 0.5, 0.75, 0.7, 0.4, 'k');
+  p.cylY(-3.0, 0.2, 0.95, 0.38, 0.9, 10);
+  p.text(FRONT(1.6, 1.26, 0.5), 'KESTREL', 0.1, 0.38, 0.32, 'ink', 'start', 0.04);
+  for (const y of [-1.0, 1.0]) p.seg('detail', W(-3.4, y, -0.35), W(-7, y * 2.2, -0.35));
+  const g = p.build('fishingBoat');
+  // the rod, out to starboard, its line down to a float
+  const r = new Part(); r.seg('line', W(-1.9, 0.5, 1.4), W(-1.9, 3.6, 2.9)).seg('detail', W(-1.9, 3.6, 2.9), W(-1.9, 6.4, -0.2));
+  const rod = r.build('rod'); rod.visible = false; g.add(rod);
+  const fl = new Part().box(-0.09, -0.09, -0.05, 0.18, 0.18, 0.22, 'k').build('float'); fl.position.copy(W(-1.9, 6.4, -0.35)); fl.visible = false; g.add(fl);
+  g.add(buildFish());
+  return g;
+}
+export function buildFish() {
+  const p = new Part();
+  p.extrude([[-0.28, 0, -0.08], [0.0, 0, -0.12], [0.26, 0, 0], [0.0, 0, 0.12], [-0.28, 0, 0.08], [-0.42, 0, 0.16], [-0.42, 0, -0.16]], [0, 0.08, 0], 'k');
+  const g = p.build('fish'); g.visible = false; return g;
+}
 export function buildLighthouse() {
   const p = new Part(), x = 402, y = 311.5;
   p.cylZ(x, y, SEA_Z - 0.4, 2.6, 2.2, 16);

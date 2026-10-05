@@ -27,6 +27,7 @@ import { BOATS, Boat } from './sim/boats';
 import { entity, home, homes, lightsText } from './sim/homes';
 import { Courier, tickOrders } from './sim/courier';
 import { buildFair } from './sim/fair';
+import { buildFishing } from './sim/fishing';
 import { initView } from './view';
 
 applyTheme();
@@ -211,6 +212,8 @@ incident.cars = [new PoliceCar('POL-1', 229), new PoliceCar('POL-2', 239)];
 const courier = new Courier();
 // Sunset Pier and its rides
 const fairSys = buildFair();
+// Kestrel and her skipper, and the angler on the town pier
+const fishingSys = buildFishing();
 PROTO.sail = buildSailboat(); PROTO.motor = buildMotorboat();
 new Boat({ id:'Gull', sail:true, skipper:'E. Lund', proto:PROTO.sail, speed:2.6, path:new Path([[200, 320], [370, 320], [370, 326], [40, 326], [40, 320], [200, 320]], 2.8, true) });   // south of Sunset Pier
 new Boat({ id:'Marlin', skipper:'R. Lopes', proto:PROTO.motor, speed:6.5, s:300, path:new Path([[220, 334.5], [30, 334.5], [30, 329], [420, 329], [420, 334.5], [220, 334.5]], 2.8, true) });
@@ -224,7 +227,7 @@ const entryClear = (x, y) => !roadVehicles().some(o => o.points.some(p => Math.h
 sim.step = dt => {
   sim.t += dt;
   const late = night() > 0.5;
-  conveyor.update(dt); tickOrders(dt); fairSys.update(dt);
+  conveyor.update(dt); tickOrders(dt); fairSys.update(dt); fishingSys.update(dt);
   if ((ROAD.next -= dt) <= 0 && entryClear(-8, 134.5)) { new Car({ path:ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
   if ((COAST.nextE -= dt) <= 0 && entryClear(-8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(10, 20) : rand(4, 9); }
   if ((COAST.nextW -= dt) <= 0 && entryClear(448, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(10, 20) : rand(4, 9); }
@@ -252,4 +255,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
