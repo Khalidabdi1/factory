@@ -64,14 +64,22 @@ const ARC = (() => { const n = 400, th: number[] = [], len: number[] = [0];
   const half = 24, out: { th: number, q: number }[] = [];
   for (let j = -half; j <= half; j++) { const f = Math.abs(j) / half; out.push({ th:Math.sign(j) * at(f), q:1 - f }); }
   return out; })();
-// how open the lattice is at a lobe's place t and a height q up its side: two lenses each side, pinched shut at the
-// valleys; the ribbons between them, at the eaves and along the crown, smooth
+// The lattice on a lobe's side, at its place t along the lobe and height q up the side (eave 0, crown 1): two big
+// sails of net, the lower under a ribbon that climbs diagonally across the lobe, the upper above it to the crown's
+// ribbon; a thick ribbon at the eave under them. The ribbons widen toward the valleys and the sails end short of them,
+// so between lobes the white bands run together. 1 inside a sail (its holes all the same size), 0 on a ribbon.
+const RIB = (t: number) => 0.3 + 0.34 * t, RW = 0.05, EAVE = 0.14, CROWN = 0.93;
+const bands = (t: number) => { const w = 0.02 + 0.12 * (1 - Math.sin(Math.PI * t)); return { e:EAVE + w, r0:RIB(t) - RW - w, r1:RIB(t) + RW + w, c:CROWN - w }; };
 function lattice(t: number, q: number) {
-  const L = Math.sin(Math.PI * t) ** 0.85;
-  const m1 = 1 - Math.abs(q - 0.33) / (0.25 * L + 1e-6), m2 = 1 - Math.abs(q - 0.79) / (0.15 * L + 1e-6);
-  return Math.max(0, Math.min(1, Math.max(m1, m2) * 1.6));
+  const b = bands(t), ex = Math.min(t, 1 - t) - 0.08;
+  const m = Math.max(Math.min(q - b.e, b.r0 - q), Math.min(q - b.r1, b.c - q));
+  return Math.max(0, Math.min(1, m / 0.025, ex / 0.04));
 }
+const mid2 = (a: THREE.Vector3, b: THREE.Vector3) => a.clone().add(b).multiplyScalar(0.5);
+const m4 = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, d: THREE.Vector3) => a.clone().add(b).add(c).add(d).multiplyScalar(0.25);
 function buildShell(p: Part) {
+  const hole = (o: THREE.Vector3, q: THREE.Vector3[], n: THREE.Vector3, D: number) => { const lift = n.clone().multiplyScalar(0.06), sz = 0.8 * Math.sqrt(D);
+    p.poly('screen', q.map(v => o.clone().add(v.clone().sub(o).multiplyScalar(sz)).add(lift))); };
   const nx = 96, xs = Array.from({ length:nx + 1 }, (_, i) => X0 + (X1 - X0) * i / nx);
   const P = xs.map(x => ARC.map(a => W(...shellAt(x, a.th))));
   for (let i = 0; i < nx; i++) for (let j = 0; j < ARC.length - 1; j++) {
@@ -80,9 +88,15 @@ function buildShell(p: Part) {
     const k = n.y > 0.55 ? 'deck' : 'body'; p.tri(k, a, b, c); p.tri(k, a, c, d);
     // a diamond pierced in the cell, as big as the lattice is open there: dark by day, lit after dark
     const { t } = section((xs[i] + xs[i + 1]) / 2), D = lattice(t, (ARC[j].q + ARC[j + 1].q) / 2);
-    if (D > 0.08) { const m = a.clone().add(b).add(c).add(d).multiplyScalar(0.25).add(n.clone().multiplyScalar(0.06)), sz = 0.86 * Math.sqrt(D);
-      const q = [a.clone().add(b), b.clone().add(c), c.clone().add(d), d.clone().add(a)].map(q => m.clone().add(q.multiplyScalar(0.5).add(n.clone().multiplyScalar(0.06)).sub(m).multiplyScalar(sz)));
-      p.poly('window', q); for (let k = 0; k < 4; k++) p.seg(D > 0.45 ? 'line' : 'detail', q[k], q[(k + 1) % 4]); }
+    // a diamond hole in the net over the cell's middle, showing the dark inner skin by day (lit after dark)
+    if (D > 0.06) hole(m4(a, b, c, d), [mid2(a, b), mid2(b, c), mid2(c, d), mid2(d, a)], n, D);
+  }
+  // and one over every corner between four cells: the holes at the middles and the corners together leave only thin
+  // white strips between them, crossing on the diagonals, which is the net
+  for (let i = 1; i < nx; i++) for (let j = 1; j < ARC.length - 1; j++) {
+    const { t } = section(xs[i]), D = lattice(t, ARC[j].q); if (D <= 0.06) continue;
+    const o = P[i][j], n = v3(0, 0, 0).crossVectors(P[i + 1][j].clone().sub(P[i - 1][j]), P[i][j + 1].clone().sub(P[i][j - 1])).normalize(); if (n.y < 0) n.negate();
+    hole(o, [mid2(o, P[i][j - 1]), mid2(o, P[i + 1][j]), mid2(o, P[i][j + 1]), mid2(o, P[i - 1][j])], n, D);
   }
   const curve = (pts: THREE.Vector3[], k = 'line') => { for (let i = 1; i < pts.length; i++) p.seg(k, pts[i - 1], pts[i]); };
   // the eaves, the crown, the ribbons between the lenses, the valleys' folds; the rims at the two ends
@@ -90,11 +104,11 @@ function buildShell(p: Part) {
   along(-Math.PI / 2, 'line', 0); along(Math.PI / 2, 'line', 0); along(0, 'detail');
   const rib = ARC.find(a => a.th > 0 && a.q < 0.6)!.th; along(rib, 'detail'); along(-rib, 'detail');
   for (const vx of VAL.slice(1, -1)) curve(ARC.map(a => { const [px, py, pz] = shellAt(vx, a.th); return W(px, py, pz + 0.05); }), 'detail');
-  // the lenses' edges: almonds drawn on each lobe's sides and roof, meeting in the valleys, where the ribbons braid
-  const HA = (ARC.length - 1) / 2, thAt = (q: number) => { const f = 1 - q, k = f * HA, i = Math.min(HA - 1, Math.floor(k)), a = ARC[HA + i].th, b = ARC[HA + i + 1].th; return a + (b - a) * (k - i); };
-  for (const [cq, w] of [[0.33, 0.25], [0.79, 0.15]]) for (const side of [-1, 1]) for (const sg of [-1, 1]) {
+  // the ribbons' edges: along each lobe, the eave's ribbon, the one climbing across it and the crown's, both sides
+  const HA = (ARC.length - 1) / 2, thAt = (q: number) => { const f = 1 - Math.min(1, Math.max(0, q)), k = f * HA, i = Math.min(HA - 1, Math.floor(k)), a = ARC[HA + i].th, b = ARC[HA + i + 1].th; return a + (b - a) * (k - i); };
+  for (let li = 0; li < VAL.length - 1; li++) for (const side of [-1, 1]) for (const key of ['e', 'r0', 'r1', 'c'] as const) {
     const pts: THREE.Vector3[] = [];
-    for (let k = 0; k <= 208; k++) { const x = X0 + (X1 - X0) * k / 208, { t } = section(x), L = Math.sin(Math.PI * t) ** 0.85, q = Math.min(1, Math.max(0, cq + sg * w * L * 0.96));
+    for (let k = 0; k <= 24; k++) { const t = 0.08 + 0.84 * k / 24, x = VAL[li] + (VAL[li + 1] - VAL[li]) * t, q = bands(t)[key];
       const [px, py, pz] = shellAt(x, side * thAt(q)); pts.push(W(px, py, pz + 0.07)); }
     curve(pts, 'line');
   }
