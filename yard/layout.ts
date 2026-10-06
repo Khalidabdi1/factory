@@ -59,6 +59,10 @@ export const WORKS = { x0:216, x1:400, y0:-46, y1:-20, h:10, ly:-31, terrace:[20
     [287, 'metal finish'], [297, 'pretreatment dip'], [307, 'paint booth'], [317, 'curing oven'], [327, 'trim'], [336, 'marriage'], [345, 'wheels'], [354, 'glazing'],
     [363, 'seats'], [371, 'fluids and first start'], [378, 'lights test'], [385, 'rolling road'], [392, 'quality check']],
   lot:{ x0:388, pitch:2.7, n:26, front:-15.3, aisle:-8.6 } };
+// The railway: one track along the foot of the hills, and a loop through the Plant 01 yard where the train stands at
+// the loading platform (its flat wagons along x 116–170, forklifts working from the lane at y 12.5). Trains come in
+// from the east, stop at Car Works' lot with the car carriers' end at the ramp, take the loop, and leave to the west.
+export const RAIL = { y:-1.5, loopY:7, lane:12.5, ramp:400, route:[[452, -1.5], [212, -1.5], [200, 7], [96, 7], [80, -1.5], [-30, -1.5]] };
 // Riverside Fire Station. ENG-1 stands nose out in bay 1 (front at park); it drives out forward and comes home by
 // stopping in the westbound lane past the bay and backing in along reverse (the path its rear end takes).
 export const STATION = { x0:360, x1:400, y0:94, y1:112, hall:378, bays:[365, 374], park:[365, 110.6], reverse:[[359, 127.5], [365, 127.5], [365, 101]] };

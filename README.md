@@ -46,6 +46,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Shop** | Corner Market on the seafront, where Hill Av meets Coast Rd: its delivery lay-by, a zebra crossing, and parking bays across the road on the promenade |
 | **Town** | Four kinds of block:<ul><li>flats, Harbour Bank and Café Mira</li><li>the police station and Town Hall, whose clock tells the simulated time</li><li>houses with gardens</li><li>villas with pools</li></ul>Mill Park lies on the west side. Riverside Fire Station stands on Riverside Rd by the roundabout, with ENG-1 in its bay. |
 | **Car Works** | A car factory on a terrace cut into the hills behind the warehouse, its lot of finished cars in front. Inside, one line runs through a press shop, a body shop of welding robots, a paint shop, assembly and the end-of-line tests. |
+| **Railway** | One track along the foot of the hills, with a loop through the Plant 01 yard and its loading platform |
 | **Coast** | Coast Rd, the promenade, the beach, the pier, and a breakwater with a lighthouse, with a sailboat and a motorboat out at sea |
 
 ## What moves
@@ -77,7 +78,12 @@ The engine runs once per page load. React draws the plate, and the engine drives
    - At the end of the line come the fluids, a lights test, a rolling road and the light tunnel. Then the car drives out to the lot.
    - Click any car on the line to see its VIN, model, colour, station and how far built it is, with the rest of its way dashed. The factory's card has a Follow a new car button, which follows one from the press shop all the way to the lot.
    - A full lot stops the line until the train takes cars away.
-10. **Chimney fires:**
+10. **The freight train (FRT-7):**
+   - Every few minutes it comes in from the east: a locomotive, four flat wagons and three car carriers.
+   - At Car Works it stops alongside the lot, and a ramp is lowered behind it. Up to twelve finished cars back out of their spaces, drive round and up onto the carriers.
+   - It runs on into the loop in the Plant 01 yard. Plant 01's forklifts load pallets onto the flat wagons, after any waiting flatbed and before clearing the belt.
+   - Then it leaves to the west, taking cars and pallets out of town. Click it for its load and next stop.
+11. **Chimney fires:**
    - Every so often a chimney catches. Smoke and flames rise from the stack, and whoever is home comes out onto the pavement.
    - A neighbour calls it in. The bell goes at Riverside Fire Station, the bay door rolls up, the watch runs to ENG-1, and it drives out with its lights flashing.
    - At the kerb the officer takes the gate and the driver the pump, while two firefighters run a hose up the garden path and put a jet on the chimney until it is out.
@@ -133,7 +139,8 @@ three.js and the font are bundled with the site, so it runs without loading anyt
   - `look(x, y, zoom)` and `view(i)` move the camera.
   - `all()` lists everything.
   - `fire(id)` starts a chimney fire now, at that house or any house.
-  - The `incident`, `sim`, `shop`, `bank`, `fireSys` and `worksSys` state are there too.
+  - `train()` brings the next train in now.
+  - The `incident`, `sim`, `shop`, `bank`, `fireSys`, `worksSys` and `trainSys` state are there too.
 - `?seed=<number>` changes the random seed. The simulation runs on a fixed 1/60 s step, so a given seed always plays out the same way.
 
 ## Credits

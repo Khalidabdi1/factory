@@ -5,12 +5,16 @@ import { glow, pose } from '../kernel/part';
 import { clamp, wrap } from '../kernel/math';
 import { Path } from '../kernel/path';
 import { Site, dedupe, keepSide } from '../kernel/graph';
-import { RACK, STAGE } from '../layout';
+import { RACK, RAIL, STAGE } from '../layout';
+import { hooks } from '../shared';
+import { WDECK } from '../models/train';
 import { DECK, VAN_DECK, VAN_LEN } from '../models/vehicles';
 import { PROTO, conveyor, kmh, sim } from './core';
 
+// Plant 01: the lane past the belt and staging, and a corridor up the east side to the rail platform's lane
 export const PLANT = new Site({ name:'Plant 01', lane:66,
-  nodes:{ a:[14, 66], J:[128, 66], A:[128, 81], B:[188, 81], C:[188, 66] }, segs:[['a', 'J'], ['J', 'A'], ['A', 'B'], ['B', 'C'], ['C', 'J']] });
+  nodes:{ a:[14, 66], J:[128, 66], A:[128, 81], B:[188, 81], C:[188, 66], R1:[188, RAIL.lane], R0:[110, RAIL.lane] },
+  segs:[['a', 'J'], ['J', 'A'], ['A', 'B'], ['B', 'C'], ['C', 'J'], ['C', 'R1'], ['R1', 'R0']] });
 export const WH = new Site({ name:'Warehouse 01', lane:65,
   nodes:{ oA:[232, 65], o1:[250, 65], o2:[286, 65], oB:[304, 65], i1:[250, 48.5], i2:[286, 48.5], iA:[236, 48.5], iB:[300, 48.5],
     kA:[236, 40.6], kB:[300, 40.6], uA:[236, 26], uB:[304, 26] },
@@ -27,6 +31,8 @@ const LOC = {
   van:t => { const p = t.pose, c = Math.cos(p.h), s = Math.sin(p.h), rx = p.x - c * VAN_LEN, ry = p.y - s * VAN_LEN, SO = [rx - c * 5.7, ry - s * 5.7];
     return { name:t.id, h:p.h, z:VAN_DECK, F:[rx - c * 0.2, ry - s * 0.2], SO, E:WH.at(SO[0], 26) }; },
   charger:c => ({ name:'charger', h:c.h, z:0, F:c.F, SO:c.SO, E:c.E }),
+  // a flat wagon at the rail platform, worked from the lane south of it
+  wagon:(t, i) => { const [x] = t.slotWorld(i); return { name:t.id, h:-Math.PI / 2, z:WDECK, F:[x, RAIL.loopY + 1.25], SO:[x, RAIL.lane], E:PLANT.at(x, RAIL.lane) }; },
 };
 
 const FL = { speed:7, acc:3.5, turn:3.2, lift:1.6, carry:0.35, slow:2.2 };
@@ -154,6 +160,14 @@ function dispatch(f) {
       // older pallets first (rough FIFO), nearer ones break ties
       c.sort((a, b) => (a.p.t0 - b.p.t0) / 20 + Math.hypot(a.loc.SO[0] - f.x, a.loc.SO[1] - f.y) / 60 - Math.hypot(b.loc.SO[0] - f.x, b.loc.SO[1] - f.y) / 60);
       if (c[0]) { const i = t.freeSlot(); return move(c[0].p, c[0].loc, LOC.flat(PLANT, t, i), t.slots[i], { text:`${c[0].p.id} → ${t.id}`, to:'Warehouse 01' }); }
+    }
+    // the train at the platform: load its flat wagons, oldest pallets first, two forklifts at most
+    const tr = hooks.train?.loadable?.(), ti = tr ? tr.freeSlot() : -1;
+    if (tr && ti >= 0 && PLANT.forklifts.filter(o => o.task?.train).length < 2) {
+      const c = conveyor.pickable().map(p => ({ p, loc:LOC.belt(p) }));
+      for (const s of STAGE) if (ready(s.pallet)) c.push({ p:s.pallet, loc:LOC.stage(s) });
+      c.sort((a, b) => a.p.t0 - b.p.t0);
+      if (c[0]) return move(c[0].p, c[0].loc, LOC.wagon(tr, ti), tr.slots[ti], { text:`${c[0].p.id} → ${tr.id}`, to:'by rail', train:true });
     }
     const e = conveyor.pickable().sort((a, b) => b.s - a.s)[0];
     const free = STAGE.filter(s => !s.pallet && !s.reserved).sort((a, b) => Math.hypot(a.x - 153, a.y - 63) - Math.hypot(b.x - 153, b.y - 63))[0];

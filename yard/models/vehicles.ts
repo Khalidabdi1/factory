@@ -191,19 +191,20 @@ export function buildFireEngine() {
   for (const [n, y] of [['barL', 0.05], ['barR', -1.05]]) g.add(new Part().box(-2.5, y, 3.0, 0.9, 1.0, 0.22).box(-L + 0.05, y + (y > 0 ? 0.75 : 0), 2.8, 0.3, 0.3, 0.25).build(n));
   return g;
 }
+// A pallet and its goods. There are dozens about, so each is kept to four draw calls: one fill for the pallet, one for
+// the goods, their two kinds of line (slats only on the faces the camera sees).
 export function buildPallet(v) {
   const p = new Part();
-  p.box(-1.2, -1.2, 0, 2.4, 2.4, 0.35);
+  p.box(-1.2, -1.2, 0, 2.4, 2.4, 0.35, 'nb');
   const slats = [0, 0.12, 2.4, 0.12, 0.55, 0.12, 0.55, 0.35, 1.85, 0.12, 1.85, 0.35];
   p.draw(FRONT(-1.2, 1.2, 0.35), slats).draw(SIDE(1.2, 1.2, 0.35), slats);
-  p.draw(FRONT(-1.2, -1.2, 0.35), slats, 'detail', -0.04).draw(SIDE(-1.2, 1.2, 0.35), slats, 'detail', -0.04);
   if (v === 0) {
-    p.box(-1.1, -1.1, 0.35, 2.2, 2.2, 1.5, 'k');
+    p.box(-1.1, -1.1, 0.35, 2.2, 2.2, 1.5, 'kb');
     p.draw(TOP(-1.1, -1.1, 1.85), [1.1, 0, 1.1, 2.2, 0, 1.1, 0.5, 1.1, 1.7, 1.1, 2.2, 1.1], 'koline');
   } else if (v === 1) {
-    for (let l = 0; l < 2; l++) for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) p.box(-1.1 + 1.12 * i, -1.1 + 1.12 * j, 0.35 + 0.78 * l, 1.08, 1.08, 0.76, 'k');
+    for (let l = 0; l < 2; l++) for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) p.box(-1.1 + 1.12 * i, -1.1 + 1.12 * j, 0.35 + 0.78 * l, 1.08, 1.08, 0.76, 'kb');
   } else {
-    for (let l = 0; l < 6; l++) p.box(-1.15, -1.0, 0.35 + 0.22 * l, 2.3, 2.0, 0.2, 'k');
+    for (let l = 0; l < 6; l++) p.box(-1.15, -1.0, 0.35 + 0.22 * l, 2.3, 2.0, 0.2, 'kb');
     for (const x of [-0.5, 0.5]) p.seg('koline', W(x, 1.03, 0.35), W(x, 1.03, 1.67)).seg('koline', W(x, 1.03, 1.67), W(x, -1.03, 1.67));
   }
   return p.build('pallet');

@@ -61,6 +61,7 @@ export class Pallet {
   bound() {
     const o = this.loc.slot?.owner;
     if (o?.model === 'flatbed') return 'Warehouse 01';
+    if (o?.kind === 'train') return 'by rail, out of town';
     if (o?.model === 'van' || RACK.includes(this.loc.slot)) return 'Corner Market';
     return this.reserved?.task?.to ?? 'Warehouse 01';
   }

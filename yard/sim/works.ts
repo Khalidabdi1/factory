@@ -15,7 +15,7 @@ import { Person } from './person';
 // on the body in it, the robots weld, paint, fit wheels or glass, and when that work is done the body becomes what
 // the station makes of it. If the lot is full the line waits, the last car at the quality check, until the train
 // takes some away.
-const ST = WORKS.stations, N = ST.length, TAKT = 14, MOVE = 4, WORK = TAKT - MOVE, LY = WORKS.ly, LOT = WORKS.lot, HALF = BODY_LEN / 2;
+const ST = WORKS.stations, N = ST.length, TAKT = 16, MOVE = 4, WORK = TAKT - MOVE, LY = WORKS.ly, LOT = WORKS.lot, HALF = BODY_LEN / 2;
 const MAKES = { 1:'panels', 3:'floor', 4:'frame', 5:'shell', 6:'closed', 9:'painted', 13:'wheels', 14:'complete' };
 const STAGE = { blanks:'steel blanks', panels:'stamped panels', floor:'the underbody', frame:'a framed body', shell:'a body in white', closed:'a body in white, doors on',
   painted:'a painted body', wheels:'a painted body on its wheels', complete:'a finished car' };
@@ -39,6 +39,8 @@ class Body {
     this.group = g; this.groups = [g]; scene.add(g);
   }
   where() {
+    if (this.onTrain) return { shop:'FRT-7', status:`on ${this.onTrain.id} · ${this.onTrain.status()}` };
+    if (this.loading) return { shop:'the lot', status:'driving onto the train' };
     if (this.parked) return { shop:'the lot', status:'on the lot · waiting for the train' };
     if (this.drive) return { shop:'the yard', status:'driving out to the lot' };
     const st = ST[Math.max(0, this.si)], shop = shopAt(st[0])[1];
@@ -54,7 +56,8 @@ class Body {
   readout() { return `${this.id} · ${this.where().status}`.toLowerCase(); }
   // the rest of the line, and the way out to the lot
   route() {
-    if (this.parked) return null;
+    if (this.parked || this.onTrain) return null;
+    if (this.loading) { const l = this.loading; return l.leg === 'fwd' ? { path:l.fwd, s:l.s, next:null, stop:'FRT-7' } : null; }
     if (this.drive) return { path:this.drive.path, s:this.drive.s, next:this.drive.to, stop:'the lot' };
     const pts = [[this.group.position.x, this.group.position.z]];
     for (let k = Math.max(0, this.si + 1); k < N; k++) pts.push([xOf(k) + HALF, LY]);
@@ -69,7 +72,7 @@ const exitPts = k => { const x = spaceX(k); return [[ST[N - 1][0] + HALF, LY], [
 
 // ---- the lot: the cars on it are drawn as one part, but for a car someone is following, which stays its own car to
 // click until they let it go ----
-export const lot = { cars:[], kept:new Set(), group:null, entity:null,
+export const lot = { cars:[], kept:new Set(), group:null, entity:null, spaceX,
   // a space is taken from the moment a car sets off for it
   free() { for (let k = 0; k < LOT.n; k++) if (!this.cars.some(c => c.space === k) && !line.driving.some(c => c.drive.space === k)) return k; return null; },
   park(b, space) {
@@ -181,7 +184,7 @@ export function buildWorks() {
     agvs:[0, 1].map(i => inside.getObjectByName(`agv${i}`)), loop:new Path([[324, LY + 7.4], [366, LY + 7.4], [366, LY - 7.2], [324, LY - 7.2], [324, LY + 7.4]], 2, true) };
   lot.entity = { kind:'lot', id:'Car Works lot', groups:[], pick:[354, -12, 1.5],
     info() { return { kind:'Car park · finished cars', title:this.id, status:`${lot.cars.length} of ${LOT.n} spaces taken`, bar:{ v:lot.cars.length, max:LOT.n, label:'waiting for the train' },
-      rows:[['Oldest', lot.cars[0] ? `${lot.cars[0].id} · ${lot.cars[0].model}` : '—'], ['Newest', lot.last ? `${lot.last.id} · ${lot.last.model}` : '—'], ['Built', `${line.built} this session`]] }; },
+      rows:[['Oldest', lot.cars[0] ? `${lot.cars[0].id} · ${lot.cars[0].model}` : '—'], ['Built', `${line.built} this session`], ['Train', hooks.train ? hooks.train.status() : '—']] }; },
     readout() { return `car works lot · ${lot.cars.length} cars`; } };
   // the line full from the start: a body at every station, made up to where it is; some cars already on the lot
   for (let k = N - 1; k >= 0; k--) {

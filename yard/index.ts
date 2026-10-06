@@ -31,6 +31,7 @@ import { buildFishing } from './sim/fishing';
 import { weather } from './sim/weather';
 import { buildFireService } from './sim/fire';
 import { buildWorks } from './sim/works';
+import { buildTrain } from './sim/train';
 import { initView } from './view';
 
 applyTheme();
@@ -70,7 +71,7 @@ for (const s of SHELF) { s.mesh = boxProto.clone(); pose(s.mesh, s.x, s.y, 0, s.
 shop.stockMeshes = []; for (let l = 0; l < 2; l++) for (let j = 0; j < 2; j++) for (let i = 0; i < 3; i++) {
   const m = boxProto.clone(); pose(m, 363.6 + SX + 1.1 * i, 95.6 + SY + 1.0 * j, 0, 0.56 * l + CURB); shopInside.add(m); shop.stockMeshes.push(m); }
 // staff cars, nose in: the north row faces +y, the south row faces −y
-for (const [i, row, van] of [[0, 0, 0], [2, 0, 1], [5, 0, 0], [9, 0, 0], [1, 1, 0], [4, 1, 1], [7, 1, 0], [11, 1, 0]]) {
+for (const [i, row, van] of [[1, 1, 0], [4, 1, 1], [7, 1, 0], [11, 1, 0], [2, 1, 0], [9, 1, 1]]) {   // one row: the north row made way for the forklifts' lane
   const c = buildCar(!!van, rng() < 0.4 ? 'k' : 'n', false), x = 141.7 + 3.4 * i;
   if (row) pose(c, x, 32, -Math.PI / 2); else pose(c, x, 15, Math.PI / 2);
   scene.add(c);
@@ -227,6 +228,8 @@ const waves = [0, 1].map(() => { const p = new Part();
 const fireSys = buildFireService();
 // Car Works on its terrace in the hills, its line full and some cars already on the lot
 const worksSys = buildWorks();
+// the railway and FRT-7, which calls at Car Works and Plant 01
+const trainSys = buildTrain();
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
@@ -248,7 +251,7 @@ sim.step = dt => {
   sim.peds = sim.people.filter(p => onRoad(p.x, p.y));
   for (const p of sim.pallets) p.update(dt);
   for (const b of BOATS) b.update(dt);
-  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt);
+  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt);
   for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
   for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);
@@ -262,4 +265,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, fishingSys, fireSys, worksSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

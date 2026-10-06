@@ -100,15 +100,14 @@ export function buildRobot() {
   return g;
 }
 // A finished car drawn into a shared part (the lot draws its cars as one), facing north with its front at (x, y):
-// a body, a glasshouse with windscreen and back window, wheels, lamps
+// a body, a glasshouse with windscreen and back window, wheels. One fill per colour keeps a lot of them cheap.
 export function carInto(p, x, y, tone) {
-  const L = BODY_LEN;
-  p.box(x - 0.9, y, 0.32, 1.8, L, 0.62, tone).box(x - 0.8, y + 1.25, 0.94, 1.6, 2.25, 0.5, tone);
+  const L = BODY_LEN, t = tone === 'k' ? 'kb' : 'nb';
+  p.box(x - 0.9, y, 0.32, 1.8, L, 0.62, t).box(x - 0.8, y + 1.25, 0.94, 1.6, 2.25, 0.5, t);
   beam(p, [x, y + 0.75, 0.95], [x, y + 1.27, 1.42], 1.5, 'g', 0.04);
   beam(p, [x, y + 3.48, 1.42], [x, y + 3.95, 0.95], 1.5, 'g', 0.04);
   p.fill2(SIDE(x + 0.8, y + 3.4, 1.4), 0.1, 0.06, 2.0, 0.36, 'glass', 0.02);
-  for (const wy of [y + 0.75, y + 3.6]) for (const wx of [x - 0.98, x + 0.72]) p.box(wx, wy - 0.34, 0, 0.26, 0.68, 0.68, 'k');
-  for (const dx of [-0.75, 0.35]) p.box(x + dx, y - 0.03, 0.55, 0.4, 0.05, 0.14, 'l');
+  for (const wy of [y + 0.75, y + 3.6]) for (const wx of [x - 0.98, x + 0.72]) p.box(wx, wy - 0.34, 0, 0.26, 0.68, 0.68, 'kb');
   return p;
 }
 // An AGV: a low cart that follows the floor paths with a crate of parts on it

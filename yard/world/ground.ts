@@ -112,11 +112,12 @@ export function buildWorld() {
     for (let i = 0; i <= n; i++) { const x = x1 + (x2 - x1) * i / n, y = y1 + (y2 - y1) * i / n; p.seg('line', W(x, y, z), W(x, y, z + h)); }
     for (const k of [0.46, 0.96]) p.seg('line', W(x1, y1, z + h * k), W(x2, y2, z + h * k));
   };
-  fence(2, 4, 196, 4); fence(2, 4, 2, 118); fence(196, 4, 196, 118); fence(2, 118, 112, 118); fence(130, 118, 196, 118);
-  fence(206, 4, 356, 4); fence(206, 4, 206, 118); fence(356, 4, 356, 118); fence(206, 118, 314, 118); fence(332, 118, 356, 118);
-  // plant parking: stalls for the staff cars
-  for (let i = 0; i <= 14; i++) { const x = 140 + i * 3.4; p.draw(G, [x, 10, x, 15.5, x, 31.5, x, 37], 'detail', 0.05); }
-  p.draw(G, [140, 15.5, 187.6, 15.5, 140, 31.5, 187.6, 31.5], 'detail', 0.05);
+  // gaps where the railway's loop comes into the Plant 01 yard and leaves it again
+  fence(2, 4, 82, 4); fence(98, 4, 196, 4); fence(2, 4, 2, 118); fence(196, 10, 196, 118); fence(2, 118, 112, 118); fence(130, 118, 196, 118);
+  fence(208, 4, 356, 4); fence(206, 6, 206, 118); fence(356, 4, 356, 118); fence(206, 118, 314, 118); fence(332, 118, 356, 118);
+  // plant parking: stalls for the staff cars (one row; the forklifts' lane to the rail platform runs north of it)
+  for (let i = 0; i <= 14; i++) { const x = 140 + i * 3.4; p.draw(G, [x, 31.5, x, 37], 'detail', 0.05); }
+  p.draw(G, [140, 31.5, 187.6, 31.5], 'detail', 0.05);
   p.text(G, 'STAFF', 140, 24.4, 1.5, 'paint');
   // paving: the Orchard Lane footway past the fire station, and Corner Market's forecourt on the kerb
   p.draw(G, [393.7, 124, 393.7, 116.4, 393.7, 116.4, 408.2, 116.4, 395.3, 124, 395.3, 118, 395.3, 118, 408.2, 118], 'detail', 0.05);
@@ -128,10 +129,11 @@ export function buildWorld() {
   // yard-side trees
   for (const [x, y] of [[136, 46], [146, 46], [190, 46], [192, 10], [134, 8], [121, 22], [124, 8], [8, 70], [8, 30], [184, 108], [140, 108], [160, 110],
     [201, 30], [201, 80], [220, 8], [342, 12], [350, 32], [344, 52], [350, 72], [342, 92], [359.5, 86], [372, 86], [388, 84], [402, 98], [414, 104], [432, 100], [436, 86]]) {
-    const s = rand(0.8, 1.1); if (x === 402 && y === 98) rand(0, 3); else tree(p, x, y, s); }   // the drill tower stands where one was
+    // the drill tower stands where one was; the railway's loop and the forklifts' corridor took others
+    const s = rand(0.8, 1.1); if (x === 402 && y === 98 || [[190, 46], [192, 10], [134, 8], [124, 8]].some(([a, b]) => a === x && b === y)) rand(0, 3); else tree(p, x, y, s); }
   // the wood behind the shop, less what Orchard Lane cleared (a cleared tree still draws its yaw, keeping the random sequence)
   for (let i = 0; i < 26; i++) { const x = rand(362, 436), y = rand(6, 78), s = rand(0.75, 1.15); if (orchardClear(x, y)) rand(0, 3); else tree(p, x, y, s); }
-  for (let x = 8; x < 196; x += rand(9, 14)) tree(p, x, rand(-2.4, 1.6), rand(0.8, 1.05));
+  for (let x = 8; x < 196; x += rand(9, 14)) { rand(-2.4, 1.6); rand(0.8, 1.05); rand(0, 3); }   // the trees along the foot of the hills made way for the railway
   buildTown(p, G, fence);
   buildOrchard(p, G, dashes, fence, bench);
   buildCoast(p, G);

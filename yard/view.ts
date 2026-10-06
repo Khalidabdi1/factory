@@ -23,7 +23,7 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -195,7 +195,7 @@ canvas.addEventListener('pointermove', e => {
   if (e.pointerType === 'mouse' && !e.buttons) { pointer = [e.clientX, e.clientY]; hoverDirty = true; }
 });
 canvas.addEventListener('pointerleave', () => { pointer = null; hovered = null; canvas.classList.remove('over'); });
-const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.cars, courier, fireSys.engine].sort((a, b) => a.id.localeCompare(b.id));
+const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.cars, courier, fireSys.engine, ...(trainSys.state === 'away' ? [] : [trainSys])].sort((a, b) => a.id.localeCompare(b.id));
 function cycle(d) { const v = vehicles(), i = v.indexOf(selected); if (v.length) select(v[i < 0 ? (d > 0 ? 0 : v.length - 1) : (i + d + v.length) % v.length]); }
 let paused = false;
 function togglePause() { paused = !paused; $('pause').setAttribute('aria-pressed', paused); $('pause').setAttribute('aria-label', paused ? 'Resume' : 'Pause');
@@ -288,7 +288,7 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
@@ -306,7 +306,9 @@ if (DEBUG) {
     // start the bank job now (when the town is quiet)
     robbery:() => { if (incident.phase === 'quiet') incident.next = sim.t; return incident.phase; },
     // a chimney fire now, at a house by id or any house with a chimney (when none is burning): returns the house
-    worksSys,
+    worksSys, trainSys,
+    // the next train now (when none is in): returns its state
+    train:() => { if (trainSys.state === 'away') trainSys.next = sim.t; return trainSys.state; },
     fire:id => fireSys.blaze.phase === 'quiet' ? fireSys.blaze.start(id ? find(id) : undefined).id : `busy: ${fireSys.blaze.phase}`, fireSys,
     // weather now: 'rain', 'fog' or 'clear', for some seconds
     weather:(kind = 'rain', secs = 60) => { if (kind === 'clear') { weather.kind = 'clear'; } else weather.set(kind, secs); return weather.kind; }, weatherState:weather,
