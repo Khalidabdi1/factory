@@ -18,7 +18,7 @@ const LEN = METRO.cars * (METRO.car + METRO.gap) - METRO.gap, PITCH = METRO.car 
 const VMAX = 15, ACC = 0.9, DEC = 1.1;
 const stopU = (st: any, dir: number) => dir > 0 ? st.u0 + 1.8 + LEN : st.u0 + 1.8;
 const STYLE: Record<string, string> = { najdi:'walls pierced with Najdi triangles that glow at night', fins:'glass behind a screen of fins, a pleated roof', louvre:'glass behind louvres, a shallow vault for a roof',
-  central:'a lattice of white dune-like shells, pierced with diamonds that light up after dark' };
+  central:'a row of white lobes after KAFD station: lenses of diamond lattice, braided ribbons, lit after dark' };
 
 // ---- stations ----
 // One per stop; Sahel Central is one station on both lines. For each line it serves, an island: where its escalator
@@ -299,7 +299,7 @@ export function buildMetro() {
   for (const line of METRO.lines) for (const st of line.stations) {
     const id = st.id; let S = STATIONS[id];
     if ((st as any).central) {
-      if (!S) { S = STATIONS[id] = new MetroStation(id, true, 'central'); const g = buildCentral(); S.groups = [g]; S.peek = g.userData.peek; S.pick = [658, 252, 6]; g.userData.entity = S; scene.add(g);
+      if (!S) { S = STATIONS[id] = new MetroStation(id, true, 'central'); const g = buildCentral(); S.groups = [g]; S.peek = g.userData.peek; S.pick = [660, 236, 10]; g.userData.entity = S; scene.add(g);
         S.entries = CENTRAL.corners.map(c => ({ ground:c.ground, foot:c.foot, top:c.top, land:c.land }));
         S.gates = CENTRAL.gates.flatMap(x => [196, 205.5, 214].map(y => [x, y, CENTRAL.z] as V3)); }
       const F = new Frame(line), z = levels(line), esc = (centralEsc as any)[line.id], isl: Island = { line, st, F, zc:CENTRAL.z, zf:z.zf, footU:esc.foot, topU:esc.top, waits:[], seats:[], waiting:[] };

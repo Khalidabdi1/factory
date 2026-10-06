@@ -4,15 +4,19 @@ import { Part, v3 } from '../kernel/part';
 import { CURB, METRO } from '../layout';
 import { beam } from '../models/works';
 import { Frame, buffer, escalator, levels, roundel, screenDoors, trackV, tracks } from './metro';
+import { datePalm } from './sahel';
 
 // ---- Sahel Central, where the lines cross ----
-// After the station Zaha Hadid's office built for Riyadh's financial district: a run of white shells like dunes the
-// wind has shaped, all one lattice, pierced with diamonds that glow after dark. Line 1 crosses it east to west at 12 m,
-// Line 2 comes in from the north at 21 m and ends on the level above Line 1; both run through vaults in the shell. Under
-// it the streets cross; a concourse spans the crossing at 5 m, reached by escalators at the four corners; from it
-// escalators climb into each line's island, Line 2's a long one up past Line 1.
+// After the station Zaha Hadid's office built for Riyadh's financial district (KAFD): a long run of white lobes, low
+// at the west end and rising to the east, each a pillow of shell with lenses of diamond lattice let into its sides and
+// its roof. Smooth ribbons run between the lenses and braid together in the valleys between the lobes; the eaves lift
+// over a recessed glass base into tall eyes at the lobes' middles and swoop down between them. Line 1 runs through it
+// end to end at 12 m and comes out of the east end through a flowing white mouth; Line 2 comes in from the north at
+// 21 m through another and ends on the level above Line 1. The lattice glows after dark. Under it the streets cross; a
+// concourse spans the crossing at 5 m, reached by escalators at the four corners; from it escalators climb into each
+// line's island, Line 2's a long one up past Line 1.
 const L1 = METRO.lines[0], L2 = METRO.lines[1], S1 = L1.stations[1], S2 = L2.stations[1];
-const [X0, X1, Y0, Y1] = [610, 706, 158, 252];
+const [X0, X1, Y0, Y1] = [601, 705, 158, 242];
 type V3 = [number, number, number];
 const CZ = 5.0;
 export const CENTRAL = { box:[X0, X1, Y0, Y1], z:CZ, main:[616, 700, 188, 222], wing:[650, 666, 162, 188], gates:[627, 687],
@@ -25,42 +29,116 @@ const ESC1 = (() => { const z = levels(L1), u = 636; return { foot:u, top:u + (z
 const ESC2 = (() => { const z = levels(L2), u = 166; return { foot:u, top:u + (z.zf - CZ) / METRO.escSlope }; })();
 export const centralEsc = { 1:ESC1, 2:ESC2 };
 
-// ---- the shell: a height field over the footprint, its dunes, and vaults for the lines and streets ----
-const mfun = (t: number) => Math.exp(-(t ** 4));
-const bump = (x: number, y: number, cx: number, cy: number, rx: number, ry: number, h: number) => h * Math.exp(-(((x - cx) / rx) ** 2) - (((y - cy) / ry) ** 2));
+// ---- the shell ----
+// Along x, the lobes between their valleys (VAL): each lobe's crown (CREST), the crown's height at each valley (VALZ),
+// how high its eaves lift at its middle (EYE). A cross-section at any x is a superellipse, boxy-round like the real
+// thing, from the north eave over the crown to the south eave; its plan bulges at a lobe's middle and draws in at the
+// valleys (and the Line 2 lobe bulges south over the end of its platform). The ends draw in and come down a little.
+const VAL = [601, 616, 631, 649, 667, 682, 705], CREST = [20, 24, 27.5, 32.5, 34, 37], VALZ = [16.5, 16.5, 17.5, 22, 22.5, 23, 21], EYE = [6.5, 8, 9.5, 6.5, 7.5, 9.5];
+const PX = 3.0;
+const lobeAt = (x: number) => { x = Math.min(X1, Math.max(X0, x)); let i = 0; while (i < VAL.length - 2 && x > VAL[i + 1]) i++; return { i, t:(x - VAL[i]) / (VAL[i + 1] - VAL[i]) }; };
+export function section(x: number) {
+  const { i, t } = lobeAt(x), s = Math.sin(Math.PI * t), hv = VALZ[i] + (VALZ[i + 1] - VALZ[i]) * t;
+  let H = hv + (CREST[i] - hv) * s ** 0.8;
+  const e = 3.2 + (EYE[i] - 3.2) * s ** 0.7;
+  const ys = 225.5 + 3.6 * s + (i === 3 ? 6 * s ** 0.6 : 0), yn = 185 - 3.6 * s - (i === 3 ? 1 * s : 0);
+  const end = Math.min(1, (x - X0) / 8, (X1 - x) / 8), r = Math.sqrt(Math.max(0, 1 - (1 - end) ** 2));
+  H = e + (H - e) * (0.88 + 0.12 * r);
+  return { e, H, mid:(ys + yn) / 2, half:(ys - yn) / 2 * (0.86 + 0.14 * r), i, t };
+}
+// a point of the shell: at x, at angle th round its section (-90° the north eave, 0 the crown, 90° the south eave)
+const pw = (v: number, k: number) => Math.sign(v) * Math.abs(v) ** k;
+export const shellAt = (x: number, th: number): [number, number, number] => { const S = section(x);
+  return [x, S.mid + S.half * pw(Math.sin(th), 2 / PX), S.e + (S.H - S.e) * Math.abs(Math.cos(th)) ** (2 / PX)]; };
 export function shellZ(x: number, y: number) {
-  const s = Math.max(bump(x, y, 658, 205, 34, 30, 33), bump(x, y, 628, 178, 14, 14, 18), bump(x, y, 690, 176, 14, 14, 21), bump(x, y, 626, 234, 14, 14, 21), bump(x, y, 690, 236, 14, 13, 17),
-    19 * Math.exp(-(((y - 205) / 10) ** 2)) * Math.exp(-(((x - 658) / 70) ** 8)),          // Line 1's vault, end to end
-    28.5 * Math.exp(-(((x - 658) / 12) ** 2)) * Math.exp(-(((y - 205) / 60) ** 8)));        // Line 2's
-  // eaves: low round the edge, lifted over the lines and the streets where they pass out under it
-  const eW = 3.5 + 14 * mfun((y - 205) / 9), eN = 3.5 + 23 * mfun((x - 658) / 9) + 4 * mfun((x - 640) / 7), eS = 3.5 + 4 * mfun((x - 640) / 7) + 14 * mfun((x - 658) / 9);
-  const cap = Math.min(eW + 2.2 * (x - X0), eW + 2.2 * (X1 - x), eN + 2.2 * (y - Y0), eS + 2.2 * (Y1 - y));
-  return Math.max(2.5, Math.min(s, cap));
+  const S = section(x), v = Math.abs(y - S.mid) / S.half; if (v >= 1) return S.e;
+  return S.e + (S.H - S.e) * (1 - v ** PX) ** (1 / PX);
+}
+// angles round a section spaced evenly along its arc (worked out once on a unit section), and, for each, how far up
+// it is from eave (0) to crown (1)
+const ARC = (() => { const n = 400, th: number[] = [], len: number[] = [0];
+  for (let k = 0; k <= n; k++) th.push(k / n * Math.PI / 2);
+  const P = th.map(a => [Math.sin(a) ** (2 / PX), Math.cos(a) ** (2 / PX) * 0.9]);
+  for (let k = 1; k <= n; k++) len.push(len[k - 1] + Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]));
+  const L = len[n], at = (f: number) => { let k = 0; while (k < n && len[k + 1] < f * L) k++; return th[k] + (th[k + 1] - th[k]) * ((f * L - len[k]) / (len[k + 1] - len[k] || 1)); };
+  const half = 24, out: { th: number, q: number }[] = [];
+  for (let j = -half; j <= half; j++) { const f = Math.abs(j) / half; out.push({ th:Math.sign(j) * at(f), q:1 - f }); }
+  return out; })();
+// how open the lattice is at a lobe's place t and a height q up its side: two lenses each side, pinched shut at the
+// valleys; the ribbons between them, at the eaves and along the crown, smooth
+function lattice(t: number, q: number) {
+  const L = Math.sin(Math.PI * t) ** 0.85;
+  const m1 = 1 - Math.abs(q - 0.33) / (0.25 * L + 1e-6), m2 = 1 - Math.abs(q - 0.79) / (0.15 * L + 1e-6);
+  return Math.max(0, Math.min(1, Math.max(m1, m2) * 1.6));
 }
 function buildShell(p: Part) {
-  const st = 2.4, nx = Math.round((X1 - X0) / st), ny = Math.round((Y1 - Y0) / st), dx = (X1 - X0) / nx, dy = (Y1 - Y0) / ny;
-  const P: THREE.Vector3[][] = [];
-  for (let i = 0; i <= nx; i++) { P.push([]); for (let j = 0; j <= ny; j++) { const x = X0 + i * dx, y = Y0 + j * dy; P[i].push(W(x, y, shellZ(x, y))); } }
-  // each cell one tone by its slope; the lattice along the plan's axes, which the iso view turns into diamonds; a
-  // smaller diamond pierced in the middle of every cell, glass by day and lit at night
-  for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
+  const nx = 96, xs = Array.from({ length:nx + 1 }, (_, i) => X0 + (X1 - X0) * i / nx);
+  const P = xs.map(x => ARC.map(a => W(...shellAt(x, a.th))));
+  for (let i = 0; i < nx; i++) for (let j = 0; j < ARC.length - 1; j++) {
     const a = P[i][j], b = P[i + 1][j], c = P[i + 1][j + 1], d = P[i][j + 1];
     const n = v3(0, 0, 0).crossVectors(c.clone().sub(a), d.clone().sub(b)).normalize(); if (n.y < 0) n.negate();
     const k = n.y > 0.55 ? 'deck' : 'body'; p.tri(k, a, b, c); p.tri(k, a, c, d);
-    const up = n.clone().multiplyScalar(0.05), mid = a.clone().add(b).add(c).add(d).multiplyScalar(0.25).add(n.clone().multiplyScalar(0.07));
-    p.seg('line', a.clone().add(up), b.clone().add(up)).seg('line', a.clone().add(up), d.clone().add(up));
-    p.poly('window', [a, b, c, d].map(q => mid.clone().add(q.clone().add(up).sub(mid).multiplyScalar(0.42))));
+    // a diamond pierced in the cell, as big as the lattice is open there: dark by day, lit after dark
+    const { t } = section((xs[i] + xs[i + 1]) / 2), D = lattice(t, (ARC[j].q + ARC[j + 1].q) / 2);
+    if (D > 0.08) { const m = a.clone().add(b).add(c).add(d).multiplyScalar(0.25).add(n.clone().multiplyScalar(0.06)), sz = 0.86 * Math.sqrt(D);
+      const q = [a.clone().add(b), b.clone().add(c), c.clone().add(d), d.clone().add(a)].map(q => m.clone().add(q.multiplyScalar(0.5).add(n.clone().multiplyScalar(0.06)).sub(m).multiplyScalar(sz)));
+      p.poly('window', q); for (let k = 0; k < 4; k++) p.seg(D > 0.45 ? 'line' : 'detail', q[k], q[(k + 1) % 4]); }
   }
-  // the edge of the shell, and glass under its eaves round the sides the camera sees; doors at the corners
-  const edge = (pts: THREE.Vector3[]) => { for (let k = 1; k < pts.length; k++) p.seg('line', pts[k - 1], pts[k]); };
-  edge(P.map(c => c[ny])); edge(P[nx]);
-  const skirt = (pts: THREE.Vector3[], ground: (q: THREE.Vector3) => THREE.Vector3, doorAt: (q: THREE.Vector3) => boolean) => {
-    for (let k = 1; k < pts.length; k++) { const a = pts[k - 1], b = pts[k]; if (a.y > 9 || b.y > 9) continue;
-      const ga = ground(a), gb = ground(b), door = doorAt(a) && doorAt(b);
-      p.poly(door ? 'glass' : 'window', [ga, gb, b, a]); p.seg('detail', ga, a); }
-  };
-  skirt(P.map(c => c[ny]), q => v3(q.x, CURB, q.z), q => Math.abs(q.x - 620) < 4 || Math.abs(q.x - 694) < 4);
-  skirt(P[nx], q => v3(q.x, CURB, q.z), q => Math.abs(q.z - 179) < 4 || Math.abs(q.z - 231) < 4);
+  const curve = (pts: THREE.Vector3[], k = 'line') => { for (let i = 1; i < pts.length; i++) p.seg(k, pts[i - 1], pts[i]); };
+  // the eaves, the crown, the ribbons between the lenses, the valleys' folds; the rims at the two ends
+  const along = (th: number, k: string, lift = 0.05) => curve(xs.map(x => { const [px, py, pz] = shellAt(x, th); return W(px, py, pz + lift); }), k);
+  along(-Math.PI / 2, 'line', 0); along(Math.PI / 2, 'line', 0); along(0, 'detail');
+  const rib = ARC.find(a => a.th > 0 && a.q < 0.6)!.th; along(rib, 'detail'); along(-rib, 'detail');
+  for (const vx of VAL.slice(1, -1)) curve(ARC.map(a => { const [px, py, pz] = shellAt(vx, a.th); return W(px, py, pz + 0.05); }), 'detail');
+  // the lenses' edges: almonds drawn on each lobe's sides and roof, meeting in the valleys, where the ribbons braid
+  const HA = (ARC.length - 1) / 2, thAt = (q: number) => { const f = 1 - q, k = f * HA, i = Math.min(HA - 1, Math.floor(k)), a = ARC[HA + i].th, b = ARC[HA + i + 1].th; return a + (b - a) * (k - i); };
+  for (const [cq, w] of [[0.33, 0.25], [0.79, 0.15]]) for (const side of [-1, 1]) for (const sg of [-1, 1]) {
+    const pts: THREE.Vector3[] = [];
+    for (let k = 0; k <= 208; k++) { const x = X0 + (X1 - X0) * k / 208, { t } = section(x), L = Math.sin(Math.PI * t) ** 0.85, q = Math.min(1, Math.max(0, cq + sg * w * L * 0.96));
+      const [px, py, pz] = shellAt(x, side * thAt(q)); pts.push(W(px, py, pz + 0.07)); }
+    curve(pts, 'line');
+  }
+  for (const [x, dx] of [[X0, 1.2], [X1, -1.2]]) {
+    const A = ARC.map(a => W(...shellAt(x, a.th))), B = ARC.map(a => { const [px, py, pz] = shellAt(x + dx, a.th); return W(px, py, pz + 0.35); });
+    for (let j = 1; j < A.length; j++) { p.poly('deck', [A[j - 1], A[j], B[j], B[j - 1]]); }
+    curve(A); curve(B);
+  }
+  // the glass base under the eaves along the south side, recessed; doors where the corner escalators come in; the
+  // avenue passing under it in the open
+  const g0 = CURB, mull: number[] = [];
+  for (let k = 0; k < xs.length - 1; k++) {
+    const xa = xs[k], xb = xs[k + 1]; if (xa < X0 + 2 || xb > X1 - 2 || (xb > 629 && xa < 651)) continue;
+    const A = section(xa), B = section(xb), ya = A.mid + A.half - 1.5, yb = B.mid + B.half - 1.5, door = [620, 694].some(d => Math.abs((xa + xb) / 2 - d) < 3.4);
+    p.poly(door ? 'glass' : 'window', [W(xa, ya, g0), W(xb, yb, g0), W(xb, yb, B.e - 0.15), W(xa, ya, A.e - 0.15)]);
+    p.seg('line', W(xa, ya, A.e - 0.15), W(xb, yb, B.e - 0.15)).seg('line', W(xa, ya, g0), W(xb, yb, g0));
+    if (k % 2 === 0) p.seg('line', W(xa, ya + 0.02, g0), W(xa, ya + 0.02, A.e - 0.15));
+  }
+  // the east end's glass, round the street and the line coming out under the mouth
+  { const x = X1 - 1.3, S = section(x);
+    for (let k = 0; k < 24; k++) { const ya = S.mid - S.half + 1.5 + k * (2 * S.half - 3) / 24, yb = ya + (2 * S.half - 3) / 24;
+      if (yb > 195.5 && ya < 214.5) continue;
+      const za = shellZ(x + 1.3, ya) - 0.3, zb = shellZ(x + 1.3, yb) - 0.3;
+      p.poly('window', [W(x, ya, g0), W(x, yb, g0), W(x, yb, zb), W(x, ya, za)]); p.seg('line', W(x + 0.02, ya, g0), W(x + 0.02, ya, za)); } }
+  // Line 2's concourse wing under its mouth, glazed
+  p.box(650, 162, CURB, 16, 20, 0.2, 'n');
+  for (let y = 162; y < 182; y += 2) p.poly('window', [W(666, y, CURB), W(666, y + 2, CURB), W(666, y + 2, 16.6), W(666, y, 16.6)]), p.seg('line', W(666.02, y, CURB), W(666.02, y, 16.6));
+}
+// a mouth: the shell drawn out round a line as a tube that flares where it opens, its lip rolled, its inside dark
+// (axis x or y; from u0 inside the building to u1 at the mouth; c the line's middle across; zb the tube's foot)
+function mouth(p: Part, axis: 'x' | 'y', u0: number, u1: number, c: number, zb: number, a0: number, a1: number, h0: number, h1: number) {
+  const n = 12, m = 18, pt = (u: number, v: number, z: number) => axis === 'x' ? W(u, c + v, z) : W(c - v, u, z);
+  const ring = (u: number, a: number, h: number, inset: number) => Array.from({ length:m + 1 }, (_, k) => { const th = -Math.PI / 2 + Math.PI * k / m;
+    return pt(u, (a - inset) * pw(Math.sin(th), 2 / 2.6), zb + (h - inset) * Math.abs(Math.cos(th)) ** (2 / 2.6)); });
+  const R: THREE.Vector3[][] = [], I: THREE.Vector3[][] = [];
+  for (let i = 0; i <= n; i++) { const f = i / n, e = f ** 2.2, u = u0 + (u1 - u0) * f, a = a0 + (a1 - a0) * e, h = h0 + (h1 - h0) * e; R.push(ring(u, a, h, 0)); I.push(ring(u, a, h, 0.8)); }
+  for (let i = 0; i < n; i++) for (let k = 0; k < m; k++) {
+    const q = [R[i][k], R[i + 1][k], R[i + 1][k + 1], R[i][k + 1]], nrm = v3(0, 0, 0).crossVectors(q[2].clone().sub(q[0]), q[3].clone().sub(q[1])).normalize();
+    p.poly(Math.abs(nrm.y) > 0.55 ? 'deck' : 'body', q); p.poly('glass', [I[i][k], I[i + 1][k], I[i + 1][k + 1], I[i][k + 1]]);
+  }
+  for (let k = 0; k < m; k++) p.poly('deck', [R[n][k], R[n][k + 1], I[n][k + 1], I[n][k]]);
+  for (let k = 1; k <= m; k++) p.seg('line', R[n][k - 1], R[n][k]).seg('line', I[n][k - 1], I[n][k]);
+  for (const k of [0, m]) for (let i = 1; i <= n; i++) p.seg('line', R[i - 1][k], R[i][k]);
+  p.poly('glass', I[0]);   // the dark inside, where the tube meets the building
 }
 
 // ---- the levels inside, the islands, escalators, gates; the trees that hold the shell up ----
@@ -74,14 +152,20 @@ export function buildCentral() {
     for (const [ax, ay] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { const tx = x + ax * 5.5, ty = y + ay * 5.5; beam(b, [x, y, CURB + 7.3], [tx, ty, Math.min(zTop, shellZ(tx, ty)) - 0.3], 0.55, 'n'); }
   };
   for (const [x, y] of [[626, 194], [690, 194], [626, 216], [690, 216]]) treeCol(x, y, 40);
-  for (const [x, y] of [[650, 170], [666, 170], [650, 240], [666, 240]]) { b.box(x - 0.8, y - 0.8, CURB, 1.6, 1.6, z2.zu - CURB - 0.2); }
+  for (const [x, y] of [[650, 170], [666, 170], [650, 224], [666, 224]]) { b.box(x - 0.8, y - 0.8, CURB, 1.6, 1.6, z2.zu - CURB - 0.2); }
   for (const x of [618, 698]) F1.box(b, x - 0.8, x + 0.8, -1.1, 1.1, 0, z1.zu - 0.2);
   b.box(700, 178, CZ + 0.4, 9, 4, 2.8, 'g').box(700, 178, CZ + 3.2, 9, 4, 0.25);   // the skybridge into Souq Sahel's upper floor
   for (const c of CENTRAL.corners) { const [x, y] = c.ground; b.box(x + 3.2, y - 0.15, CURB, 0.3, 0.3, 3.6).box(x + 2.85, y - 0.1, CURB + 3.6, 1.0, 0.1, 1.0, 'k'); }
-  const sign = FRONT(668, Y1 + 0.02, 4.2); b.text(sign, 'SAHEL CENTRAL', 12, 1.2, 1.15, 'ink', 'middle', 0.06); roundel(b, sign, 2, 0.9, 0.75, 0.06);
+  for (const x of [611, 681]) { b.box(x - 0.4, 238.6, CURB, 0.8, 0.5, 4.6, 'n'); const sign = FRONT(x - 4, 239.12, 4.6);
+    b.box(x - 4, 238.6, CURB + 3.2, 8, 0.5, 1.4, 'n').text(sign, 'SAHEL CENTRAL', 4.6, 0.95, 0.62, 'ink', 'middle', 0.04); roundel(b, sign, 0.75, 0.7, 0.5, 0.04); }
+  for (let x = 604; x < 703; x += 7.2) if (x < 627 || x > 653) { if (Math.abs(x - 620) > 4 && Math.abs(x - 694) > 4) datePalm(b, x, 243.5, 0.9, CURB); }
+  for (const [a, bb] of [[603, 627], [653, 703]]) b.box(a, 245.6, CURB, bb - a, 0.35, 0.5, 'n');
   g.add(b.build('centralBase'));
   // ---- the shell ----
   const sh = new Part(); buildShell(sh);
+  mouth(sh, 'x', X1 - 3, X1 + 11, 205, z1.zu - 1.6, 7.6, 8.8, 10.4, 11.6);    // Line 1 out to the east
+  mouth(sh, 'x', X0 + 3, X0 - 11, 205, z1.zu - 1.6, 7.6, 8.8, 10.4, 11.6);    // and in from the west
+  mouth(sh, 'y', 185, 159, 658, z2.zu - 1.6, 7.4, 8.6, 10.2, 11.4);           // Line 2 in from the north
   const shell = sh.build('centralShell'); g.add(shell);
   // ---- the cut: the floors, the islands, low walls round the concourse, the shell as its edge only ----
   const c = new Part();
@@ -96,22 +180,19 @@ export function buildCentral() {
   for (const s of [-1, 1]) F1.box(c, o1[0], o1[1], s > 0 ? 1.6 : -ISL, s > 0 ? ISL : -1.6, z1.zu, z1.zf - z1.zu);
   // Line 2 on its level above: the same, and its long escalator coming up through its island from the wing
   const o2 = [Math.max(S2.u0 - 4, Math.min(ESC2.foot, ESC2.top) - 0.3), Math.max(ESC2.foot, ESC2.top) + 0.3];
-  for (const s of [-1, 1]) F2.box(c, 160, 240, s > 0 ? ISL : -7.6, s > 0 ? 7.6 : -ISL, z2.zu, z2.zd - z2.zu);
-  for (const [a, bb] of [[160, o2[0]], [o2[1], 240]]) if (bb > a) F2.box(c, a, bb, -ISL, ISL, z2.zu, z2.zf - z2.zu);
+  for (const s of [-1, 1]) F2.box(c, 160, 230, s > 0 ? ISL : -7.6, s > 0 ? 7.6 : -ISL, z2.zu, z2.zd - z2.zu);
+  for (const [a, bb] of [[160, o2[0]], [o2[1], 230]]) if (bb > a) F2.box(c, a, bb, -ISL, ISL, z2.zu, z2.zf - z2.zu);
   for (const s of [-1, 1]) F2.box(c, o2[0], o2[1], s > 0 ? 1.6 : -ISL, s > 0 ? ISL : -1.6, z2.zu, z2.zf - z2.zu);
-  for (const s of [-1, 1]) { F1.box(c, 612, 704, s > 0 ? 7.2 : -7.6, s > 0 ? 7.6 : -7.2, z1.zd, 1.0); F2.box(c, 160, 240, s > 0 ? 7.2 : -7.6, s > 0 ? 7.6 : -7.2, z2.zd, 1.0); }
-  // the shell's edge where it meets the ground and its ridge lines, so its shape stays readable
-  for (const [ax, ay, bx2, by2] of [[X0, Y0, X1, Y0], [X1, Y0, X1, Y1], [X1, Y1, X0, Y1], [X0, Y1, X0, Y0]]) {
-    const n = 40; for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, xa = ax + (bx2 - ax) * t0, ya = ay + (by2 - ay) * t0, xb = ax + (bx2 - ax) * t1, yb = ay + (by2 - ay) * t1;
-      c.seg('detail', W(xa, ya, shellZ(xa, ya)), W(xb, yb, shellZ(xb, yb))); } }
-  for (const [ax, ay, bx2, by2] of [[X0, 205, X1, 205], [658, Y0, 658, Y1]]) { const n = 48; for (let k = 0; k < n; k++) {
-    const xa = ax + (bx2 - ax) * k / n, ya = ay + (by2 - ay) * k / n, xb = ax + (bx2 - ax) * (k + 1) / n, yb = ay + (by2 - ay) * (k + 1) / n;
-    c.seg('detail', W(xa, ya, shellZ(xa, ya)), W(xb, yb, shellZ(xb, yb))); } }
+  for (const s of [-1, 1]) { F1.box(c, 612, 704, s > 0 ? 7.2 : -7.6, s > 0 ? 7.6 : -7.2, z1.zd, 1.0); F2.box(c, 160, 230, s > 0 ? 7.2 : -7.6, s > 0 ? 7.6 : -7.2, z2.zd, 1.0); }
+  // the shell in outline: its eaves, its crown, the valleys' folds and the ends, so its shape stays readable
+  { const xs = Array.from({ length:53 }, (_, i) => X0 + (X1 - X0) * i / 52), line = (pts: number[][]) => { for (let i = 1; i < pts.length; i++) c.seg('line', W(...pts[i - 1] as [number, number, number]), W(...pts[i] as [number, number, number])); };
+    for (const th of [-Math.PI / 2, 0, Math.PI / 2]) line(xs.map(x => shellAt(x, th)));
+    for (const x of VAL) line(ARC.map(a => shellAt(x, a.th))); }
   const cut = c.build('centralCut'); cut.visible = false; g.add(cut);
   // ---- inside ----
   const f = new Part(), inside = new THREE.Group(); inside.name = 'centralInside';
   tracks(f, F1, 612, 704, (u: number, s: number) => s * trackV(L1, u), false);
-  tracks(f, F2, 160, 240, (u: number, s: number) => s * trackV(L2, u), false);
+  tracks(f, F2, 160, 230, (u: number, s: number) => s * trackV(L2, u), false);
   for (const s of [-1, 1]) buffer(f, F2, L2.to, s, -1);
   for (const [F, st, zf] of [[F1, S1, z1.zf], [F2, S2, z2.zf]] as [Frame, typeof S1, number][]) for (const s of [-1, 1]) for (const o of screenDoors(F, st.u0, s, zf, f)) inside.add(o);
   // escalators: the corners, Line 1's pair, Line 2's long pair

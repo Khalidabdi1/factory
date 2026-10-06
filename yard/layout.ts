@@ -100,8 +100,8 @@ export const METRO = { track:2.2, wide:4.4, island:2.85, plat:58, car:13, gap:0.
     { id:1, name:'Line 1', colour:'Blue', axis:'x', at:205, from:438, to:932, deck:10.5, conc:5.0,
       stations:[{ id:'Market St', u0:442, conc:[4, 24], entry:-1, style:'najdi' }, { id:'Sahel Central', u0:629, central:true }, { id:'Port', u0:872, conc:[34, 54], entry:1, style:'fins' }],
       xovers:[[516, 536], [840, 860]] },
-    { id:2, name:'Line 2', colour:'Red', axis:'y', at:658, from:26, to:236, deck:19.5, conc:11.5,
-      stations:[{ id:'Motor District', u0:28, conc:[36, 56], entry:1, style:'louvre' }, { id:'Sahel Central', u0:176, central:true }],
+    { id:2, name:'Line 2', colour:'Red', axis:'y', at:658, from:26, to:228, deck:19.5, conc:11.5,
+      stations:[{ id:'Motor District', u0:28, conc:[36, 56], entry:1, style:'louvre' }, { id:'Sahel Central', u0:168, central:true }],
       xovers:[[100, 118], [144, 162]] }] };
 // a point of a line's frame (u along, v across, z up) in the town's
 export const metroAt = (line, u, v, z = 0) => line.axis === 'x' ? [u, line.at + v, z] : [line.at - v, u, z];
