@@ -12,7 +12,7 @@ const G = TOP(0, 0, 0), AV = CITY.av, [NY0, NY1] = CITY.north, [BY0, BY1] = CITY
 const L = CITY.lanes;
 // ground the stations will stand on, kept clear of street furniture: Central over Najd Av and Souq St, Motor District
 // over Najd Av at the north end, Port over Souq St's east end
-export const STATION_SITES: [number, number, number, number][] = [[600, 680, 162, 244], [626, 654, 14, 86], [862, 938, 190, 222]];
+export const STATION_SITES: [number, number, number, number][] = [[612, 704, 160, 250], [646, 670, 16, 110], [866, 952, 190, 222]];
 const onSite = (x: number, y: number) => STATION_SITES.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);
 const nearAv = (x: number, m = 9) => AV.some(a => Math.abs(x - a) < m);
 
@@ -89,8 +89,8 @@ export function buildSahelGround() {
     .text(G, 'SOUQ ST', 690, 209, 1.2, 'paint').text(G, 'CORNICHE', 552, 271, 1.3, 'paint');
   // ---- the boulevard's strips and median: palms on the strips, double lamps down the median (clear of the stops) ----
   for (const [x0, x1] of [[547, 633], [647, 753], [767, 873], [887, 1000]]) {
-    for (let x = x0 + 5; x < x1 - 3; x += 12) for (const [y0, y1] of CITY.sep) datePalm(p, x, (y0 + y1) / 2, rand(0.85, 1.05), CURB);
-    for (let x = x0 + 12; x < x1 - 4; x += 24) if (!BRT_STOPS.some(s => Math.abs(x - s) < 16)) cityLamp(p, x, (CITY.median[0] + CITY.median[1]) / 2, true, 0, 1);
+    for (let x = x0 + 5; x < x1 - 3; x += 12) for (const [y0, y1] of CITY.sep) if (Math.abs(x - 658) > 3) datePalm(p, x, (y0 + y1) / 2, rand(0.85, 1.05), CURB); else rand(0, 1);
+    for (let x = x0 + 12; x < x1 - 4; x += 24) if (!BRT_STOPS.some(s => Math.abs(x - s) < 16) && Math.abs(x - 658) > 5) cityLamp(p, x, (CITY.median[0] + CITY.median[1]) / 2, true, 0, 1);
     p.draw(GC, [x0 + 0.6, CITY.median[0] + 0.6, x1 - 0.6, CITY.median[0] + 0.6, x0 + 0.6, CITY.median[1] - 0.6, x1 - 0.6, CITY.median[1] - 0.6], 'detail', 0.03);
   }
   // ---- pavements: an inner line round every block, lamps along the kerbs, parked cars on North St ----

@@ -264,7 +264,7 @@ const OUTDOORS = ['beach', 'park', 'pier'];
 hooks.onRain = () => { for (const p of sim.people) if (p instanceof Walker && OUTDOORS.includes(p.to?.kind) && p.steps[0]?.do === 'wait') p.steps[0].t = Math.min(p.steps[0].t, 1 + Math.abs(Math.sin(p.x)) * 3); };
 export function nextPortal(from, avoid) {
   const n = night() > 0.5, pool = PORTALS.filter(q => q !== from && q.kind !== avoid);
-  const w = q => q.w * (n && q.kind === 'home' ? 4 : 1) * (n && LEISURE.includes(q.kind) ? 0.1 : 1) * (q.kind === 'bank' && !hooks.bankOpen() ? 0 : 1) * (q.kind === 'fair' && !hooks.fairOpen() ? 0 : 1) * (hooks.raining() && OUTDOORS.includes(q.kind) ? 0.08 : 1);
+  const w = q => q.w * (n && q.kind === 'metro' ? 0.4 : 1) * (n && q.kind === 'home' ? 4 : 1) * (n && LEISURE.includes(q.kind) ? 0.1 : 1) * (q.kind === 'bank' && !hooks.bankOpen() ? 0 : 1) * (q.kind === 'fair' && !hooks.fairOpen() ? 0 : 1) * (hooks.raining() && OUTDOORS.includes(q.kind) ? 0.08 : 1);
   let r = rng() * pool.reduce((s, q) => s + w(q), 0);
   for (const q of pool) if ((r -= w(q)) <= 0) return q;
   return pool[0];
@@ -294,6 +294,7 @@ export class Walker extends Person {
     if (t.kind === 'edge' || t.kind === 'home') { this.remove(); return; }   // indoors, or off the edge of the map
     if (t.kind === 'stop') { t.stop.queue.push(this); this.wait(150, 'waiting for the bus').then(p => p.giveUp()); return; }
     if (t.kind === 'bank') { this.from = t; hooks.bankVisit(this); return; }
+    if (t.kind === 'metro') { this.from = t; hooks.metroVisit(this, () => this.trip(nextPortal(t, 'metro'))); return; }
     if (t.kind === 'fair') { this.from = t; hooks.fairVisit(this); return; }
     this.from = t;
     // take a free chair or bench nearby; on the beach sit on the sand, on the pier stand at the rail, both facing the sea

@@ -76,7 +76,7 @@ export const cityRoute = (a: number[], b: number[]) => dedupe([a, ...CPED.route(
 // rest keep them a while.
 type Portal = { kind: string, name: string, p: number[], w: number, seat?: boolean };
 export const CITY_PORTALS: Portal[] = [];
-const cportal = (kind: string, name: string, p: number[], w = 1) => { const q = { kind, name, p, w }; CITY_PORTALS.push(q); return q; };
+export const cportal = (kind: string, name: string, p: number[], w = 1) => { const q = { kind, name, p, w }; CITY_PORTALS.push(q); return q; };
 for (const [n, p] of [['the green belt', [524, 200]], ['the promenade west', [524, PROM]], ['the east of the boulevard', [958, 113.4]], ['the east of the boulevard', [958, 148.6]]] as [string, number[]][])
   cportal('edge', n, p, 1.5);
 const KIND: Record<string, string> = { Offices:'office', Flats:'home', Hotel:'hotel', 'Shopping centre':'mall', Mosque:'mosque', Library:'library', Park:'park' };
@@ -91,11 +91,11 @@ const OUTDOORS = ['park', 'beach', 'marina'];
 // the times of prayer, roughly, as the town's clock keeps them
 export const PRAYERS: [string, number][] = [['Fajr', 4.75], ['Dhuhr', 12.0], ['Asr', 15.35], ['Maghrib', 18.1], ['Isha', 19.6]];
 export const prayerNow = () => { const h = hourAt(sim.t); return PRAYERS.find(([, t]) => h >= t - 0.25 && h < t + 0.4); };
-function nextCity(from: Portal | null, avoid?: string) {
+export function nextCity(from: Portal | null, avoid?: string) {
   const h = hourAt(sim.t), n = night() > 0.5, pool = CITY_PORTALS.filter(q => q !== from && q.kind !== avoid);
   const work = h > 7.5 && h < 18.5, mallOpen = h >= 10 && h < 23, pray = !!prayerNow();
   const wt = (q: Portal) => q.w * ({ office:work ? 2.2 : 0.2, home:n ? 3 : 1, hotel:1, mall:mallOpen ? 2 : 0, mosque:pray ? 5 : 0.3, library:h > 8 && h < 22 ? 0.8 : 0,
-    park:n ? 0.15 : 1.4, beach:n ? 0.05 : 1.2, marina:n ? 0.2 : 1.0, edge:1 } as Record<string, number>)[q.kind] * (hooks.raining() && OUTDOORS.includes(q.kind) ? 0.08 : 1);
+    park:n ? 0.15 : 1.4, beach:n ? 0.05 : 1.2, marina:n ? 0.2 : 1.0, edge:1, metro:n ? 0.6 : 1.6 } as Record<string, number>)[q.kind] * (hooks.raining() && OUTDOORS.includes(q.kind) ? 0.08 : 1);
   let r = rng() * pool.reduce((s, q) => s + wt(q), 0);
   for (const q of pool) if ((r -= wt(q)) <= 0) return q;
   return pool[0];
@@ -108,13 +108,14 @@ let citizenSeq = 0;
 export const CITIZENS = () => sim.people.filter((p: any) => p instanceof Citizen);
 export class Citizen extends Person {
   [k: string]: any;
-  constructor(from: Portal, to: Portal) {
-    super({ look:'sahel', id:NAMES_SAHEL[citizenSeq++ % NAMES_SAHEL.length], x:from.p[0], y:from.p[1], speed:rand(1.1, 1.45), from });
+  constructor(from: Portal, to: Portal, o: any = {}) {
+    super({ look:'sahel', id:NAMES_SAHEL[citizenSeq++ % NAMES_SAHEL.length], x:from.p[0], y:from.p[1], speed:rand(1.1, 1.45), from, ...o });
     this.trip(to);
   }
   trip(to: Portal) { this.to = to; this.go(cityRoute([this.x, this.y], to.p), `walking to ${to.name}`).then((p: Citizen) => p.arrive()); }
   arrive() {
     const t = this.to;
+    if (t.kind === 'metro') { hooks.metroVisit(this, () => this.trip(nextCity(t, 'metro'))); return; }
     if (!OUTDOORS.includes(t.kind)) { this.remove(); return; }   // indoors, or off the edge
     this.from = t;
     const seat = t.kind === 'park' && SEATS.filter(s => !s.by).sort((a, b) => Math.hypot(a.at[0] - this.x, a.at[1] - this.y) - Math.hypot(b.at[0] - this.x, b.at[1] - this.y))[0];

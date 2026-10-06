@@ -5,6 +5,7 @@ import { pose } from '../kernel/part';
 import { clamp, ease, rand, rng } from '../kernel/math';
 import { Path } from '../kernel/path';
 import { BOXES, RACK } from '../layout';
+import { FAR } from './person';
 
 // ---- simulation ----
 export const STEP = 1 / 60, WARMUP = 80;
@@ -39,6 +40,7 @@ export class Pallet {
     this.kind = 'pallet'; this.id = `PAL-${palletSeq++}`; this.v = Math.floor(rng() * 3); this.sku = SKUS[this.v];
     this.units = Math.round(rand(...this.sku.units)); this.kg = Math.round(rand(...this.sku.kg) / 5) * 5; this.t0 = sim.t;
     this.group = PROTO.pallet[this.v].clone(); this.group.userData.entity = this; this.groups = [this.group];
+    if (FAR) for (const m of this.group.children) if (m.userData.fill !== 'kob') m.visible = false;   // made while the view is far out
     this.loc = { type:'new' }; this.reserved = null; this.tw = null; this.pick = [0, 0, 1.2];
     sim.pallets.add(this);
   }

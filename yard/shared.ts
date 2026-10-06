@@ -12,5 +12,5 @@ export const scene = new THREE.Scene();
 export const gfx = { aniso:1 };
 // late-bound calls into the view, so the simulation never imports it
 // and a few things the simulation reaches without importing them (they import it): the courier and its orders
-export const hooks = { forget:noop, lookInside:noop, track:noop, select:noop, closedAt:() => false, orderFor:() => null, courier:null, orders:{ list:[], delivered:0 },
+export const hooks: Record<string, any> = { forget:noop, handOff:noop, metroVisit:noop, lookInside:noop, track:noop, select:noop, closedAt:() => false, orderFor:() => null, courier:null, orders:{ list:[], delivered:0 },
   bankOpen:() => false, bankVisit:noop, fairOpen:() => false, fairVisit:noop, raining:() => false, inBuilding:() => false, onRain:noop, weather:null, fireFor:() => null, isSelected:() => false };

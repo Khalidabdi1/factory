@@ -34,6 +34,7 @@ import { buildWorks } from './sim/works';
 import { buildTrain } from './sim/train';
 import { buildWoods } from './world/woods';
 import { THROUGH, buildSahel } from './sim/sahel';
+import { buildMetro } from './sim/metro';
 import { initView } from './view';
 
 applyTheme();
@@ -237,6 +238,8 @@ const trainSys = buildTrain();
 const woodsG = buildWoods(); woodsG.traverse(o => { o.raycast = noop; }); scene.add(woodsG);
 // Sahel, the new city east of the green belt: its streets, its towers, its traffic and people
 const sahelSys = buildSahel();
+// Sahel Metro: its viaducts, its five stations and their insides, its driverless trains
+const metroSys = buildMetro();
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
@@ -258,7 +261,7 @@ sim.step = dt => {
   sim.peds = sim.people.filter(p => onRoad(p.x, p.y));
   for (const p of sim.pallets) p.update(dt);
   for (const b of BOATS) b.update(dt);
-  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt); sahelSys.update(dt);
+  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt); sahelSys.update(dt); metroSys.update(dt);
   for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
   for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);
@@ -272,4 +275,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

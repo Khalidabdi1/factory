@@ -221,10 +221,10 @@ export function buildSahelBuildings() {
   add('Motor House', 'Offices', [552, 604, 74, 108, 22], [['Floors', '6'], ['Tenants', 'Sahel Motors, a bank, two consultancies'], ['Street', 'Sahel Blvd']]);
   plaza(p, 596, 26, 624, 66, { fountain:false, palms:4 });
   // Najd Av east: two office blocks, a plaza with a sculpture, the arch tower
-  midRise(p, 656, 26, 42, 34, 22); midRise(p, 706, 26, 42, 36, 26);
-  add('Najd Court', 'Offices', [656, 698, 26, 60, 22], [['Floors', '6'], ['Street', 'North St']]);
-  add('Al Rawda House', 'Offices', [706, 748, 26, 62, 26], [['Floors', '7'], ['Street', 'North St']]);
-  plaza(p, 654, 66, 686, 110, { palms:6 });
+  midRise(p, 672, 26, 32, 34, 22); midRise(p, 712, 26, 36, 36, 26);
+  add('Najd Court', 'Offices', [672, 704, 26, 60, 22], [['Floors', '6'], ['Street', 'North St']]);
+  add('Al Rawda House', 'Offices', [712, 748, 26, 62, 26], [['Floors', '7'], ['Street', 'North St']]);
+  plaza(p, 670, 66, 688, 110, { palms:4 });
   archTower(p, 692, 82, 34, 22, 94, 62);
   add('Sahel Arch', 'Offices · 24 floors', [692, 726, 82, 104, 94], [['Height', '94 m'], ['The opening', 'from floor 17 to the top'], ['Skybridge', 'a lit walk 85 m up'], ['Street', 'Tower Av']]);
   // Tower Av to Port Av: the twisting tower, the globe, two glass towers
@@ -247,8 +247,8 @@ export function buildSahelBuildings() {
   // ---- between the boulevard and Souq St ----
   mosque(p, 548, 150);
   add('Al Noor Mosque', 'Mosque', [552, 594, 156, 192, 37], [['Minaret', '37 m'], ['Dome', '15 m across'], ['Prayer hall', 'for 900'], ['Street', 'Gate Av']]);
-  mall(p, 682, 152, 66, 42);
-  add('Souq Sahel', 'Shopping centre', [682, 748, 152, 194, 19], [['Shops', '140 on two floors'], ['Hours', '10:00–23:00'], ['Under the vault', 'a food court'], ['Street', 'Souq St']]);
+  mall(p, 708, 152, 44, 42);
+  add('Souq Sahel', 'Shopping centre', [708, 752, 152, 194, 19], [['Shops', '140 on two floors'], ['Hours', '10:00–23:00'], ['Under the vault', 'a food court'], ['Street', 'Souq St']]);
   midRise(p, 772, 152, 96, 18, 11);
   flatsTower(p, 788, 174, 64, 20, 33);
   add('Sahel Grand', 'Hotel · 10 floors', [772, 868, 152, 194, 33], [['Rooms', '320'], ['Below', 'shops along the boulevard'], ['Street', 'Tower Av']]);
@@ -260,8 +260,8 @@ export function buildSahelBuildings() {
   flatsTower(p, 552, 238, 44, 16, 34);
   add('Wadi Gardens', 'Flats', [552, 598, 218, 254, 34], [['Flats', '180'], ['Street', 'Gate Av']]);
   // Wadi Park: lawns, a dry river of stones, palms, a pergola and a kiosk
-  buildPark(p, 680, 216, 750, 256);
-  add('Wadi Park', 'Park', [680, 753, 214, 258, 4], [['Open', 'dawn to midnight'], ['The wadi', 'a dry riverbed that runs after rain'], ['Street', 'Souq St']]);
+  buildPark(p, 708, 216, 750, 256);
+  add('Wadi Park', 'Park', [708, 753, 214, 258, 4], [['Open', 'dawn to midnight'], ['The wadi', 'a dry riverbed that runs after rain'], ['Street', 'Souq St']]);
   // Sahel Library, a box held out over its plaza, and flats stepping up behind
   p.box(776, 230, Z, 18, 20, 5).box(772, 224, Z + 5, 42, 24, 10);
   for (const [M, fw] of faces(772, 224, 42, 24, Z + 5, 10)) { const segs: number[] = []; for (let u = 1.2; u < fw; u += 1.2) segs.push(u, 0, u, 10); p.fill2(M, 0, 2, fw, 6, 'window', 0.03).draw(M, segs, 'detail', 0.04); }

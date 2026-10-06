@@ -166,7 +166,8 @@ function buildTown(p, G, fence) {
     (y > 146 && y < 253 && (Math.abs(x - 8) < 3 || Math.abs(x - 42) < 3)) || (x > 4 && x < 46 && (Math.abs(y - 150) < 3 || Math.abs(y - 250) < 3)) || (Math.abs(y - 200) < 3 && (x < 9 || x > 40));
   for (let i = 0, n = 0; i < 200 && n < 30; i++) { const x = rand(2.5, 48), y = rand(143, 255); if (!inPark(x, y)) { tree(p, x, y, rand(0.8, 1.25), CURB); n++; } }
   // block E and the plaza in B1: trees; gardens get theirs with their houses
-  for (let y = 152; y < 256; y += rand(9, 13)) tree(p, rand(431.5, 437.5), y, rand(0.8, 1.1), CURB);
+  // (none where Market St station's entrances come down; a tree not planted still draws its numbers)
+  for (let y = 152; y < 256; y += rand(9, 13)) { const x = rand(431.5, 437.5), s = rand(0.8, 1.1); if (y > 186 && y < 222) rand(0, 3); else tree(p, x, y, s, CURB); }
   for (const x of [106, 118, 160]) for (const y of [146, 160]) tree(p, x, y, 0.95, CURB);
   // pavement lamps: along the main road, Market St on both sides, the avenues and the promenade
   for (const x of [8, 30, 72, 96, 120, 144, 168, 192, 216, 240, 264, 288, 312, 336, 392]) lampPost(p, x, 138.7, 0, -1);

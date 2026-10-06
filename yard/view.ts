@@ -23,7 +23,7 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -37,7 +37,7 @@ controls.target.copy(CENTER);
 controls.listenToKeyEvents(window);
 // the places the caption links jump to: [x0, x1, y0, y1]
 const WB = [WORLD.x0, WORLD.x1, WORLD.y0, WORLD.y1];
-const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [352, 440, 212, 298], [53, 300, 138, 262], [0, 440, 255, 336], [206, 410, -58, 2], [520, 960, 0, 270]];
+const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [352, 440, 212, 298], [53, 300, 138, 262], [0, 440, 255, 336], [206, 410, -58, 2], [520, 960, 0, 270], [566, 760, 120, 284]];
 let fitZoom = 1, HOME = CENTER.clone(), goal = null, follow = false, sized = false;
 // the zoom and ground target that frame a box of the world (z0..z1 high) in a w × h view
 function frame(w, h, [x0, x1, y0, y1], [z0, z1] = [0, 12]) {
@@ -130,7 +130,10 @@ hooks.select = ent => select(ent);
 hooks.isSelected = ent => !!ent && selected === ent;
 hooks.track = ent => { select(ent); setFollow(true); goal = { zoom:Math.max(camera.zoom, fitZoom * 5.5) }; };
 // Look inside: frame the building close enough to see its rooms (it is open while it is selected)
-hooks.lookInside = ent => { const [x0, x1, y0, y1] = ent.groups[0].userData.peek.box; setFollow(false); goal = frame(stage.clientWidth, stage.clientHeight, [x0 - 4, x1 + 4, y0 - 4, y1 + 4], [0, 5]); };
+hooks.lookInside = ent => { const pk = ent.groups[0].userData.peek, [x0, x1, y0, y1] = pk.box; setFollow(false); goal = frame(stage.clientWidth, stage.clientHeight, [x0 - 4, x1 + 4, y0 - 4, y1 + 4], pk.z ?? [0, 5]); };
+// someone selected turns into someone else (a walker into a metro rider, a rider onto a train): the selection, and
+// following, go with them
+hooks.handOff = (from, to) => { if (selected === from) { const f = follow; select(to); setFollow(f); } };
 // a closed building says it can be opened
 const hoverText = e => { const pk = e?.groups?.[0]?.userData.peek; return e ? `${e.id}${pk && !pk.cut?.visible ? ' · look inside' : ''}` : ''; };
 const screenAt = v => { tmp.copy(v).project(camera); return [(tmp.x + 1) / 2 * stage.clientWidth, (1 - tmp.y) / 2 * stage.clientHeight]; };
@@ -168,14 +171,19 @@ function drawRoute() {
 }
 // A closed building opens up while it, or something inside it, is selected. Homes draw their section (and are told
 // to show who is in) the first time they open.
-const PEEK = [[whG, warehouse], [shopG, shop], [bank.groups[0], bank], [fireSys.station.groups[0], fireSys.station], [worksSys.works.groups[0], worksSys.works], ...homes.map(h => [h.groups[0], h])];
+const PEEK = [[whG, warehouse], [shopG, shop], [bank.groups[0], bank], [fireSys.station.groups[0], fireSys.station], [worksSys.works.groups[0], worksSys.works], ...homes.map(h => [h.groups[0], h]),
+  ...Object.values(metroSys.stations).map(s => [s.groups[0], s])];
 hooks.inBuilding = (x, y) => PEEK.some(([g]) => { const b = g.userData.peek.box; return x > b[0] && x < b[1] && y > b[2] && y < b[3]; });
-hooks.closedAt = (x, y) => { for (const [g] of PEEK) { const pk = g.userData.peek, b = pk.box; if (x > b[0] && x < b[1] && y > b[2] && y < b[3]) return !pk.cut?.visible; } return false; };
+// a shut building hides who is in it; a station only those up on its floors, not those in the street beneath it
+hooks.closedAt = (x, y, p) => { for (const [g] of PEEK) { const pk = g.userData.peek, b = pk.box;
+  if (x > b[0] && x < b[1] && y > b[2] && y < b[3]) { if (pk.hides && !pk.hides(x, y, p)) continue; return !pk.cut?.visible; } } return false; };
 function updatePeek() {
   let c = null; if (selected) { const b = bounds(selected); c = [(b.min.x + b.max.x) / 2, (b.min.z + b.max.z) / 2]; }
   for (const [g, ent] of PEEK) { const pk = g.userData.peek, [x0, x1, y0, y1] = pk.box;
     const inside = p => !!p && p[0] > x0 && p[0] < x1 && p[1] > y0 && p[1] < y1;
-    const on = selected === ent || inside(c) || !!routeNext && inside([routeNext.p.x, routeNext.p.z]);
+    // a station also opens when the view comes in close over it
+    const near = pk.near && camera.zoom > 9 && controls.target.x > x0 - 6 && controls.target.x < x1 + 6 && controls.target.z > y0 - 6 && controls.target.z < y1 + 6;
+    const on = selected === ent || inside(c) || !!routeNext && inside([routeNext.p.x, routeNext.p.z]) || near;
     if (on && !pk.cut) {
       const s = pk.section({ twoBeds:ent.household?.n >= 3 }); s.cut.visible = s.inside.visible = false;
       g.add(s.cut, s.inside); Object.assign(pk, { cut:s.cut, inside:s.inside }); ent.spots = s.spots;
@@ -196,7 +204,7 @@ canvas.addEventListener('pointermove', e => {
   if (e.pointerType === 'mouse' && !e.buttons) { pointer = [e.clientX, e.clientY]; hoverDirty = true; }
 });
 canvas.addEventListener('pointerleave', () => { pointer = null; hovered = null; canvas.classList.remove('over'); });
-const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.cars, courier, fireSys.engine, ...(trainSys.state === 'away' ? [] : [trainSys])].sort((a, b) => a.id.localeCompare(b.id));
+const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.cars, courier, fireSys.engine, ...(trainSys.state === 'away' ? [] : [trainSys]), ...metroSys.trains].sort((a, b) => a.id.localeCompare(b.id));
 function cycle(d) { const v = vehicles(), i = v.indexOf(selected); if (v.length) select(v[i < 0 ? (d > 0 ? 0 : v.length - 1) : (i + d + v.length) % v.length]); }
 let paused = false;
 function togglePause() { paused = !paused; $('pause').setAttribute('aria-pressed', paused); $('pause').setAttribute('aria-label', paused ? 'Resume' : 'Pause');
@@ -236,7 +244,7 @@ window.addEventListener('keydown', e => {
   if (e.key.startsWith('Arrow')) { goal = null; setFollow(false); return; }
   const act = { Escape:() => select(null), f:() => setFollow(!follow), F:() => setFollow(!follow), ']':() => cycle(1), '[':() => cycle(-1), ' ':togglePause,
     '+':() => zoomBy(1.4), '=':() => zoomBy(1.4), '-':() => zoomBy(1 / 1.4), '_':() => zoomBy(1 / 1.4), '0':resetView, Home:resetView, t:toggleTheme, T:toggleTheme,
-    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5), 7:() => goView(6) }[e.key];
+    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5), 7:() => goView(6), 8:() => goView(7) }[e.key];
   if (act) { act(); e.preventDefault(); }
 });
 
@@ -269,7 +277,10 @@ function tick(now) {
   camera.updateMatrixWorld();
   // people's detail by how big they are on screen (zoom is screen px per metre): a lite figure under about 4 px a
   // metre, none at all under about 1.5
-  const tiny = camera.zoom < 4.2, far = camera.zoom < 1.5; if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); for (const p of sim.people) p.place(); }
+  const tiny = camera.zoom < 4.2, far = camera.zoom < 1.5;
+  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place();
+    // a pallet a few pixels across is its load and nothing else: one draw call instead of four
+    for (const pl of sim.pallets) for (const m of pl.group.children) if (m.userData.fill !== 'kob') m.visible = !far; }
   updatePeek();
   if (hoverDirty && pointer) { hoverDirty = false; hovered = hit(...pointer); canvas.classList.toggle('over', !!hovered); }
   placeTag($('tagSel'), selected, selected ? `${selected.id} · ${selected.info().status}` : '');
@@ -291,7 +302,7 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [...sahelSys.buildings, factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
@@ -309,7 +320,7 @@ if (DEBUG) {
     // start the bank job now (when the town is quiet)
     robbery:() => { if (incident.phase === 'quiet') incident.next = sim.t; return incident.phase; },
     // a chimney fire now, at a house by id or any house with a chimney (when none is burning): returns the house
-    worksSys, trainSys,
+    worksSys, trainSys, metroSys,
     // the next train now (when none is in): returns its state
     train:() => { if (trainSys.state === 'away') trainSys.next = sim.t; return trainSys.state; },
     fire:id => fireSys.blaze.phase === 'quiet' ? fireSys.blaze.start(id ? find(id) : undefined).id : `busy: ${fireSys.blaze.phase}`, fireSys,

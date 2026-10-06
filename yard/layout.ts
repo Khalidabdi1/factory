@@ -85,6 +85,23 @@ const CB = (() => { const c = [[547, 633], [647, 753], [767, 873]], r = [[20, 11
 // mole of rocks round the basin; the stops of the Metrobus on the boulevard's median
 export const MARINA = { x0:566, x1:636, jetty:[597.5, 602.5], fingers:[302, 312, 322], deck:1.15, mole:334 };
 export const BRT_STOPS = [592, 704, 818, 930];
+// Sahel Metro: two lines on viaducts, driverless four-car trains, island platforms behind glass between the tracks.
+// Line 1 runs east along y 205 from Market St, at the old town's end of Market St, through Sahel Central to Port; Line 2
+// south along x 658 from Motor District to Sahel Central, where it ends on the level above Line 1. Along a line, u is the
+// distance down it (x for Line 1, y for Line 2) and v the offset across it to the right of travel in the +u direction
+// (south of Line 1, west of Line 2); the tracks run at v ±2.2 and spread to ±4.4 round a station's island. A station's
+// platform starts at u0 and is 58 m long; its concourse hangs under the tracks over conc (station u), its entrance
+// escalators climb to it from the ground at its entry end (−1 the low-u end, 1 the high-u end) either side of the line.
+export const METRO = { track:2.2, wide:4.4, island:2.85, plat:58, car:13, gap:0.8, cars:4, escSlope:Math.tan(Math.PI / 6),
+  lines:[
+    { id:1, name:'Line 1', colour:'Blue', axis:'x', at:205, from:438, to:932, deck:10.5, conc:5.0,
+      stations:[{ id:'Market St', u0:442, conc:[4, 24], entry:-1, style:'najdi' }, { id:'Sahel Central', u0:629, central:true }, { id:'Port', u0:872, conc:[34, 54], entry:1, style:'fins' }],
+      xovers:[[516, 536], [840, 860]] },
+    { id:2, name:'Line 2', colour:'Red', axis:'y', at:658, from:26, to:236, deck:19.5, conc:11.5,
+      stations:[{ id:'Motor District', u0:28, conc:[36, 56], entry:1, style:'louvre' }, { id:'Sahel Central', u0:176, central:true }],
+      xovers:[[100, 118], [144, 162]] }] };
+// a point of a line's frame (u along, v across, z up) in the town's
+export const metroAt = (line, u, v, z = 0) => line.axis === 'x' ? [u, line.at + v, z] : [line.at - v, u, z];
 // Sahel Motors, the showroom Car Works sells through: a terrace cut into the foothills north of the railway, and the
 // siding its car train runs to, a second track north of the main line from Car Works' lot
 export const MOTORS = { terrace:[452, 628, -52, -9], sidingY:-6.5, sidingX:[404, 612] };

@@ -25,7 +25,8 @@ export class Person {
     if (this.dog) { this.dogG = PROTO.dog.clone(); this.dogG.userData.entity = this; this.groups.push(this.dogG); scene.add(this.dogG); }
     scene.add(this.group); sim.people.push(this); this.place();
   }
-  walk(pts, label?) { for (const to of pts) this.steps.push({ do:'walk', to, label }); return this; }
+  // ride: standing on an escalator's steps rather than walking
+  walk(pts, label?, ride?) { for (const to of pts) this.steps.push({ do:'walk', to, label, ride, speed:ride ? 0.9 : undefined }); return this; }
   // a walk over the pavements: where a leg crosses a street, wait at the kerb for a gap first
   go(pts, label?) {
     for (let i = 1; i < pts.length; i++) {
@@ -46,9 +47,9 @@ export class Person {
       const st = this.steps[0];
       if (st) { if (!st.started) { st.started = true; if (st.label) this.label = st.label; } if (this.run(st, dt)) this.steps.shift(); } else this.v = 0;
     }
-    if (this.v > 0.05) this.phase += dt * this.v * 4.5;
+    if (this.v > 0.05 && !this.riding) this.phase += dt * this.v * 4.5;
     // arms swing against the legs; a box is held out in front with both hands; seated, the legs fold
-    const sw = this.v > 0.05 && !this.sit ? Math.sin(this.phase) * 0.5 : 0, ground = this.sit === 'ground';
+    const sw = this.v > 0.05 && !this.sit && !this.riding ? Math.sin(this.phase) * 0.5 : 0, ground = this.sit === 'ground';
     this.legs[0].rotation.z = ground ? 1.5 : sw; this.legs[1].rotation.z = ground ? 1.5 : -sw;
     for (const l of this.legs) l.visible = this.sit !== 'chair';
     this.sitLegs.visible = this.sit === 'chair';
@@ -63,7 +64,11 @@ export class Person {
     if (st.do === 'walk') {
       const to = typeof st.to === 'function' ? st.to(this) : st.to;
       const dx = to[0] - this.x, dy = to[1] - this.y, d = Math.hypot(dx, dy);
-      if (d < (st.near ?? 0.03)) { if (!st.near) { this.x = to[0]; this.y = to[1]; } this.v = 0; return true; }
+      // a walk to a point with a height (up an escalator, along a platform): the height follows the way along;
+      // ride: standing on the steps, not walking
+      if (to.length > 2) { st.z0 ??= this.lz ?? zAt(this.x, this.y); st.d0 ??= Math.max(d, 1e-6); this.lz = to[2] + (st.z0 - to[2]) * Math.min(1, d / st.d0); }
+      this.riding = !!st.ride;
+      if (d < (st.near ?? 0.03)) { if (!st.near) { this.x = to[0]; this.y = to[1]; } if (to.length > 2) this.lz = to[2]; this.v = 0; this.riding = false; return true; }
       const e = wrap(Math.atan2(dy, dx) - this.h); this.h += clamp(e, -7 * dt, 7 * dt);
       this.v = Math.abs(e) > 0.8 ? 0 : st.speed ?? this.speed;
       const step = Math.min(d, this.v * dt); this.x += dx / d * step; this.y += dy / d * step; return false;
@@ -80,10 +85,11 @@ export class Person {
   standUp() { if (this.seat?.by === this) this.seat.by = null; this.sit = null; this.seat = null; }
   place() {
     // seated, the hips drop to the seat (or to the ground)
-    const s = this.scale, z = zAt(this.x, this.y) + (this.sit === 'chair' ? (this.seat.z ?? 0.45) - (HIP_H - 0.07) * s : this.sit === 'ground' ? -(HIP_H - 0.08) * s : 0);
+    // lz: a height of their own, off the ground (in a station, on a platform)
+    const s = this.scale, z = (this.lz ?? zAt(this.x, this.y)) + (this.sit === 'chair' ? (this.seat.z ?? 0.45) - (HIP_H - 0.07) * s : this.sit === 'ground' ? -(HIP_H - 0.08) * s : 0);
     pose(this.group, this.x, this.y, this.h, z); pose(this.lite, this.x, this.y, this.h, z);
     // inside a building that is shut, nobody is drawn (its walls hide them anyway)
-    const away = hooks.closedAt(this.x, this.y);
+    const away = hooks.closedAt(this.x, this.y, this);
     const gone = away || this.hidden || FAR;   // hidden: on a ride, drawn by the ride instead
     this.group.visible = !TINY && !gone; this.lite.visible = TINY && !gone; if (this.dogG) this.dogG.visible = !TINY && !gone;
     if (this.dogG) { const c = Math.cos(this.h), s = Math.sin(this.h), x = this.x - c * 0.9 - s * 0.55, y = this.y - s * 0.9 + c * 0.55; pose(this.dogG, x, y, this.h, zAt(x, y)); }
