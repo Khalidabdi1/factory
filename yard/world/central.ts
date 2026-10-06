@@ -30,21 +30,23 @@ const ESC2 = (() => { const z = levels(L2), u = 166; return { foot:u, top:u + (z
 export const centralEsc = { 1:ESC1, 2:ESC2 };
 
 // ---- the shell ----
-// Along x, the lobes between their valleys (VAL): each lobe's crown (CREST), the crown's height at each valley (VALZ),
-// how high its eaves lift at its middle (EYE). A cross-section at any x is a superellipse, boxy-round like the real
-// thing, from the north eave over the crown to the south eave; its plan bulges at a lobe's middle and draws in at the
-// valleys (and the Line 2 lobe bulges south over the end of its platform). The ends draw in and come down a little.
-const VAL = [601, 616, 631, 649, 667, 682, 705], CREST = [20, 24, 27.5, 32.5, 34, 37], VALZ = [16.5, 16.5, 17.5, 22, 22.5, 23, 21], EYE = [6.5, 8, 9.5, 6.5, 7.5, 9.5];
-const PX = 3.0;
-const lobeAt = (x: number) => { x = Math.min(X1, Math.max(X0, x)); let i = 0; while (i < VAL.length - 2 && x > VAL[i + 1]) i++; return { i, t:(x - VAL[i]) / (VAL[i + 1] - VAL[i]) }; };
+// The real building's motif: white ribbons that run the whole length as waves, in pairs out of step with each other, so
+// that each pair crosses itself every so often like a braid, and between its crossings opens into an eye of lattice.
+// One row of eyes runs along each side, a second over the roof, half an eye along from the first (its eyes over the
+// first row's crossings). The body is a long boxy-round section, rising to the tall east end, its roof domed a little
+// over the upper eyes and its sides bulging a little at the lower ones; the eaves lift over the glass base in the
+// middle of each lower eye and come down at the crossings.
+const PX = 3.2, EYE = 15, MZ = levels(METRO.lines[0]).zu - 1.6;   // MZ: the foot of Line 1's mouths                                       // the section's squareness; an eye's length
+export const phase = (x: number) => Math.PI / 2 + (x - 640) * Math.PI / EYE;   // 0, π, 2π… at the lower row's crossings
+const sm = (v: number) => { v = Math.min(1, Math.max(0, v)); return v * v * (3 - 2 * v); };
 export function section(x: number) {
-  const { i, t } = lobeAt(x), s = Math.sin(Math.PI * t), hv = VALZ[i] + (VALZ[i + 1] - VALZ[i]) * t;
-  let H = hv + (CREST[i] - hv) * s ** 0.8;
-  const e = 3.2 + (EYE[i] - 3.2) * s ** 0.7;
-  const ys = 225.5 + 3.6 * s + (i === 3 ? 6 * s ** 0.6 : 0), yn = 185 - 3.6 * s - (i === 3 ? 1 * s : 0);
+  const f = phase(x), s2 = Math.sin(f) ** 2, c2 = Math.cos(f) ** 2, l2 = Math.exp(-(((x - 658) / 11.5) ** 2));
+  let H = 19 + 13 * sm((x - X0) / (X1 - X0)) ** 0.85 + 1.5 * c2 + 2.5 * l2;
+  const e = 3.2 + 4.3 * s2 + 3.2 * Math.exp(-(((x - 640) / 9) ** 4));        // (and lifted over Najd Av)
+  const ys = 225.6 + 1.6 * s2 + 9 * l2, yn = 185 - 1.6 * s2 - l2;               // (and out over the end of Line 2)
   const end = Math.min(1, (x - X0) / 8, (X1 - x) / 8), r = Math.sqrt(Math.max(0, 1 - (1 - end) ** 2));
   H = e + (H - e) * (0.88 + 0.12 * r);
-  return { e, H, mid:(ys + yn) / 2, half:(ys - yn) / 2 * (0.86 + 0.14 * r), i, t };
+  return { e, H, mid:(ys + yn) / 2, half:(ys - yn) / 2 * (0.86 + 0.14 * r), f };
 }
 // a point of the shell: at x, at angle th round its section (-90° the north eave, 0 the crown, 90° the south eave)
 const pw = (v: number, k: number) => Math.sign(v) * Math.abs(v) ** k;
@@ -64,16 +66,15 @@ const ARC = (() => { const n = 400, th: number[] = [], len: number[] = [0];
   const half = 24, out: { th: number, q: number }[] = [];
   for (let j = -half; j <= half; j++) { const f = Math.abs(j) / half; out.push({ th:Math.sign(j) * at(f), q:1 - f }); }
   return out; })();
-// The lattice on a lobe's side, at its place t along the lobe and height q up the side (eave 0, crown 1): two big
-// sails of net, the lower under a ribbon that climbs diagonally across the lobe, the upper above it to the crown's
-// ribbon; a thick ribbon at the eave under them. The ribbons widen toward the valleys and the sails end short of them,
-// so between lobes the white bands run together. 1 inside a sail (its holes all the same size), 0 on a ribbon.
-const RIB = (t: number) => 0.3 + 0.34 * t, RW = 0.05, EAVE = 0.14, CROWN = 0.93;
-const bands = (t: number) => { const w = 0.02 + 0.12 * (1 - Math.sin(Math.PI * t)); return { e:EAVE + w, r0:RIB(t) - RW - w, r1:RIB(t) + RW + w, c:CROWN - w }; };
-function lattice(t: number, q: number) {
-  const b = bands(t), ex = Math.min(t, 1 - t) - 0.08;
-  const m = Math.max(Math.min(q - b.e, b.r0 - q), Math.min(q - b.r1, b.c - q));
-  return Math.max(0, Math.min(1, m / 0.025, ex / 0.04));
+// The ribbons, as heights up a side (q: 0 the eave, 1 the crown) along x: two pairs of waves out of step, the lower
+// pair's eyes on the side, the upper's on the roof, a quarter-wave along. The lattice fills each eye between its pair's
+// ribbons (1 inside, falling off at the ribbons' edges, 0 on a ribbon or in the white between the eyes).
+const WAVES = [{ c:0.365, a:0.21, ph:0 }, { c:0.785, a:0.17, ph:Math.PI / 2 }], RW = 0.03;
+const ribbons = (x: number) => WAVES.flatMap(w => { const s = w.a * Math.sin(phase(x) + w.ph); return [w.c + s, w.c - s]; });
+function lattice(x: number, q: number) {
+  const f = phase(x); let m = -1;
+  for (const w of WAVES) { const s = Math.abs(w.a * Math.sin(f + w.ph)); m = Math.max(m, Math.min(q - (w.c - s + RW), (w.c + s - RW) - q)); }
+  return Math.max(0, Math.min(1, m / 0.022, (Math.min(x - X0, X1 - x) - 3) / 2));
 }
 const mid2 = (a: THREE.Vector3, b: THREE.Vector3) => a.clone().add(b).multiplyScalar(0.5);
 const m4 = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, d: THREE.Vector3) => a.clone().add(b).add(c).add(d).multiplyScalar(0.25);
@@ -87,29 +88,25 @@ function buildShell(p: Part) {
     const n = v3(0, 0, 0).crossVectors(c.clone().sub(a), d.clone().sub(b)).normalize(); if (n.y < 0) n.negate();
     const k = n.y > 0.55 ? 'deck' : 'body'; p.tri(k, a, b, c); p.tri(k, a, c, d);
     // a diamond pierced in the cell, as big as the lattice is open there: dark by day, lit after dark
-    const { t } = section((xs[i] + xs[i + 1]) / 2), D = lattice(t, (ARC[j].q + ARC[j + 1].q) / 2);
+    const D = lattice((xs[i] + xs[i + 1]) / 2, (ARC[j].q + ARC[j + 1].q) / 2);
     // a diamond hole in the net over the cell's middle, showing the dark inner skin by day (lit after dark)
     if (D > 0.06) hole(m4(a, b, c, d), [mid2(a, b), mid2(b, c), mid2(c, d), mid2(d, a)], n, D);
   }
   // and one over every corner between four cells: the holes at the middles and the corners together leave only thin
   // white strips between them, crossing on the diagonals, which is the net
   for (let i = 1; i < nx; i++) for (let j = 1; j < ARC.length - 1; j++) {
-    const { t } = section(xs[i]), D = lattice(t, ARC[j].q); if (D <= 0.06) continue;
+    const D = lattice(xs[i], ARC[j].q); if (D <= 0.06) continue;
     const o = P[i][j], n = v3(0, 0, 0).crossVectors(P[i + 1][j].clone().sub(P[i - 1][j]), P[i][j + 1].clone().sub(P[i][j - 1])).normalize(); if (n.y < 0) n.negate();
     hole(o, [mid2(o, P[i][j - 1]), mid2(o, P[i + 1][j]), mid2(o, P[i][j + 1]), mid2(o, P[i - 1][j])], n, D);
   }
   const curve = (pts: THREE.Vector3[], k = 'line') => { for (let i = 1; i < pts.length; i++) p.seg(k, pts[i - 1], pts[i]); };
-  // the eaves, the crown, the ribbons between the lenses, the valleys' folds; the rims at the two ends
+  // the eaves and the crown; the ribbons' edges, each wave's two, both sides, crossing in the braid; the end rims
   const along = (th: number, k: string, lift = 0.05) => curve(xs.map(x => { const [px, py, pz] = shellAt(x, th); return W(px, py, pz + lift); }), k);
   along(-Math.PI / 2, 'line', 0); along(Math.PI / 2, 'line', 0); along(0, 'detail');
-  const rib = ARC.find(a => a.th > 0 && a.q < 0.6)!.th; along(rib, 'detail'); along(-rib, 'detail');
-  for (const vx of VAL.slice(1, -1)) curve(ARC.map(a => { const [px, py, pz] = shellAt(vx, a.th); return W(px, py, pz + 0.05); }), 'detail');
-  // the ribbons' edges: along each lobe, the eave's ribbon, the one climbing across it and the crown's, both sides
   const HA = (ARC.length - 1) / 2, thAt = (q: number) => { const f = 1 - Math.min(1, Math.max(0, q)), k = f * HA, i = Math.min(HA - 1, Math.floor(k)), a = ARC[HA + i].th, b = ARC[HA + i + 1].th; return a + (b - a) * (k - i); };
-  for (let li = 0; li < VAL.length - 1; li++) for (const side of [-1, 1]) for (const key of ['e', 'r0', 'r1', 'c'] as const) {
+  for (let w = 0; w < 4; w++) for (const side of [-1, 1]) for (const d of [-RW, RW]) {
     const pts: THREE.Vector3[] = [];
-    for (let k = 0; k <= 24; k++) { const t = 0.08 + 0.84 * k / 24, x = VAL[li] + (VAL[li + 1] - VAL[li]) * t, q = bands(t)[key];
-      const [px, py, pz] = shellAt(x, side * thAt(q)); pts.push(W(px, py, pz + 0.07)); }
+    for (let k = 0; k <= 260; k++) { const x = X0 + 2.5 + (X1 - X0 - 5) * k / 260, [px, py, pz] = shellAt(x, side * thAt(ribbons(x)[w] + d)); pts.push(W(px, py, pz + 0.07)); }
     curve(pts, 'line');
   }
   for (const [x, dx] of [[X0, 1.2], [X1, -1.2]]) {
@@ -130,9 +127,12 @@ function buildShell(p: Part) {
   // the east end's glass, round the street and the line coming out under the mouth
   { const x = X1 - 1.3, S = section(x);
     for (let k = 0; k < 24; k++) { const ya = S.mid - S.half + 1.5 + k * (2 * S.half - 3) / 24, yb = ya + (2 * S.half - 3) / 24;
-      if (yb > 195.5 && ya < 214.5) continue;
       const za = shellZ(x + 1.3, ya) - 0.3, zb = shellZ(x + 1.3, yb) - 0.3;
-      p.poly('window', [W(x, ya, g0), W(x, yb, g0), W(x, yb, zb), W(x, ya, za)]); p.seg('line', W(x + 0.02, ya, g0), W(x + 0.02, ya, za)); } }
+      // over the line's mouth the glass comes down only to the tube's back; over the street beside it, to the street's
+      // headroom; elsewhere to the ground
+      const tube = (y: number) => { const v = Math.abs(y - 205) / 7.6; return v < 1 ? MZ + 10.4 * (1 - v ** 2.6) ** (1 / 2.6) : -1; };
+      const fa = Math.max(tube(ya), yb > 197 && ya < 213 ? MZ : (yb > 195.5 && ya < 214.5 ? 6 : g0)), fb = Math.max(tube(yb), fa);
+      p.poly('window', [W(x, ya, fa), W(x, yb, fb), W(x, yb, zb), W(x, ya, za)]); p.seg('line', W(x + 0.02, ya, fa), W(x + 0.02, ya, za)); } }
   // Line 2's concourse wing under its mouth, glazed
   p.box(650, 162, CURB, 16, 20, 0.2, 'n');
   for (let y = 162; y < 182; y += 2) p.poly('window', [W(666, y, CURB), W(666, y + 2, CURB), W(666, y + 2, 16.6), W(666, y, 16.6)]), p.seg('line', W(666.02, y, CURB), W(666.02, y, 16.6));
@@ -177,8 +177,8 @@ export function buildCentral() {
   g.add(b.build('centralBase'));
   // ---- the shell ----
   const sh = new Part(); buildShell(sh);
-  mouth(sh, 'x', X1 - 3, X1 + 11, 205, z1.zu - 1.6, 7.6, 8.8, 10.4, 11.6);    // Line 1 out to the east
-  mouth(sh, 'x', X0 + 3, X0 - 11, 205, z1.zu - 1.6, 7.6, 8.8, 10.4, 11.6);    // and in from the west
+  mouth(sh, 'x', X1 - 3, X1 + 11, 205, MZ, 7.6, 8.8, 10.4, 11.6);    // Line 1 out to the east
+  mouth(sh, 'x', X0 + 3, X0 - 11, 205, MZ, 7.6, 8.8, 10.4, 11.6);    // and in from the west
   mouth(sh, 'y', 185, 159, 658, z2.zu - 1.6, 7.4, 8.6, 10.2, 11.4);           // Line 2 in from the north
   const shell = sh.build('centralShell'); g.add(shell);
   // ---- the cut: the floors, the islands, low walls round the concourse, the shell as its edge only ----
@@ -201,7 +201,7 @@ export function buildCentral() {
   // the shell in outline: its eaves, its crown, the valleys' folds and the ends, so its shape stays readable
   { const xs = Array.from({ length:53 }, (_, i) => X0 + (X1 - X0) * i / 52), line = (pts: number[][]) => { for (let i = 1; i < pts.length; i++) c.seg('line', W(...pts[i - 1] as [number, number, number]), W(...pts[i] as [number, number, number])); };
     for (const th of [-Math.PI / 2, 0, Math.PI / 2]) line(xs.map(x => shellAt(x, th)));
-    for (const x of VAL) line(ARC.map(a => shellAt(x, a.th))); }
+    for (let x = 602.5; x < X1; x += EYE) line(ARC.map(a => shellAt(x, a.th))); line(ARC.map(a => shellAt(X0, a.th))); line(ARC.map(a => shellAt(X1, a.th))); }
   const cut = c.build('centralCut'); cut.visible = false; g.add(cut);
   // ---- inside ----
   const f = new Part(), inside = new THREE.Group(); inside.name = 'centralInside';
