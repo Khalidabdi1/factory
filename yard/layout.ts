@@ -116,6 +116,16 @@ export const metroAt = (line, u, v, z = 0) => line.axis === 'x' ? [u, line.at + 
 export const MOTORS = { terrace:[452, 668, -52, -9], sidingY:-6.5, sidingX:[411, 614], dock:420, stop:608, ramp:550.8,
   towers:[[518, -31], [542, -31]], towerR:8, levels:8, levelH:3.2, hall:[572, 628, -46, -16], bay:579,
   out:-10.5, in:-13.5, road:[633, 647], cross:[-4.5, 2], walk:630.6, door:-24, track:[456, 506, -46, -16] };
+// Sahel Container Terminal, on land made out over the beach east of the marina, its deck at z. The quay faces south
+// (edge at quay); the ship-to-shore cranes run on two rails (rails) and work the ship at its berth (ship: its middle,
+// its beam, the line it comes in and goes out along). Tractors go round one circuit, eastbound under the cranes (lane,
+// pass the passing lane's offset), up the east end, westbound along the yard road under the yard gantries (road), and
+// down the west end (x0, x1 of the circuit). The yard: three blocks of five rows, four 40-footers long, each with its
+// gantry (RTG); the breakwater beyond the berth (its two heads lit) and the gate off the end of Port Av.
+export const PORT = { x0:650, x1:958, y0:279, y1:340, z:2.0, quay:340, rails:[323, 339], lane:330, pass:3.6, road:304, loop:[678, 912],
+  blocks:[[686, 737], [745, 796], [804, 855]], row0:285.0, pitch:2.9, rows:5, bay:12.8, bays:4, rtg:[283.2, 310.2],
+  cranes:[760, 800, 840], ship:{ x:790, y:354, half:74, beam:12, in:370, bays:8, bay0:-46, pitch:13 },
+  breakwater:[700, 950, 410, 416], gate:[866, 894], ramp:[873, 887, 279, 293], reefer:[652, 676], tugs:[[931, 346], [955, 346]] };
 export const RAIL = { y:-1.5, loopY:7, lane:12.5, ramp:400, route:[[WORLD.x1 + 12, -1.5], [212, -1.5], [200, 7], [96, 7], [80, -1.5], [WORLD.x0 - 30, -1.5]] };
 // Riverside Fire Station. ENG-1 stands nose out in bay 1 (front at park); it drives out forward and comes home by
 // stopping in the westbound lane past the bay and backing in along reverse (the path its rear end takes).
