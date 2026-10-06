@@ -89,9 +89,10 @@ export function buildSahelGround() {
     .text(G, 'SOUQ ST', 690, 209, 1.2, 'paint').text(G, 'CORNICHE', 552, 271, 1.3, 'paint');
   // ---- the boulevard's strips and median: palms on the strips, double lamps down the median (clear of the stops) ----
   for (const [x0, x1] of [[547, 633], [647, 753], [767, 873], [887, 1000]]) {
-    for (let x = x0 + 5; x < x1 - 3; x += 12) for (const [y0, y1] of CITY.sep) if (Math.abs(x - 658) > 3) datePalm(p, x, (y0 + y1) / 2, rand(0.85, 1.05), CURB); else rand(0, 1);
-    for (let x = x0 + 12; x < x1 - 4; x += 24) if (!BRT_STOPS.some(s => Math.abs(x - s) < 16) && Math.abs(x - 658) > 5) cityLamp(p, x, (CITY.median[0] + CITY.median[1]) / 2, true, 0, 1);
-    p.draw(GC, [x0 + 0.6, CITY.median[0] + 0.6, x1 - 0.6, CITY.median[0] + 0.6, x0 + 0.6, CITY.median[1] - 0.6, x1 - 0.6, CITY.median[1] - 0.6], 'detail', 0.03);
+    for (let x = x0 + 5; x < x1 - 3; x += 12) for (const [y0, y1] of CITY.sep) if (Math.abs(x - 658) > 3 && !BRT_STOPS.some(q => Math.abs(x - q) < 15)) datePalm(p, x, (y0 + y1) / 2, rand(0.85, 1.05), CURB); else rand(0, 1);
+    const m1 = Math.min(x1, 962);
+    for (let x = x0 + 12; x < m1 - 4; x += 24) if (!BRT_STOPS.some(s => Math.abs(x - s) < 16) && Math.abs(x - 658) > 5) cityLamp(p, x, (CITY.median[0] + CITY.median[1]) / 2, true, 0, 1);
+    p.draw(GC, [x0 + 0.6, CITY.median[0] + 0.6, m1 - 0.6, CITY.median[0] + 0.6, x0 + 0.6, CITY.median[1] - 0.6, m1 - 0.6, CITY.median[1] - 0.6], 'detail', 0.03);
   }
   // ---- pavements: an inner line round every block, lamps along the kerbs, parked cars on North St ----
   for (const [x0, x1, y0, y1] of [[547, 633, 20, 115], [647, 753, 20, 115], [767, 873, 20, 115], [887, 960, 2, 115], [547, 633, 147, 198], [647, 753, 147, 198],

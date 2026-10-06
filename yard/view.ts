@@ -23,7 +23,7 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -102,7 +102,7 @@ function select(ent) {
 }
 hooks.forget = forget;
 function forget(ent) { if (selected === ent) select(null); if (hovered === ent) hovered = null; }
-const STILL = ['factory', 'works', 'lot', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'station', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride'];
+const STILL = ['factory', 'works', 'lot', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'station', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride', 'brtstop', 'line'];
 const followable = ent => !!ent && !STILL.includes(ent.kind);
 function setFollow(on) { follow = on && followable(selected); $('cardFollow').setAttribute('aria-pressed', follow); }
 function refresh() {
@@ -278,7 +278,7 @@ function tick(now) {
   // people's detail by how big they are on screen (zoom is screen px per metre): a lite figure under about 4 px a
   // metre, none at all under about 1.5
   const tiny = camera.zoom < 4.2, far = camera.zoom < 1.5;
-  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place();
+  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place(); for (const b of brtSys.buses) b.place();
     // a pallet a few pixels across is its load and nothing else: one draw call instead of four
     for (const pl of sim.pallets) for (const m of pl.group.children) if (m.userData.fill !== 'kob') m.visible = !far; }
   updatePeek();
@@ -302,7 +302,7 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
@@ -320,7 +320,7 @@ if (DEBUG) {
     // start the bank job now (when the town is quiet)
     robbery:() => { if (incident.phase === 'quiet') incident.next = sim.t; return incident.phase; },
     // a chimney fire now, at a house by id or any house with a chimney (when none is burning): returns the house
-    worksSys, trainSys, metroSys,
+    worksSys, trainSys, metroSys, brtSys,
     // the next train now (when none is in): returns its state
     train:() => { if (trainSys.state === 'away') trainSys.next = sim.t; return trainSys.state; },
     fire:id => fireSys.blaze.phase === 'quiet' ? fireSys.blaze.start(id ? find(id) : undefined).id : `busy: ${fireSys.blaze.phase}`, fireSys,

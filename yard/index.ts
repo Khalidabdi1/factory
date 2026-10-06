@@ -35,6 +35,7 @@ import { buildTrain } from './sim/train';
 import { buildWoods } from './world/woods';
 import { THROUGH, buildSahel } from './sim/sahel';
 import { buildMetro } from './sim/metro';
+import { buildBrt } from './sim/brt';
 import { initView } from './view';
 
 applyTheme();
@@ -240,6 +241,8 @@ const woodsG = buildWoods(); woodsG.traverse(o => { o.raycast = noop; }); scene.
 const sahelSys = buildSahel();
 // Sahel Metro: its viaducts, its five stations and their insides, its driverless trains
 const metroSys = buildMetro();
+// the Metrobus along Sahel Blvd's busway, and its stations on the median
+const brtSys = buildBrt();
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
@@ -275,4 +278,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

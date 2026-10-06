@@ -95,7 +95,7 @@ export function nextCity(from: Portal | null, avoid?: string) {
   const h = hourAt(sim.t), n = night() > 0.5, pool = CITY_PORTALS.filter(q => q !== from && q.kind !== avoid);
   const work = h > 7.5 && h < 18.5, mallOpen = h >= 10 && h < 23, pray = !!prayerNow();
   const wt = (q: Portal) => q.w * ({ office:work ? 2.2 : 0.2, home:n ? 3 : 1, hotel:1, mall:mallOpen ? 2 : 0, mosque:pray ? 5 : 0.3, library:h > 8 && h < 22 ? 0.8 : 0,
-    park:n ? 0.15 : 1.4, beach:n ? 0.05 : 1.2, marina:n ? 0.2 : 1.0, edge:1, metro:n ? 0.6 : 1.6 } as Record<string, number>)[q.kind] * (hooks.raining() && OUTDOORS.includes(q.kind) ? 0.08 : 1);
+    park:n ? 0.15 : 1.4, beach:n ? 0.05 : 1.2, marina:n ? 0.2 : 1.0, edge:1, metro:n ? 0.6 : 1.6, brt:n ? 0.3 : 1.2 } as Record<string, number>)[q.kind] * (hooks.raining() && OUTDOORS.includes(q.kind) ? 0.08 : 1);
   let r = rng() * pool.reduce((s, q) => s + wt(q), 0);
   for (const q of pool) if ((r -= wt(q)) <= 0) return q;
   return pool[0];
@@ -116,6 +116,7 @@ export class Citizen extends Person {
   arrive() {
     const t = this.to;
     if (t.kind === 'metro') { hooks.metroVisit(this, () => this.trip(nextCity(t, 'metro'))); return; }
+    if (t.kind === 'brt') { hooks.brtVisit(this, () => this.trip(nextCity(t, 'brt'))); return; }
     if (!OUTDOORS.includes(t.kind)) { this.remove(); return; }   // indoors, or off the edge
     this.from = t;
     const seat = t.kind === 'park' && SEATS.filter(s => !s.by).sort((a, b) => Math.hypot(a.at[0] - this.x, a.at[1] - this.y) - Math.hypot(b.at[0] - this.x, b.at[1] - this.y))[0];
