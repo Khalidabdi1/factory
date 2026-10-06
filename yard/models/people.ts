@@ -34,6 +34,9 @@ export const OUTFITS = {
   sahel:[civ('n', 'n', 'coat', 'none', 'ghutra', null, false), civ('k', 'k', 'coat', 'none', 'scarf', 'bag', true), civ('n', 'k', 'trousers', 'short', null, 'bag', false),
     civ('n', 'n', 'coat', 'none', 'ghutra', 'bag', false), civ('k', 'n', 'skirt', 'long', null, 'bag', true), civ('k', 'k', 'trousers', 'short', null, null, false),
     civ('k', 'k', 'coat', 'none', 'scarf', null, true), civ('n', 'k', 'trousers', 'none', 'cap', 'backpack', false)],
+  // Millbrook: farmers in work clothes and a cap or a hat, a waxed coat, dresses and a shopping bag
+  village:[civ('n', 'k', 'trousers', 'short', 'cap', null, false), civ('k', 'n', 'skirt', 'long', null, 'bag', true), civ('n', 'k', 'trousers', 'short', 'hat', null, false),
+    civ('k', 'k', 'coat', 'short', 'hat', null, false), civ('n', 'n', 'skirt', 'bun', null, null, true), civ('k', 'n', 'trousers', 'none', 'cap', null, false)],
 };
 OUTFITS.shopper = OUTFITS.walker;
 export const LOOKS = Object.keys(OUTFITS);

@@ -197,3 +197,15 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
     (`RAIL_EAST`); its track is drawn from `RAIL_PORTAL`.
   - `fitZoom` frames the whole plate; `baseZoom` the two towns, and the closest zoom, `hooks.track` and the debug
     `look(x, y, k)` go by it. Forklifts are not drawn at FAR. View 10 and key `E` frame the east.
+- Phase 21: Millbrook (`world/village.ts`, `sim/village.ts`, `models/animals.ts`), an English farming village on the floor of
+  Millbrook Vale (height 0) round the terminus; the owner asked for a Western village, and for English names across the
+  east country. `VIL` and `HOUSES` hold where everything is; `LANES` are the lanes and farm tracks, made a `Site` with
+  every T-junction split. People are `Villager`s with a role: `farm` hands come and go by the barn and work the fields,
+  orchard and pens; `village` people keep to the green, the market, the store and the Plough (indoors means `hidden`);
+  `visitor`s come off the metro (`hooks.villageArrive`) and go back to it. `nextSpot` weights places by the hour and by
+  distance: walking is real speed and a day is six minutes, so a walk across the vale would take most of one. Animals
+  are one part each (`Animal`): they wander a pen, graze, follow their keeper in a crowd (`slotFor`) or walk in line on
+  the keeper's footsteps (`trail`); the shepherd has a dog, the flock grazes on the slope above the farm. The tractor
+  runs one `Path` over the long field; finished lanes are drawn as furrows into a part rebuilt as it goes, cleared
+  before dawn. `villageSys.detail()` re-places the animals and machines when the level of detail changes; they are not
+  drawn at FAR. View 11 and key `V` frame it.

@@ -56,7 +56,8 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Sahel Metro** | Two lines on viaducts, after Riyadh's: Line 1 from Market St in the old town through Sahel Central and Port and on out to Millbrook, Line 2 from Motor District down to Sahel Central. Sahel Central, after the King Abdullah Financial District station, is a long row of white lobes woven with ribbons and eyes of lattice that glow at night. |
 | **Sahel Motors** | Car Works' showroom on a terrace at the foot of the hills: twin glass car towers, a glass hall with cars on show, a test track, and a level crossing over the main line down to Najd Av |
 | **Port** | Sahel Container Terminal, east of the marina: a quay with three ship-to-shore cranes, a yard of stacked boxes with three gantry cranes, a gate, a control tower, reefer racks, and a breakwater with a light at each end |
-| **East** | The country beyond Sahel. Harrow Ridge, which the Vale Road climbs in hairpins; Raven Gorge, with the Raven Beck and alders and willows on its floor, crossed by Line 1 on a concrete arch and by the road on a suspension bridge; the plateau of High Moor with Beacon Hill standing on it; Long Edge; and Millbrook Vale, the valley at the end of the line, and its village, Millbrook. Snow on the high peaks behind. |
+| **East** | The country beyond Sahel. Harrow Ridge, which the Vale Road climbs in hairpins; Raven Gorge, with the Raven Beck and alders and willows on its floor, crossed by Line 1 on a concrete arch and by the road on a suspension bridge; the plateau of High Moor with Beacon Hill standing on it; Long Edge; and Millbrook Vale, the valley at the end of the line. Snow on the high peaks behind. |
+| **Village** | Millbrook, an English farming village round Line 1's terminus. Cottages with front gardens behind picket fences, a green with an old oak, a pump and a farmers' market, the Plough Inn and Millbrook Stores. Across the road, the farm: wheat, a hay meadow with its bales and a windpump, allotments, the long field, the millpond and its watermill, a red barn with two silos, pens for the sheep, cows, pigs, hens and horses, and an apple orchard with its store. |
 
 ![Sahel by day: Sahel Central's woven lattice among the Financial District's towers, Sahel Motors and its car towers at the foot of the hills, the metro's viaducts, and the container terminal on the waterfront](docs/sahel.png)
 
@@ -128,6 +129,11 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - Line 1's trains run on from Port over the woods, into Harrow Ridge, out of its cliff onto the arch over Raven Gorge, across High Moor in a cutting, through Long Edge and down a viaduct to Millbrook, where they turn back. They go faster on the open line.
     - Through traffic from the old town takes the Vale Road: up the hairpins, over the suspension bridge, through the tunnel, round the curving viaduct into the valley and on east. Coast Rd runs on along the shore, over a low bridge at the gorge's mouth.
     - FRT-7 comes out of its tunnel under Harrow Ridge.
+23. **Millbrook:**
+    - Farm hands come out of the barn at first light to hoe the vegetables, weed the allotments, turn the hay, feed the animals and pick apples, carrying the crates to the apple store. They go in for dinner at midday and at dusk.
+    - Villagers walk between their cottages, the green, the market, the store and the Plough, which fills up in the evening. Visitors come off the metro for the market and the inn, and villagers take the train into Sahel.
+    - The shepherd and his collie take the flock up onto the slope above the farm in the morning and bring it down at dusk. The stable hand leads the horses to their trough in a line. The cows, pigs and hens keep to their paddock, sty and run, and the hens go in at dusk.
+    - The tractor ploughs the long field a lane at a time, leaving furrows behind it, and is back by the barn by late afternoon. The mill wheel turns all day, and the windpump turns faster in the rain.
 
 Each stage only runs as fast as the next one lets it:
 - A full shop keeps the box trucks waiting at the warehouse.
@@ -140,7 +146,7 @@ Each stage only runs as fast as the next one lets it:
 
 | Action | Mouse / touch | Keys |
 | --- | --- | --- |
-| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East, top right | `1`–`9`, `P`, `E` |
+| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East · Village, top right | `1`–`9`, `P`, `E`, `V` |
 | Whole map | ⌂ button | `0` |
 | Skip ahead six hours | clock button | `N` |
 | Pan | drag | arrow keys |

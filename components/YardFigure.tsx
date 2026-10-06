@@ -28,6 +28,7 @@ export default function YardFigure() {
           <button data-view="8" title="Sahel Motors (9)">Motors</button>
           <button data-view="9" title="Port (P)">Port</button>
           <button data-view="10" title="The east country (E)">East</button>
+          <button data-view="11" title="Millbrook (V)">Village</button>
         </nav>
       </div>
       <div className="stage" id="stage">
