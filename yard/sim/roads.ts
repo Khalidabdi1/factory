@@ -22,7 +22,8 @@ export function clearAhead(v, look, gap, dt) {
   v.ghostT = Math.max(0, (v.ghostT ?? 0) - dt);
   const { x, y, h } = v.front, c = Math.cos(h), s = Math.sin(h);
   let best = Infinity, who = null;
-  if (!v.ghostT) for (const o of roadVehicles()) if (o !== v && o !== v.ignore && !o.parked) for (const p of o.points) {
+  // lookPast: a vehicle may look past some others (police on a chase, past the traffic they would have pulled over for)
+  if (!v.ghostT) for (const o of roadVehicles()) if (o !== v && o !== v.ignore && !o.parked && !v.lookPast?.(o)) for (const p of o.points) {
     const dx = p[0] - x, dy = p[1] - y, f = dx * c + dy * s;
     // keepBack: a vehicle about to back up asks those behind it to stop further off
     const k = o.halfW + (o.keepBack ?? 0);

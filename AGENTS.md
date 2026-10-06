@@ -118,7 +118,7 @@ Done:
   - The bank is a peek building (`BANK` in `world/town.ts`), and `route()` moves people through its doors and the counter gap.
   - Tellers keep its hours, and walkers visit through the `bank` portal.
   - The incident runs through the phases quiet → casing → alarm → siege → chase → done.
-  - Four officers hold the posts left, right, back and east; front pair go in after a stand-off. Debug `yard.robbery()`.
+  - Four officers hold the posts left, right, back and east; front pair go in after a stand-off. (Rebuilt in Phase 22.)
 - Phase 7: Sunset Pier (`yard/world/pier.ts` for models and the static pier, `yard/sim/fair.ts` for the rides and visitors).
   - People stand on pier decks via `DECKS` in `zAt`. A rider's walker is `hidden` while a small figure rides.
   - Rides close outside 10:00–23:00 and when `hooks.raining()`. Day-trippers come up off the beach.
@@ -192,7 +192,7 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
     (`MILLBROOK`) is the terminus; the open line runs at 22 m/s. `world/east.ts` draws the land, the gorge, the woods
     beyond Sahel, Line 1's runs (viaduct piers on the land, the arch over the gorge, portals with hoods), the Vale Road
     (`ROAD_PTS`, three hairpins, the suspension bridge, a tunnel, a curving viaduct) and the coast road's bridge.
-  - `withHeights(path, zOf)` gives a `Path` its `zs(s)`; `Car.place` stands on it. Sahel's `THROUGH` paths run the Wadi
+  - `withHeights(path, zOf)` gives a `Path` its `zs(s)`; `Car.place` stands on it. Sahel's `THROUGH` paths run the Vale
     Road's lanes (`offsetLine`), `COAST` and the customers' paths `coastZ`. FRT-7's route starts inside Harrow Ridge
     (`RAIL_EAST`); its track is drawn from `RAIL_PORTAL`.
   - `fitZoom` frames the whole plate; `baseZoom` the two towns, and the closest zoom, `hooks.track` and the debug
@@ -209,3 +209,23 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
   runs one `Path` over the long field; finished lanes are drawn as furrows into a part rebuilt as it goes, cleared
   before dawn. `villageSys.detail()` re-places the animals and machines when the level of detail changes; they are not
   drawn at FAR. View 11 and key `V` frame it.
+- Phase 22: crime (`sim/police.ts`, `models/heli.ts`). `JOBS` are the bank, Corner Market and the terminal (by night only:
+  it sets out in the evening, since the drive and the work bring the break-in to near midnight). Each job has the
+  getaway car's `lane` (or its own `approach`), a `focus`, `way(a, b)` (how to walk in and out: the bank's `route`, the
+  shop's door, the terminal's fence cut and deck edge, `DECK_IN`), `work(c, k)`, `holds`, `giveUp` spots, the cars'
+  `police` lanes and `posts`, the getaway `escape`, a `block`, `bail` paths and `foot` paths. A `plan` (`surrender`,
+  `shootout`, `getaway`, `foot`) and, for a getaway, an `end` (`roadblock`, `bail`, `escape`) are drawn at the start.
+  - Crew are `Crook`s (look `thief`, five outfits); officers are `Officer`s, from `PoliceCar`s POL-1–3 (POL-3 is made
+    last, in `incident.extend`, since a car takes its plate from the town's random sequence). Everyone leaves a `trail`:
+    a chaser follows the trail of the one on the run (straight at them when close with no wall between), and an
+    officer far from the car walks back along their own. `reset(p)` clears a person's steps from inside one of their
+    own steps.
+  - Person stances: `stance` `'aim'` (arms out, the `gun` shown) or `'hands'`; `down` lays a person on their back. A
+    walk point's fourth field puts them back on the ground (clears `lz`), for climbing down off the terminal's deck.
+  - Police cars leave the yard westmost first and come back into the westmost free bay. On a call or a chase they look
+    past traffic (`lookPast`, read by `clearAhead`) and keep behind the getaway car by `room()` (read by `Car.update`).
+    A getaway car left behind is driven away along its run once it is over.
+  - POL-AIR (`Heli`) sits on the helipad on the station roof, flies to `heliTarget()` (the scene, the getaway car, or
+    whoever is running), circles at 40 m, and by night shines a searchlight (live hairlines). Gunfire is a pool of
+    streaks and muzzle flashes (`FX`). The bank and shop open while robbed (`opened()`, read by the view's peek).
+  - Debug `yard.robbery(job, plan, end)`.

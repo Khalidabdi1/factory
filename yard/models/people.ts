@@ -11,7 +11,7 @@ import { Part, v3 } from '../kernel/part';
 //   top / bottom  'n' | 'k'                         shirt and trousers (or skirt)
 //   lower         'trousers' | 'skirt' | 'coat'
 //   hair          'short' | 'long' | 'bun' | 'none'  (hidden under a hood)
-//   hat           'cap' | 'police' | 'hat' | 'hood' | 'helmet' | 'ghutra' | 'scarf' | null
+//   hat           'cap' | 'police' | 'hat' | 'hood' | 'mask' | 'helmet' | 'ghutra' | 'scarf' | null
 //   pack          'backpack' | 'bag' | null
 //   slim          narrower shoulders and waist
 const civ = (top, bottom, lower, hair, hat, pack, slim) => ({ top, bottom, lower, hair, hat, pack, slim });
@@ -24,7 +24,9 @@ export const OUTFITS = {
   staff:[civ('k', 'n', 'trousers', 'short', null, null, false), civ('k', 'n', 'trousers', 'bun', null, null, true)],
   guard:[civ('k', 'k', 'trousers', 'short', 'police', null, false)],
   police:[civ('k', 'n', 'trousers', 'short', 'police', null, false), civ('k', 'n', 'trousers', 'bun', 'police', null, true)],
-  thief:[civ('k', 'k', 'trousers', 'none', 'hood', 'backpack', false)],
+  // robbers: a dark hood, a balaclava, a cap pulled low
+  thief:[civ('k', 'k', 'trousers', 'none', 'hood', 'backpack', false), civ('k', 'n', 'trousers', 'none', 'mask', null, false), civ('n', 'k', 'trousers', 'none', 'mask', 'bag', true),
+    civ('k', 'k', 'coat', 'none', 'mask', null, false), civ('k', 'k', 'trousers', 'short', 'cap', 'backpack', false)],
   fisher:[civ('n', 'k', 'coat', 'short', 'hat', null, false), civ('k', 'n', 'trousers', 'short', 'cap', 'bag', false)],
   courier:[civ('k', 'n', 'trousers', 'short', 'cap', null, false)],
   teller:[civ('n', 'k', 'trousers', 'short', null, null, false), civ('k', 'n', 'skirt', 'bun', null, null, true)],
@@ -41,7 +43,7 @@ export const OUTFITS = {
 OUTFITS.shopper = OUTFITS.walker;
 export const LOOKS = Object.keys(OUTFITS);
 
-const HIP = 0.86, SHOULDER = 1.4;
+const HIP = 0.86, SHOULDER = 1.4, ARMED = ['police', 'thief'];
 // a six-sided frustum standing on z0: skirts and coat tails
 function frustum(p, x, z0, z1, rTop, rBot, depth, tone) {
   p.geo(new THREE.CylinderGeometry(rTop, rBot, z1 - z0, 6), new THREE.Matrix4().compose(W(x, 0, (z0 + z1) / 2), new THREE.Quaternion(), v3(depth, 1, 1)), tone);
@@ -63,7 +65,7 @@ function upper(p, o) {
   p.box(-0.04, -0.045, SHOULDER + 0.02, 0.08, 0.09, 0.06, 'nb');
   p.cylZ(0.01, 0, 1.47, 0.11, 0.25, 8, 'nb');
   const hairTone = o.top === 'k' ? 'nb' : 'kb';
-  if (!['hood', 'ghutra', 'scarf'].includes(o.hat) && o.hair !== 'none') {
+  if (!['hood', 'mask', 'ghutra', 'scarf'].includes(o.hat) && o.hair !== 'none') {
     p.cylZ(-0.005, 0, 1.655, 0.12, 0.085, 8, hairTone);
     if (o.hair === 'short') p.box(-0.135, -0.11, 1.53, 0.07, 0.22, 0.14, hairTone);
     if (o.hair === 'long') p.box(-0.145, -0.12, 1.3, 0.08, 0.24, 0.38, hairTone);
@@ -74,6 +76,7 @@ function upper(p, o) {
   if (o.hat === 'hat') { p.cylZ(0, 0, 1.68, 0.2, 0.025, 10, 'nb'); p.cylZ(0, 0, 1.7, 0.115, 0.1, 8, 'nb'); }
   if (o.hat === 'helmet') { p.cylZ(0, 0, 1.64, 0.14, 0.13, 10, 'kb'); p.box(-0.2, -0.14, 1.64, 0.08, 0.28, 0.025, 'kb'); }
   if (o.hat === 'hood') p.box(-0.15, -0.14, 1.44, 0.21, 0.28, 0.33, 'kb');
+  if (o.hat === 'mask') p.cylZ(0, 0, 1.45, 0.122, 0.3, 8, 'kb');
   // a ghutra falls to the shoulders under its black agal; a scarf frames the face
   if (o.hat === 'ghutra') { p.box(-0.16, -0.15, 1.42, 0.26, 0.3, 0.34, 'nb'); p.cylZ(0, 0, 1.74, 0.13, 0.04, 10, 'kb'); }
   if (o.hat === 'scarf') p.box(-0.15, -0.14, 1.42, 0.24, 0.28, 0.35, 'kb');
@@ -100,6 +103,8 @@ export function buildPerson(look, variant = 0, lite = false) {
   for (const [n, s] of [['armL', 1], ['armR', -1]]) {
     const a = new Part().box(-0.05, -0.05, -0.6, 0.1, 0.1, 0.6, T(o.top)).box(-0.045, -0.045, -0.68, 0.09, 0.09, 0.08, T(o.top)).build(n);
     a.position.copy(W(0, s * (sh + 0.005), SHOULDER - 0.03)); g.add(a);
+    // police and robbers carry a gun in the right hand, drawn only when they aim
+    if (n === 'armR' && ARMED.includes(look)) { const gun = new Part().box(-0.035, -0.03, -0.96, 0.07, 0.06, 0.3, 'kb').box(-0.1, -0.025, -0.72, 0.08, 0.05, 0.06, 'kb').build('gun'); gun.visible = false; a.add(gun); }
   }
   // sitting on a chair or a bench: thighs forward, shins down to the floor; shown instead of the swinging legs
   const sit = new Part();

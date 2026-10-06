@@ -20,7 +20,7 @@ export class Person {
     this.group = PROTO.person[this.look][variant].clone(); this.group.scale.setScalar(scale);
     [this.legs, this.arms] = [['legL', 'legR'], ['armL', 'armR']].map(ns => ns.map(n => this.group.getObjectByName(n)));
     this.sitLegs = this.group.getObjectByName('sitLegs'); this.umbrella = this.group.getObjectByName('umbrella');
-    this.box = this.group.getObjectByName('carry'); this.box.visible = false; this.group.userData.entity = this; this.groups = [this.group]; this.pick = [0, 0, 1.25];
+    this.box = this.group.getObjectByName('carry'); this.box.visible = false; this.gun = this.group.getObjectByName('gun'); this.group.userData.entity = this; this.groups = [this.group]; this.pick = [0, 0, 1.25];
     this.lite = PROTO.personLite[this.look][variant].clone(); this.lite.scale.setScalar(scale); this.lite.userData.entity = this; this.groups.push(this.lite); scene.add(this.lite);
     if (this.dog) { this.dogG = PROTO.dog.clone(); this.dogG.userData.entity = this; this.groups.push(this.dogG); scene.add(this.dogG); }
     scene.add(this.group); sim.people.push(this); this.place();
@@ -41,7 +41,7 @@ export class Person {
   then(fn, label?) { this.steps.push({ do:'call', fn, label }); return this; }
   update(dt) {
     if (this.follow) {   // walked along by someone else, a step behind them
-      const f = this.follow; this.h = f.h; this.x = f.x - Math.cos(f.h) * 0.85; this.y = f.y - Math.sin(f.h) * 0.85; this.v = f.v;
+      const f = this.follow; this.h = f.h; this.x = f.x - Math.cos(f.h) * 0.85; this.y = f.y - Math.sin(f.h) * 0.85; this.v = f.v; this.lz = f.lz;
     } else {
       if (!this.steps.length) this.think?.();
       const st = this.steps[0];
@@ -53,9 +53,10 @@ export class Person {
     this.legs[0].rotation.z = ground ? 1.5 : sw; this.legs[1].rotation.z = ground ? 1.5 : -sw;
     for (const l of this.legs) l.visible = this.sit !== 'chair';
     this.sitLegs.visible = this.sit === 'chair';
-    const arm = this.carrying ? 1.15 : this.sit ? 0.35 : -sw * 0.7;
-    this.arms[0].rotation.z = arm; this.arms[1].rotation.z = this.carrying || this.sit ? arm : sw * 0.7;
-    this.box.visible = !!this.carrying;
+    // a stance: a gun held out in both hands (aim), or both hands up
+    const arm = this.stance === 'aim' ? 1.45 : this.stance === 'hands' ? 2.9 : this.carrying ? 1.15 : this.sit ? 0.35 : -sw * 0.7;
+    this.arms[0].rotation.z = arm; this.arms[1].rotation.z = this.stance || this.carrying || this.sit ? arm : sw * 0.7;
+    this.box.visible = !!this.carrying && !this.stance; if (this.gun) this.gun.visible = this.stance === 'aim';
     // out of doors in rain, an umbrella (not for the police, nor for a man on the run)
     this.umbrella.visible = hooks.raining() && !this.sit && !this.carrying && this.look !== 'police' && this.look !== 'thief' && !hooks.inBuilding(this.x, this.y);
     this.place();
@@ -68,7 +69,8 @@ export class Person {
       // ride: standing on the steps, not walking
       if (to.length > 2) { st.z0 ??= this.lz ?? zAt(this.x, this.y); st.d0 ??= Math.max(d, 1e-6); this.lz = to[2] + (st.z0 - to[2]) * Math.min(1, d / st.d0); }
       this.riding = !!st.ride;
-      if (d < (st.near ?? 0.03)) { if (!st.near) { this.x = to[0]; this.y = to[1]; } if (to.length > 2) this.lz = to[2]; this.v = 0; this.riding = false; return true; }
+      // a fourth field on a point with a height: back on the ground there, the height no longer one's own
+      if (d < (st.near ?? 0.03)) { if (!st.near) { this.x = to[0]; this.y = to[1]; } if (to.length > 2) this.lz = to[3] ? undefined : to[2]; this.v = 0; this.riding = false; return true; }
       const e = wrap(Math.atan2(dy, dx) - this.h); this.h += clamp(e, -7 * dt, 7 * dt);
       this.v = Math.abs(e) > 0.8 ? 0 : st.speed ?? this.speed;
       const step = Math.min(d, this.v * dt); this.x += dx / d * step; this.y += dy / d * step; return false;
@@ -88,7 +90,9 @@ export class Person {
     // seated, the hips drop to the seat (or to the ground)
     // lz: a height of their own, off the ground (in a station, on a platform)
     const s = this.scale, z = (this.lz ?? zAt(this.x, this.y)) + (this.sit === 'chair' ? (this.seat.z ?? 0.45) - (HIP_H - 0.07) * s : this.sit === 'ground' ? -(HIP_H - 0.08) * s : 0);
-    pose(this.group, this.x, this.y, this.h, z); pose(this.lite, this.x, this.y, this.h, z);
+    // down: lying on the back, feet where they stood
+    const lie = this.down ? Math.PI / 2 : 0, zz = z + (this.down ? 0.14 : 0);
+    pose(this.group, this.x, this.y, this.h, zz); pose(this.lite, this.x, this.y, this.h, zz); this.group.rotation.z = this.lite.rotation.z = lie;
     // inside a building that is shut, nobody is drawn (its walls hide them anyway)
     const away = hooks.closedAt(this.x, this.y, this);
     const gone = away || this.hidden || FAR;   // hidden: on a ride, drawn by the ride instead

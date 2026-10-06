@@ -84,10 +84,15 @@ The engine runs once per page load. React draws the plate, and the engine drives
    - Each has an outfit that suits who they are, from shoppers and staff to police, firefighters and line workers. Arms swing as they walk, and they sit at café tables and on benches. Some jog, and some walk a dog.
    - There are fewer people out at night, and fewer shoppers.
 9. **Homes:** every house and villa can be looked inside. Its rooms are furnished, and whoever is home is on the sofa, at the table or in bed, depending on the hour. Delivered parcels wait inside the door.
-10. **The bank job:**
-    - Now and then a man in a dark hood cases Harbour Bank, goes in, makes for the vault, and the alarm goes off. Staff and customers get out.
-    - Both police cars come with their lights flashing. Four officers surround the bank, at the front door either side, the back and the east wall.
-    - Click the bank, the suspect or an officer to see inside. Usually, after a stand-off, two officers go in and bring him out. If he reaches the back door first, there is a chase, and he may get away.
+10. **Robberies:**
+    - Now and then a crew of two to four drives into town in a dark car. They rob Harbour Bank (walking in by day, forcing the door by night), hold up Corner Market while it is open, or break into a refrigerated container at the terminal in Sahel by night. The driver waits at the kerb with the engine running.
+    - When the alarm goes off, staff and customers get out of the bank. At the shop, the staff at the till put their hands up and shoppers run out. All three police cars come with their lights flashing, two officers in each, and POL-AIR, the police helicopter, lifts off the station roof and circles overhead. By night its searchlight follows the action.
+    - Each robbery ends one of four ways:
+      - The police surround the place, and after a stand-off the crew come out one by one with their hands up.
+      - It turns into a shootout: the crew fire from inside and the officers fire back from behind their cars. Nobody dies, but anyone hit goes down and is arrested where he fell, and the rest give up.
+      - The crew run for the car as the sirens come, and it races off through the traffic with the police behind it and the helicopter above. It may run into a roadblock, be abandoned while the crew scatter on foot and are chased down, or get clean away.
+      - The driver loses his nerve and leaves without them, and the crew try to escape on foot.
+    - While it lasts, the bank or the shop stands open so you can see inside. Click the place, a suspect, the getaway car, an officer or POL-AIR for their cards. The police station's card keeps the last few calls.
 11. **Sunset Pier:** a pleasure pier with a Ferris wheel, a carousel and a small coaster. Visitors queue, ride and wander. The rides open 10:00–23:00 and close in the rain.
 12. **Fishing:** Kestrel leaves the town pier in the morning, fishes on the bay and lands her catch, which shows on her card. An angler fishes from the end of the town pier.
 13. **Weather:** showers come through the day, and some mornings there is sea fog. People put up umbrellas and leave the beach, the park and the piers, the boats come in, and the caption says so.
@@ -174,7 +179,7 @@ ai-iso-skill draws SVG figures with a small projection kernel. This page keeps t
 - **Hairlines.** Every edge is a `LineSegments2` exactly 1 CSS pixel wide at any zoom, the WebGL equivalent of `vector-effect: non-scaling-stroke`. Faces are flat, unlit and opaque, so the depth buffer hides lines behind them.
 - **Day and night.** Every colour is a CSS custom property, with one set for dark and one for light. Through the evening the materials slide toward a single night palette. Windows and lamps are two extra fills that light up as everything else darkens.
 - **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, the showroom and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only.
-- **The look.** It uses two greys for lines and one `--live` colour, reserved for what is live: the selection and its route, a busy bay's lamp, a forklift's beacon, the police and fire light bars, the bank alarm, a chimney's flames, a welding robot's sparks and the lighthouse beam. Goods and uniforms use the two-tone fill.
+- **The look.** It uses two greys for lines and one `--live` colour, reserved for what is live: the selection and its route, a busy bay's lamp, a forklift's beacon, the police and fire light bars, the bank alarm, gunfire and the helicopter's searchlight, a chimney's flames, a welding robot's sparks and the lighthouse beam. Goods and uniforms use the two-tone fill.
 - **The frame.** The page is a plate with `Fig 1` and the clock (and `night`, `rain` or `fog` when it is), the places, the instruction and a live readout in the four corners. At night the whole page goes dark, even in the light theme, and the ◐ choice is remembered.
 
 three.js and the font are bundled with the site, so it runs without loading anything from elsewhere.
@@ -189,7 +194,7 @@ three.js and the font are bundled with the site, so it runs without loading anyt
   - `all()` lists everything.
   - `drawCalls()` draws one frame and counts its draw calls (it works in a hidden window too).
   - `order(id)` places an online order now, for that home or any home.
-  - `robbery()` starts the bank job now, when the town is quiet.
+  - `robbery(job, plan, end)` starts a robbery now, when the town is quiet: `job` is `'bank'`, `'shop'` or `'port'`, `plan` is `'surrender'`, `'shootout'`, `'getaway'` or `'foot'`, and `end` (for a getaway) is `'roadblock'`, `'bail'` or `'escape'`. Any left out are chosen as usual.
   - `weather(kind, seconds)` brings `'rain'`, `'fog'` or `'clear'`.
   - `fire(id)` starts a chimney fire now, at that house or any house.
   - `train()` brings the next train in now.

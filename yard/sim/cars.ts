@@ -44,7 +44,8 @@ export class Car {
       const st = this.at; this.at = null; this.si++; st.left?.(this);
     }
     const st = this.stops[this.si];
-    let room = Math.min(clearAhead(this, 30, 2, dt), this.yieldRoom());
+    // room: a vehicle's own reason to keep back (a police car on a chase, behind the car it chases)
+    let room = Math.min(clearAhead(this, 30, 2, dt), this.yieldRoom(), this.room?.() ?? Infinity);
     if (st) room = Math.min(room, st.s - this.s);
     const vT = Math.min(this.limit(), Math.sqrt(12 * Math.max(0, room)));
     this.v = vT < this.v ? vT : Math.min(vT, this.v + 3 * dt);

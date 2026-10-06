@@ -144,8 +144,10 @@ export class Shopper extends Person {
     // on foot, from up Hill Av or along the promenade
     const start = o.car ? null : rng() < 0.5 ? EAST_PATH : [EAST, PROM];
     super({ look:'shopper', id:`Shopper ${shopperSeq++}`, x:start?.[0], y:start?.[1], h:Math.PI, speed:rand(1.2, 1.5), want:1 + Math.floor(rng() * 3), got:[], start, ...o });
-    if (!this.car) this.go(pedRoute(start, SHOP.front), 'walking to Corner Market').walk([SHOP.out, SHOP.in], 'walking in').then(p => p.choose());
+    if (!this.car) this.go(pedRoute(start, SHOP.front), 'walking to Corner Market').then(p => hooks.shopShut() && p.turnAway()).walk([SHOP.out, SHOP.in], 'walking in').then(p => p.choose());
   }
+  // police at the door: back the way they came (the first step is a stand-in, dropped as this call returns)
+  turnAway() { this.steps = [{ do:'skip' }]; this.wait(1.5, 'police at the shop door').go(pedRoute(SHOP.front, this.start).slice(1), 'going home · the shop is shut').then(p => p.remove()); }
   inside() { return this.x > 377.5 && this.x < 409.5 && this.y > 231 && this.y < 249; }
   choose() {
     const shelf = SHELF.filter(s => s.sku && !s.reserved), sh = shelf[Math.floor(rng() * shelf.length)];
@@ -175,8 +177,9 @@ export class Customer extends Shopper {
     const door = [spot.S + 5.6, 277.2], Z = SHOP.zebra;
     super({ car, spot, door, x:door[0], y:door[1], h:Math.PI / 2 });
     this.way = [door, [door[0], 277.7], [Z, 277.7], [Z, 254.6], SHOP.front, SHOP.out];
-    this.go(this.way, 'walking to Corner Market').walk([SHOP.in]).then(p => p.choose());
+    this.go(this.way, 'walking to Corner Market').then(p => hooks.shopShut() && p.turnAway()).walk([SHOP.in]).then(p => p.choose());
   }
+  turnAway() { this.steps = [{ do:'skip' }]; this.wait(1.5, 'police at the shop door').go([...this.way].reverse(), 'back to the car · the shop is shut').then(p => { p.car.back = true; p.car.driver = null; p.remove(); }); }
   leave() {
     this.go([SHOP.in, ...[...this.way].reverse()], 'walking back to the car')
       .then(p => { p.car.back = true; p.car.driver = null; p.remove(); });

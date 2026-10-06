@@ -255,6 +255,8 @@ const portSys = buildPort();
 const eastSys = buildEastSys(metroSys);
 // Millbrook, the village at the end of the line: its cottages, green, inn and store, the farm, the people and animals
 const villageSys = buildVillageSys();
+// POL-3, POL-AIR and its pad on the station roof: last, since a police car takes its plate from the town's sequence
+incident.extend(policeStation.groups[0]);
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');

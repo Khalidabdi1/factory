@@ -423,7 +423,7 @@ export const port: any = { kind:'terminal', id:'Sahel Container Terminal', group
   status() { return ship.state === 'working' ? `the ${ship.title()} alongside · ${PORT_CRANES.filter(c => c.mode !== 'done').length} cranes working` : ship.state === 'away' ? `berth empty · next ship ${clock(ship.next)}` : ship.status(); },
   info() {
     const n = BLOCKS.reduce((s, b) => s + b.count(), 0), cap = BLOCKS.length * PORT.bays * PORT.rows * TIERS_Y;
-    return { kind:'Container terminal · one berth, three cranes', title:this.id, status:this.status(), bar:{ v:n, max:cap, label:`yard ${n * 2} TEU of ${cap * 2}` },
+    return { kind:'Container terminal · one berth, three cranes', title:this.id, status:hooks.crimeAt('port') ?? this.status(), bar:{ v:n, max:cap, label:`yard ${n * 2} TEU of ${cap * 2}` },
       rows:[['Berth 1', ship.state === 'away' ? 'empty' : ship.title()], ['Moves this call', String(ship.moves)], ['Ships worked', String(ship.calls)], ['Quay', `${PORT.x1 - PORT.x0} m · 14 m alongside`], ['Gate', 'Port Av']] };
   },
   readout() { return `sahel container terminal · ${this.status()}`; },

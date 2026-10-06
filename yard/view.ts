@@ -188,7 +188,8 @@ function updatePeek() {
     const inside = p => !!p && p[0] > x0 && p[0] < x1 && p[1] > y0 && p[1] < y1;
     // a station also opens when the view comes in close over it
     const near = pk.near && camera.zoom > 9 && controls.target.x > x0 - 6 && controls.target.x < x1 + 6 && controls.target.z > y0 - 6 && controls.target.z < y1 + 6;
-    const on = selected === ent || inside(c) || !!routeNext && inside([routeNext.p.x, routeNext.p.z]) || near;
+    // a bank or a shop being robbed stands open while it lasts
+    const on = selected === ent || inside(c) || !!routeNext && inside([routeNext.p.x, routeNext.p.z]) || near || !!ent.opened?.();
     if (on && !pk.cut) {
       const s = pk.section({ twoBeds:ent.household?.n >= 3 }); s.cut.visible = s.inside.visible = false;
       g.add(s.cut, s.inside); Object.assign(pk, { cut:s.cut, inside:s.inside }); ent.spots = s.spots;
@@ -209,7 +210,7 @@ canvas.addEventListener('pointermove', e => {
   if (e.pointerType === 'mouse' && !e.buttons) { pointer = [e.clientX, e.clientY]; hoverDirty = true; }
 });
 canvas.addEventListener('pointerleave', () => { pointer = null; hovered = null; canvas.classList.remove('over'); });
-const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.cars, courier, fireSys.engine, ...(trainSys.state === 'away' ? [] : [trainSys]), ...metroSys.trains, motorsSys.shuttle, ...portSys.vehicles()].sort((a, b) => a.id.localeCompare(b.id));
+const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.vehicles(), courier, fireSys.engine, ...(trainSys.state === 'away' ? [] : [trainSys]), ...metroSys.trains, motorsSys.shuttle, ...portSys.vehicles()].sort((a, b) => a.id.localeCompare(b.id));
 function cycle(d) { const v = vehicles(), i = v.indexOf(selected); if (v.length) select(v[i < 0 ? (d > 0 ? 0 : v.length - 1) : (i + d + v.length) % v.length]); }
 let paused = false;
 function togglePause() { paused = !paused; $('pause').setAttribute('aria-pressed', paused); $('pause').setAttribute('aria-label', paused ? 'Resume' : 'Pause');
@@ -310,7 +311,7 @@ window.__yardReady = true;
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
   const all = () => [...villageSys.entities(), ...eastSys.places, eastSys.road, ...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
-    fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
+    fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...(incident.heli ? [incident.heli] : []), ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
     sim, conveyor, shop, whGate, incident, bank, RACK, SHELF, SPOTS, BUS_STOPS, camera, controls, renderer, scene, hourAt, night, PROTO, pose, hooks, PORTALS, nextPortal,
@@ -324,8 +325,9 @@ if (DEBUG) {
     drawCalls:() => { tick(performance.now()); return renderer.info.render.calls; },
     // place an online order now (for a home by id, or any): returns the order
     order:id => placeOrder(id ? find(id) : homes[Math.floor(Math.random() * homes.length)]), orders, courier, roadnet:{ trip, locate, kerbStop, EDGES },
-    // start the bank job now (when the town is quiet)
-    robbery:() => { if (incident.phase === 'quiet') incident.next = sim.t; return incident.phase; },
+    // a robbery now (when the town is quiet): job 'bank' | 'shop' | 'port', plan 'surrender' | 'shootout' | 'getaway' | 'foot',
+    // and for a getaway, end 'roadblock' | 'bail' | 'escape'; any left out are drawn as usual
+    robbery:(job, plan, end) => { if (incident.phase === 'quiet') { incident.force = { job, plan, end }; incident.next = sim.t; } return incident.phase; },
     // a chimney fire now, at a house by id or any house with a chimney (when none is burning): returns the house
     worksSys, trainSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys,
     // the next train now (when none is in): returns its state
