@@ -14,7 +14,7 @@ import { ring } from './world/ground';
 import { PROTO, STEP, clock, conveyor, hourAt, night, shift, sim } from './sim/core';
 import { SPOTS } from './sim/cars';
 import { BUS_STOPS } from './sim/trucks';
-import { TINY, setTiny } from './sim/person';
+import { FAR, TINY, setTiny } from './sim/person';
 import { PORTALS, nextPortal, shop, whGate } from './sim/people';
 import { bank, incident, policeStation } from './sim/police';
 import { BOATS } from './sim/boats';
@@ -23,7 +23,7 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -37,7 +37,7 @@ controls.target.copy(CENTER);
 controls.listenToKeyEvents(window);
 // the places the caption links jump to: [x0, x1, y0, y1]
 const WB = [WORLD.x0, WORLD.x1, WORLD.y0, WORLD.y1];
-const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [352, 440, 212, 298], [53, 300, 138, 262], [0, 440, 255, 336], [206, 410, -58, 2]];
+const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [352, 440, 212, 298], [53, 300, 138, 262], [0, 440, 255, 336], [206, 410, -58, 2], [520, 960, 0, 270]];
 let fitZoom = 1, HOME = CENTER.clone(), goal = null, follow = false, sized = false;
 // the zoom and ground target that frame a box of the world (z0..z1 high) in a w × h view
 function frame(w, h, [x0, x1, y0, y1], [z0, z1] = [0, 12]) {
@@ -85,7 +85,8 @@ function hit(cx, cy) {
   for (const h of ray.intersectObjects(scene.children, true)) {
     if (!h.object.isMesh || !shown(h.object) || h.point.x < WORLD.x0 || h.point.x > WORLD.x1 || h.point.z < WORLD.y0 || h.point.z > WORLD.y1) continue;
     let o = h.object; while (o && !o.userData.entity) o = o.parent;
-    return o ? o.userData.entity : null;   // the nearest visible surface decides
+    // the nearest visible surface decides; a part drawn for many things (Sahel's buildings) says which one was hit
+    return o ? o.userData.entity.resolve?.(h.point) ?? o.userData.entity : null;
   }
   return null;
 }
@@ -93,7 +94,7 @@ function hit(cx, cy) {
 function eachOwn(ent, fn) { const walk = o => { if (o.userData.entity && o.userData.entity !== ent) return; fn(o); o.children.forEach(walk); };
   for (const g of ent.groups) { fn(g); g.children.forEach(walk); } }
 function setLive(ent, on) { if (ent) eachOwn(ent, o => { if (o.isLineSegments2 && o.userData.line === 'line') o.material = on ? LINE.live : LINE.line; }); }
-function bounds(ent) { box.makeEmpty(); for (const g of ent.groups) box.expandByObject(g); return box; }
+function bounds(ent) { box.makeEmpty(); if (ent.bbox) return box.copy(ent.bbox); for (const g of ent.groups) box.expandByObject(g); return box; }
 function select(ent) {
   if (ent === selected) return;
   setLive(selected, false); selected = ent; setLive(selected, true);
@@ -235,7 +236,7 @@ window.addEventListener('keydown', e => {
   if (e.key.startsWith('Arrow')) { goal = null; setFollow(false); return; }
   const act = { Escape:() => select(null), f:() => setFollow(!follow), F:() => setFollow(!follow), ']':() => cycle(1), '[':() => cycle(-1), ' ':togglePause,
     '+':() => zoomBy(1.4), '=':() => zoomBy(1.4), '-':() => zoomBy(1 / 1.4), '_':() => zoomBy(1 / 1.4), '0':resetView, Home:resetView, t:toggleTheme, T:toggleTheme,
-    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5) }[e.key];
+    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5), 7:() => goView(6) }[e.key];
   if (act) { act(); e.preventDefault(); }
 });
 
@@ -266,7 +267,9 @@ function tick(now) {
   const t = controls.target; moveTarget(t.clone().addScaledVector(ISO, -t.y / ISO.y));
   moveTarget(v3(clamp(t.x, WORLD.x0, WORLD.x1), 0, clamp(t.z, WORLD.y0, WORLD.y1)));
   camera.updateMatrixWorld();
-  const tiny = camera.zoom < fitZoom * 2.2; if (tiny !== TINY) { setTiny(tiny); for (const p of sim.people) p.place(); }
+  // people's detail by how big they are on screen (zoom is screen px per metre): a lite figure under about 4 px a
+  // metre, none at all under about 1.5
+  const tiny = camera.zoom < 4.2, far = camera.zoom < 1.5; if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); for (const p of sim.people) p.place(); }
   updatePeek();
   if (hoverDirty && pointer) { hoverDirty = false; hovered = hit(...pointer); canvas.classList.toggle('over', !!hovered); }
   placeTag($('tagSel'), selected, selected ? `${selected.id} · ${selected.info().status}` : '');
@@ -288,7 +291,7 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [...sahelSys.buildings, factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
@@ -312,7 +315,7 @@ if (DEBUG) {
     fire:id => fireSys.blaze.phase === 'quiet' ? fireSys.blaze.start(id ? find(id) : undefined).id : `busy: ${fireSys.blaze.phase}`, fireSys,
     // weather now: 'rain', 'fog' or 'clear', for some seconds
     weather:(kind = 'rain', secs = 60) => { if (kind === 'clear') { weather.kind = 'clear'; } else weather.set(kind, secs); return weather.kind; }, weatherState:weather,
-    screenOf:id => { const e = find(id); scene.updateMatrixWorld(); camera.updateMatrixWorld(); const p = e.groups[0].localToWorld(W(...(e.pick ?? [0, 0, 1]))).project(camera), r = canvas.getBoundingClientRect();
+    screenOf:id => { const e = find(id); scene.updateMatrixWorld(); camera.updateMatrixWorld(); const p = (e.groups[0] ? e.groups[0].localToWorld(W(...(e.pick ?? [0, 0, 1]))) : W(...e.pick)).project(camera), r = canvas.getBoundingClientRect();
       return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; },
   };
 }

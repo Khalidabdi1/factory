@@ -7,6 +7,7 @@ import { RAB, WORLD } from '../layout';
 import { PROTO, kmh, sim } from './core';
 import { bendLimit, clearAhead, compass, nextRoadSeq, roadBusy, streetAt } from './roads';
 import { Customer } from './people';
+import { FAR } from './person';
 
 // ---- cars ----
 // Through traffic comes in from the west and goes round the roundabout; town traffic drives closed loops of
@@ -22,11 +23,14 @@ export class Car {
     this.tone ??= rng() < 0.4 ? 'k' : 'n'; this.id ??= plate();
     this.vmax ??= rand(10, 14); this.v ??= this.vmax * 0.8;
     this.group = (this.proto ?? (this.van ? PROTO.carVan : PROTO.car)[this.tone]).clone(); this.group.userData.entity = this; this.groups = [this.group];
+    // an ordinary car is drawn from far away as a one-fill block (two draw calls fewer, and there are dozens)
+    if (!this.proto) { this.lite = (this.van ? PROTO.carVanLite : PROTO.carLite)[this.tone].clone(); this.lite.userData.entity = this; this.groups.push(this.lite); scene.add(this.lite); }
     this.pick ??= [-this.len / 2, 0, this.van ? 1.6 : 1.2];
     scene.add(this.group); sim.cars.push(this); this.place();
   }
   place() {
     const a = this.path.at(this.s); pose(this.group, a.x, a.y, a.h);
+    if (this.lite) { pose(this.lite, a.x, a.y, a.h); this.group.visible = !FAR; this.lite.visible = FAR; }
     this.front = a; this.points = [[a.x, a.y], [a.x - Math.cos(a.h) * this.len, a.y - Math.sin(a.h) * this.len]];
   }
   update(dt) {

@@ -11,7 +11,7 @@ import { Part, v3 } from '../kernel/part';
 //   top / bottom  'n' | 'k'                         shirt and trousers (or skirt)
 //   lower         'trousers' | 'skirt' | 'coat'
 //   hair          'short' | 'long' | 'bun' | 'none'  (hidden under a hood)
-//   hat           'cap' | 'police' | 'hat' | 'hood' | 'helmet' | null
+//   hat           'cap' | 'police' | 'hat' | 'hood' | 'helmet' | 'ghutra' | 'scarf' | null
 //   pack          'backpack' | 'bag' | null
 //   slim          narrower shoulders and waist
 const civ = (top, bottom, lower, hair, hat, pack, slim) => ({ top, bottom, lower, hair, hat, pack, slim });
@@ -30,6 +30,10 @@ export const OUTFITS = {
   teller:[civ('n', 'k', 'trousers', 'short', null, null, false), civ('k', 'n', 'skirt', 'bun', null, null, true)],
   fire:[civ('k', 'k', 'coat', 'short', 'helmet', null, false), civ('k', 'k', 'coat', 'bun', 'helmet', null, true)],
   worker:[civ('n', 'k', 'trousers', 'short', 'cap', null, false), civ('k', 'k', 'trousers', 'bun', 'cap', null, true)],
+  // Sahel's people: a thobe and ghutra, an abaya and scarf, and the wardrobe of a city's offices
+  sahel:[civ('n', 'n', 'coat', 'none', 'ghutra', null, false), civ('k', 'k', 'coat', 'none', 'scarf', 'bag', true), civ('n', 'k', 'trousers', 'short', null, 'bag', false),
+    civ('n', 'n', 'coat', 'none', 'ghutra', 'bag', false), civ('k', 'n', 'skirt', 'long', null, 'bag', true), civ('k', 'k', 'trousers', 'short', null, null, false),
+    civ('k', 'k', 'coat', 'none', 'scarf', null, true), civ('n', 'k', 'trousers', 'none', 'cap', 'backpack', false)],
 };
 OUTFITS.shopper = OUTFITS.walker;
 export const LOOKS = Object.keys(OUTFITS);
@@ -50,11 +54,13 @@ function upper(p, o) {
   if (o.lower !== 'skirt') p.box(-0.11, -wa, HIP - 0.06, 0.22, 2 * wa, 0.16, bottom);
   p.extrude([[-0.12, -wa, 0.95], [-0.12, wa, 0.95], [-0.12, sh, SHOULDER + 0.02], [-0.12, -sh, SHOULDER + 0.02]], [0.24, 0, 0], top);
   if (o.lower === 'skirt') frustum(p, 0, 0.5, 0.98, 0.17, 0.26, 0.82, bottom);
-  if (o.lower === 'coat') frustum(p, 0, 0.52, 0.97, 0.19, 0.25, 0.8, top);
+  // a coat to the knees; a thobe or an abaya to the ankles
+  const robe = o.hat === 'ghutra' || o.hat === 'scarf';
+  if (o.lower === 'coat') frustum(p, 0, robe ? 0.1 : 0.52, 0.97, 0.19, robe ? 0.28 : 0.25, 0.8, top);
   p.box(-0.04, -0.045, SHOULDER + 0.02, 0.08, 0.09, 0.06, 'nb');
   p.cylZ(0.01, 0, 1.47, 0.11, 0.25, 8, 'nb');
   const hairTone = o.top === 'k' ? 'nb' : 'kb';
-  if (o.hat !== 'hood' && o.hair !== 'none') {
+  if (!['hood', 'ghutra', 'scarf'].includes(o.hat) && o.hair !== 'none') {
     p.cylZ(-0.005, 0, 1.655, 0.12, 0.085, 8, hairTone);
     if (o.hair === 'short') p.box(-0.135, -0.11, 1.53, 0.07, 0.22, 0.14, hairTone);
     if (o.hair === 'long') p.box(-0.145, -0.12, 1.3, 0.08, 0.24, 0.38, hairTone);
@@ -65,6 +71,9 @@ function upper(p, o) {
   if (o.hat === 'hat') { p.cylZ(0, 0, 1.68, 0.2, 0.025, 10, 'nb'); p.cylZ(0, 0, 1.7, 0.115, 0.1, 8, 'nb'); }
   if (o.hat === 'helmet') { p.cylZ(0, 0, 1.64, 0.14, 0.13, 10, 'kb'); p.box(-0.2, -0.14, 1.64, 0.08, 0.28, 0.025, 'kb'); }
   if (o.hat === 'hood') p.box(-0.15, -0.14, 1.44, 0.21, 0.28, 0.33, 'kb');
+  // a ghutra falls to the shoulders under its black agal; a scarf frames the face
+  if (o.hat === 'ghutra') { p.box(-0.16, -0.15, 1.42, 0.26, 0.3, 0.34, 'nb'); p.cylZ(0, 0, 1.74, 0.13, 0.04, 10, 'kb'); }
+  if (o.hat === 'scarf') p.box(-0.15, -0.14, 1.42, 0.24, 0.28, 0.35, 'kb');
   if (o.pack === 'backpack') p.box(-0.25, -0.15, 1.0, 0.13, 0.3, 0.36, o.top === 'k' ? 'nb' : 'kb');
   if (o.pack === 'bag') { p.box(-0.06, sh + 0.02, 0.84, 0.18, 0.06, 0.17, 'kb'); p.seg('line', W(0, sh - 0.02, SHOULDER), W(0.03, sh + 0.05, 1.01)); }
   return sh;

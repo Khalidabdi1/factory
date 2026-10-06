@@ -12,7 +12,7 @@ import { buildWorld } from './world/ground';
 import { buildRange, hillHeight } from './world/range';
 import { bayLamp, buildBooth, buildConveyor, buildFactory, buildGate, buildShop, buildShopBox, buildWarehouse, buildWhGate } from './world/industry';
 import { buildBank, buildCafe, buildFlats, buildHouse, buildPolice, buildTownHall, buildVilla } from './world/town';
-import { buildBus, buildCar, buildForklift, buildPallet, buildParcelVan, buildPoliceCar, buildTractor, buildTrailer, buildVan } from './models/vehicles';
+import { buildBus, buildCar, buildCarLite, buildForklift, buildPallet, buildParcelVan, buildPoliceCar, buildTractor, buildTrailer, buildVan } from './models/vehicles';
 import { LOOKS, OUTFITS, buildDog, buildPerson } from './models/people';
 import { buildLighthouse, buildMotorboat, buildSailboat } from './models/sea';
 import { DRIVERS, PROTO, Pallet, SKUS, STEP, WARMUP, clock, conveyor, hourAt, night, putIn, resetStats, sim } from './sim/core';
@@ -33,6 +33,7 @@ import { buildFireService } from './sim/fire';
 import { buildWorks } from './sim/works';
 import { buildTrain } from './sim/train';
 import { buildWoods } from './world/woods';
+import { THROUGH, buildSahel } from './sim/sahel';
 import { initView } from './view';
 
 applyTheme();
@@ -53,6 +54,7 @@ gfx.aniso = renderer.capabilities.getMaxAnisotropy();
 await Promise.race([document.fonts.load(`500 ${TEX_PX}px ${css('--mono')}`), new Promise(r => setTimeout(r, 2500))]).catch(noop);
 PROTO.tractor = buildTractor(); PROTO.trailer = buildTrailer(); PROTO.forklift = buildForklift(); PROTO.van = buildVan(); PROTO.bus = buildBus(); PROTO.police = buildPoliceCar(); PROTO.parcelVan = buildParcelVan();
 PROTO.car = { n:buildCar(false, 'n'), k:buildCar(false, 'k') }; PROTO.carVan = { n:buildCar(true, 'n'), k:buildCar(true, 'k') };
+PROTO.carLite = { n:buildCarLite(false, 'n'), k:buildCarLite(false, 'k') }; PROTO.carVanLite = { n:buildCarLite(true, 'n'), k:buildCarLite(true, 'k') };
 PROTO.pallet = [0, 1, 2].map(buildPallet);
 // every look in each of its outfits, full and lite
 PROTO.person = Object.fromEntries(LOOKS.map(k => [k, OUTFITS[k].map((_, i) => buildPerson(k, i))]));
@@ -233,6 +235,8 @@ const worksSys = buildWorks();
 const trainSys = buildTrain();
 // the woods round both towns, and the pines up the hills
 const woodsG = buildWoods(); woodsG.traverse(o => { o.raycast = noop; }); scene.add(woodsG);
+// Sahel, the new city east of the green belt: its streets, its towers, its traffic and people
+const sahelSys = buildSahel();
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
@@ -241,9 +245,9 @@ sim.step = dt => {
   sim.t += dt;
   const late = night() > 0.5;
   conveyor.update(dt); tickOrders(dt); fairSys.update(dt); fishingSys.update(dt); weather.update(dt);
-  if ((ROAD.next -= dt) <= 0 && entryClear(WORLD.x0 - 8, 134.5)) { new Car({ path:ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
-  if ((COAST.nextE -= dt) <= 0 && entryClear(WORLD.x0 - 8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(10, 20) : rand(4, 9); }
-  if ((COAST.nextW -= dt) <= 0 && entryClear(WORLD.x1 + 8, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(10, 20) : rand(4, 9); }
+  if ((ROAD.next -= dt) <= 0 && entryClear(WORLD.x0 - 8, 134.5)) { new Car({ path:rng() < 0.45 ? THROUGH.e : ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
+  if ((COAST.nextE -= dt) <= 0 && entryClear(WORLD.x0 - 8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(16, 30) : rand(7, 13); }
+  if ((COAST.nextW -= dt) <= 0 && entryClear(WORLD.x1 + 8, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(16, 30) : rand(7, 13); }
   if ((custNext.t -= dt) <= 0) { const sp = SPOTS.find(s => !s.car); if (sp && entryClear(WORLD.x0 - 8, 270.5)) customerCar(sp); custNext.t = late ? rand(60, 120) : rand(20, 40); }
   if ((shop.next -= dt) <= 0) { if (SHOPPERS().length < 10) new Shopper(); shop.next = late ? rand(14, 22) : rand(4.5, 7.5); }
   if ((walkSpawn.t -= dt) <= 0) { walkSpawn.t = rand(1.0, 2.2); if (WALKERS().length < (late ? 8 : 24)) { const f = startPortal(); new Walker(f, nextPortal(f)); } }
@@ -254,7 +258,7 @@ sim.step = dt => {
   sim.peds = sim.people.filter(p => onRoad(p.x, p.y));
   for (const p of sim.pallets) p.update(dt);
   for (const b of BOATS) b.update(dt);
-  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt);
+  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt); sahelSys.update(dt);
   for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
   for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);
@@ -268,4 +272,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

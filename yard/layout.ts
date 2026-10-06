@@ -68,10 +68,26 @@ export const WORKS = { x0:216, x1:400, y0:-46, y1:-20, h:10, ly:-31, terrace:[20
 // Sahel, the new city east of the green belt: four avenues (14 wide, like the old town's), North St along the railway,
 // Sahel Blvd with its busway in the middle (the old town's Riverside Rd runs on into it), Souq St under the metro, and the
 // Corniche (Coast Rd's run through Sahel). The waterfront and the port lie south of the Corniche.
-export const CITY = { x0:520, x1:960, av:[540, 640, 760, 880], north:[6, 20], blvd:[115, 147], souq:[198, 212], corniche:[260, 274] };
+export const CITY = { x0:520, x1:960, av:[540, 640, 760, 880], north:[6, 20], blvd:[115, 147], souq:[198, 212], corniche:[260, 274],
+  names:['Gate Av', 'Najd Av', 'Tower Av', 'Port Av'],
+  // Sahel Blvd in section, north to south: a general lane each side, a planted strip, the busways, and the median the
+  // Metrobus stations stand on. Its lanes: general westbound/eastbound, busway westbound/eastbound.
+  lanes:{ gW:118.5, gE:143.5, bW:126.5, bE:135.5 }, sep:[[122, 124.5], [137.5, 140]], median:[128.5, 133.5] };
+// Sahel's blocks: kerbed like the old town's. The columns between the avenues and the rows between the streets; the
+// last column runs on east past Port Av, where North St and Souq St end.
+const CB = (() => { const c = [[547, 633], [647, 753], [767, 873]], r = [[20, 115], [147, 198], [212, 260]], b = [];
+  for (const [x0, x1] of c) for (const [y0, y1] of r) b.push([x0, x1, y0, y1]);
+  b.push([887, 960, 2, 115], [887, 960, 147, 260], [520, 533, 2, 115], [520, 533, 147, 260], [533, 633, 2, 6], [647, 873, 2, 6], [520, 1000, 274, 279]);
+  // the boulevard's planted strips and median, broken at each avenue
+  for (const [x0, x1] of [[547, 633], [647, 753], [767, 873], [887, 1000]]) for (const [y0, y1] of [[122, 124.5], [128.5, 133.5], [137.5, 140]]) b.push([x0, x1, y0, y1]);
+  return b; })();
+// Sahel Marina, between the beach and the port: a jetty out from the promenade, finger piers off it either side, a
+// mole of rocks round the basin; the stops of the Metrobus on the boulevard's median
+export const MARINA = { x0:566, x1:636, jetty:[597.5, 602.5], fingers:[302, 312, 322], deck:1.15, mole:334 };
+export const BRT_STOPS = [592, 704, 818, 930];
 // Sahel Motors, the showroom Car Works sells through: a terrace cut into the foothills north of the railway, and the
 // siding its car train runs to, a second track north of the main line from Car Works' lot
-export const MOTORS = { terrace:[556, 732, -52, -9], sidingY:-6.5, sidingX:[404, 708] };
+export const MOTORS = { terrace:[452, 628, -52, -9], sidingY:-6.5, sidingX:[404, 612] };
 export const RAIL = { y:-1.5, loopY:7, lane:12.5, ramp:400, route:[[WORLD.x1 + 12, -1.5], [212, -1.5], [200, 7], [96, 7], [80, -1.5], [WORLD.x0 - 30, -1.5]] };
 // Riverside Fire Station. ENG-1 stands nose out in bay 1 (front at park); it drives out forward and comes home by
 // stopping in the westbound lane past the bay and backing in along reverse (the path its rear end takes).
@@ -82,18 +98,21 @@ export const AV = [60, 180, 300, 420];
 export const ORCHARD = { ax:422, ay0:71, ay1:117, ey:66, ex0:373, ex1:427, turn:{ x:373, y:66, r:5.5 }, pave:60.2, lotY1:59.4, walkX:407,
   lots:[0, 1, 2, 3, 4, 5].map(i => [358.4 + 13.6 * i, 13.6]) };
 // asphalt people only cross: a walker on it is an obstacle to traffic, and waits for a gap before stepping out
-const ROADS = [[-60, 404, 124, 138], [436, 520, 124, 138], [53, 67, 138, 274], [173, 187, 138, 274], [293, 307, 138, 274], [413, 427, 138, 274], [405, 413, 138, 142.6],
+const ROADS = [[-60, 404, 124, 138], [436, 520, 124, 138], [520, 1000, 115, 147], [533, 887, 6, 20], [533, 887, 198, 212],
+  [533, 547, 6, 274], [633, 647, 2, 274], [753, 767, 6, 274], [873, 887, 6, 274], [53, 67, 138, 274], [173, 187, 138, 274], [293, 307, 138, 274], [413, 427, 138, 274], [405, 413, 138, 142.6],
   [53, 427, 198, 212], [-60, 1000, 260, 274], [345, 384, 138, 142.6], [219, 262, 178, 198], [417, 427, 71, 117], [373, 427, 61, 71], [378, 413, 255.6, 260], [374, 378, 257.4, 260], [374, 409, 274, 276.6]];
-export const onRoad = (x, y) => ROADS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) || Math.hypot(x - RAB.x, y - RAB.y) < 14.5
-  || Math.hypot(x - ORCHARD.turn.x, y - ORCHARD.turn.y) < ORCHARD.turn.r;
+// (the boulevard's median and planted strips are kerbed islands inside its asphalt: standing there is off the road)
+export const onRoad = (x, y) => (ROADS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) || Math.hypot(x - RAB.x, y - RAB.y) < 14.5
+  || Math.hypot(x - ORCHARD.turn.x, y - ORCHARD.turn.y) < ORCHARD.turn.r) && !BLOCKS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);
 // raised blocks: a pavement round the edge, lots inside; the promenade is one too
 export const BLOCKS = [[67, 173, 138, 198], [187, 293, 138, 178], [187, 219, 178, 198], [262, 293, 178, 198], [307, 413, 142.6, 198], [307, 345, 138, 142.6], [384, 405, 138, 142.6],
   [67, 173, 212, 260], [187, 293, 212, 260], [307, 413, 212, 255.6], [307, 374, 255.6, 260], [374, 378, 255.6, 257.4], [427, 440, 146, 260], [0, 53, 138, 260],
   [-60, 374, 274, 279], [374, 409, 276.6, 279], [409, 520, 274, 279],
-  [358, 440, 4, 61], [358, 417, 71, 92], [427, 440, 71, 117]];
+  [358, 440, 4, 61], [358, 417, 71, 92], [427, 440, 71, 117], ...CB];
 // the piers' decks, people walk on them: [x0, x1, y0, y1, height, ramp] (a ramp rises from the promenade over its first 2.3 m)
 export const PIER = { neck:[326, 334], y0:278.7, platform:[308, 352, 297, 317], deck:1.2, wheel:{ x:344, y:307.5, z:11.85, r:8 }, carousel:{ x:322, y:304, r:4.2 } };
-export const DECKS = [[196, 202, 278.7, 313, 1.15, true], [326, 334, 278.7, 297.1, 1.2, true], [308, 352, 297, 317, 1.2, false]];
+export const DECKS = [[196, 202, 278.7, 313, 1.15, true], [326, 334, 278.7, 297.1, 1.2, true], [308, 352, 297, 317, 1.2, false],
+  [597.5, 602.5, 278.7, 327, 1.15, true], [571, 629, 300.8, 303.2, 1.15, false], [571, 629, 310.8, 313.2, 1.15, false], [571, 629, 320.8, 323.2, 1.15, false]];
 export const zAt = (x, y) => {
   for (const [x0, x1, y0, y1, z, ramp] of DECKS) if (x > x0 && x < x1 && y > y0 && y < y1) return ramp ? Math.min(z, CURB + (y - y0) * 0.45) : z;
   return BLOCKS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) ? CURB : 0;

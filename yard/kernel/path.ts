@@ -3,6 +3,7 @@
 // A polyline with filleted corners, walked by arc length. at(s) extrapolates past both ends, or wraps
 // round when the path is a closed loop (start it in the middle of a straight).
 export class Path {
+  declare length: number; declare closed: boolean; declare segs: any[];
   constructor(pts, r = 6, closed = false) {
     // a point repeated back to back would make a zero-length leg (and a corner with no direction): drop it
     pts = pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 1e-6);

@@ -143,6 +143,14 @@ export function buildCar(van, tone, lit = true) {
   if (lit) lights(p, 0, [0.6, -0.6], van ? 0.6 : 0.58, 0.2, 0.36);
   return p.build(van ? 'van' : 'car');
 }
+// a car from far away, a few pixels long: one fill, its headlamps (which still light up after dusk), its lines
+export function buildCarLite(van, tone) {
+  const p = new Part(), t = tone === 'k' ? 'kb' : 'nb';
+  if (van) p.box(-5.2, -1.05, 0.0, 5.2, 2.1, 2.45, t);
+  else p.box(-4.2, -0.95, 0.0, 4.2, 1.9, 1.1, t).box(-3.2, -0.85, 1.1, 2.1, 1.7, 0.62, t);
+  lights(p, 0, [0.6, -0.6], van ? 0.6 : 0.58, 0.2, 0.36);
+  return p.build('carLite');
+}
 // Corner Market's parcel van: a tall box van with a two-tone band and PARCELS on both sides, and hazard lamps at the
 // corners that blink while the courier is at a door
 export function buildParcelVan() {

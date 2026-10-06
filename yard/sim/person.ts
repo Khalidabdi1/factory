@@ -9,8 +9,9 @@ import { crossClear } from './roads';
 
 // ---- people ----
 // from far away everyone is drawn as one static part, a handful of draw calls instead of a dozen
-export let TINY = false;
-export const setTiny = v => { TINY = v; };
+export let TINY = false, FAR = false;
+// further out still, a person is a pixel or two tall: nobody is drawn at all
+export const setTiny = (v, far = false) => { TINY = v; FAR = far; };
 export class Person {
   constructor(o) {
     Object.assign(this, { kind:'person', isPerson:true, h:0, v:0, speed:1.5, steps:[], phase:0, label:'', carrying:null, done:0, t0:sim.t }, o);
@@ -24,9 +25,9 @@ export class Person {
     if (this.dog) { this.dogG = PROTO.dog.clone(); this.dogG.userData.entity = this; this.groups.push(this.dogG); scene.add(this.dogG); }
     scene.add(this.group); sim.people.push(this); this.place();
   }
-  walk(pts, label) { for (const to of pts) this.steps.push({ do:'walk', to, label }); return this; }
+  walk(pts, label?) { for (const to of pts) this.steps.push({ do:'walk', to, label }); return this; }
   // a walk over the pavements: where a leg crosses a street, wait at the kerb for a gap first
-  go(pts, label) {
+  go(pts, label?) {
     for (let i = 1; i < pts.length; i++) {
       const a = pts[i - 1], b = pts[i];
       if (onRoad((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) this.steps.push({ do:'cross', a, b });
@@ -35,8 +36,8 @@ export class Person {
     return this;
   }
   face(h) { this.steps.push({ do:'face', h }); return this; }
-  wait(t, label) { this.steps.push({ do:'wait', t, label }); return this; }
-  then(fn, label) { this.steps.push({ do:'call', fn, label }); return this; }
+  wait(t, label?) { this.steps.push({ do:'wait', t, label }); return this; }
+  then(fn, label?) { this.steps.push({ do:'call', fn, label }); return this; }
   update(dt) {
     if (this.follow) {   // walked along by someone else, a step behind them
       const f = this.follow; this.h = f.h; this.x = f.x - Math.cos(f.h) * 0.85; this.y = f.y - Math.sin(f.h) * 0.85; this.v = f.v;
@@ -83,7 +84,7 @@ export class Person {
     pose(this.group, this.x, this.y, this.h, z); pose(this.lite, this.x, this.y, this.h, z);
     // inside a building that is shut, nobody is drawn (its walls hide them anyway)
     const away = hooks.closedAt(this.x, this.y);
-    const gone = away || this.hidden;   // hidden: on a ride, drawn by the ride instead
+    const gone = away || this.hidden || FAR;   // hidden: on a ride, drawn by the ride instead
     this.group.visible = !TINY && !gone; this.lite.visible = TINY && !gone; if (this.dogG) this.dogG.visible = !TINY && !gone;
     if (this.dogG) { const c = Math.cos(this.h), s = Math.sin(this.h), x = this.x - c * 0.9 - s * 0.55, y = this.y - s * 0.9 + c * 0.55; pose(this.dogG, x, y, this.h, zAt(x, y)); }
   }
