@@ -17,7 +17,7 @@ A live isometric seaside town drawn with three.js/WebGL in the hairline style of
 | Command | What it does |
 | --- | --- |
 | `npm install` | Installs dependencies. Needs Node 20 or later; Node 22 is used. |
-| `npm run dev` | Dev server on <http://localhost:3000>. On the owner's machine port 3000 is often taken by another app, so use `npm run dev -- --port 3100`. |
+| `npm run dev` | Dev server on <http://localhost:3000>. If another app holds port 3000, use `npm run dev -- --port 3100`. |
 | `npm run build` | Type check and static export to `out/`, because `next.config.ts` sets `output: 'export'`. There is no server and there are no API routes. |
 | `npm run preview` | Serves `out/`. |
 | `npm run check` | Scope and load-order check of `yard/`, since the ported modules skip type checking. Run it after every edit. It catches missing imports and "cannot access X before initialization" cycles. |
@@ -54,7 +54,7 @@ The React component and the engine share a contract: the engine finds the plate'
 - **Tones.** `n` is the normal body/deck. `k` is two-tone, for goods and uniforms. `l` (lamps) and `w` (windows) light up at night by themselves. `g` is glass, `gs` grass, `s` sand.
 - **Lines.** Every line is a 1 CSS px `LineSegments2`. Faces are flat, unlit and opaque.
 - **Colour.** Never hard-code colours in scene code; use tokens. `--live` is reserved for live state: the selection, the route, busy lamps, beacons, police lights, alarms and the lighthouse beam. `glow(group, on)` swaps a part's faces to the live fill.
-- **Draw calls.** Keep the default view at or below about 1.5k (`renderer.info.render.calls`; it was about 1,000–1,140 after the port). Merge static things into one `Part`. Give moving pieces their own group only when they animate. Far zoom (`TINY`) swaps people for a one-part "lite" model.
+- **Draw calls.** Keep the default view at or below about 1.5k (`renderer.info.render.calls`). It is about 1.3k quiet and up to about 1.5k with the train in and a fire on. Merge static things into one `Part`; things there are many of (pallets, parked cars) use the single-fill tones. Give moving pieces their own group only when they animate. Far zoom (`TINY`) swaps people for a one-part "lite" model.
 
 ## Simulation rules
 
@@ -153,10 +153,9 @@ Done:
 - Phase 11: FRT-7 (`yard/sim/train.ts`, `yard/models/train.ts`, `yard/world/rail.ts`, `RAIL` in `layout.ts`).
   - One `Path` (`RAIL_PATH`) from the east edge: along the foot of the hills, round the loop in the Plant 01 yard (fence gaps at its corners; the staff parking's north row and some trees gave way), and off the west edge. Vehicles stand on it by their `off` behind the front.
   - At Car Works (`S_WORKS`) cars come off the lot with `lot.take()` and a `Loader` backs each out (rear-led, like ENG-1) and drives it up the ramp to a carrier place. Loaded cars are drawn into the carrier (`carAlong`) unless followed.
-  - At Plant 01 (`S_PLANT`), `hooks.train.loadable()` lets `dispatch()` load the flat wagons (`LOC.wagon`, from the lane at `RAIL.lane` reached by the corridor R1–R0). The priority is flatbed, then train, then belt. It leaves when full or after 45 s with nothing in hand.
+  - At Plant 01 (`S_PLANT`), `hooks.train.loadable()` lets `dispatch()` load the flat wagons (`LOC.wagon`, from the lane at `RAIL.lane` reached by the corridor R1–R0). The priority is train, then flatbed, then belt; Plant 01 makes a pallet every 26 s so both get a share. It leaves when full or after 45 s with nothing in hand.
   - Pallets are four draw calls each (single-fill tones). Keep it so: the home view sits about 1.3–1.47k with the train in.
 
-Next:
-12. README, debug hooks, push to `main`.
+- Phase 12: the README covers everything above; `docs/factory-yard.png` and `docs/car-works.png` are captured from the static build (no dev badge) at 1600 × 1000.
 
-The full plan is in the owner's `~/.claude/plans/` file for this work. A shared road router (`ROADNET`), card `actions`, and a peek helper are planned infrastructure for phases 3–10.
+The roadmap agreed in October 2026 is done. The full plan is in the owner's `~/.claude/plans/` file for this work.
