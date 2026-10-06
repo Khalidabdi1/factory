@@ -105,9 +105,17 @@ export const METRO = { track:2.2, wide:4.4, island:2.85, plat:58, car:13, gap:0.
       xovers:[[100, 118], [144, 162]] }] };
 // a point of a line's frame (u along, v across, z up) in the town's
 export const metroAt = (line, u, v, z = 0) => line.axis === 'x' ? [u, line.at + v, z] : [line.at - v, u, z];
-// Sahel Motors, the showroom Car Works sells through: a terrace cut into the foothills north of the railway, and the
-// siding its car train runs to, a second track north of the main line from Car Works' lot
-export const MOTORS = { terrace:[452, 628, -52, -9], sidingY:-6.5, sidingX:[404, 612] };
+// Sahel Motors, the showroom Car Works sells through, on a terrace cut into the foothills north of the railway. Its car
+// shuttle runs on a siding of its own north of the main line: from the dock at Car Works' lot (the shuttle's tail at
+// dock) to the showroom (its loco's nose at stop), where a ramp rises out of the track behind it (high end at ramp).
+// The cars wait in twin glass towers, eight levels of eight bays round a lift (gates on their south faces); the hall
+// has a handover bay at its west end (bay: its door's x) and its entrance on the east (door: its y), off the footway
+// at walk. A drive runs along the front (out: the lane east to Najd Av; in: the lane to the towers), and Najd Av comes
+// up over the main line on the level (road: the access road's x span, cross: the crossing's y span). West of the
+// towers, the test track.
+export const MOTORS = { terrace:[452, 668, -52, -9], sidingY:-6.5, sidingX:[411, 614], dock:420, stop:608, ramp:550.8,
+  towers:[[518, -31], [542, -31]], towerR:8, levels:8, levelH:3.2, hall:[572, 628, -46, -16], bay:579,
+  out:-10.5, in:-13.5, road:[633, 647], cross:[-4.5, 2], walk:630.6, door:-24, track:[456, 506, -46, -16] };
 export const RAIL = { y:-1.5, loopY:7, lane:12.5, ramp:400, route:[[WORLD.x1 + 12, -1.5], [212, -1.5], [200, 7], [96, 7], [80, -1.5], [WORLD.x0 - 30, -1.5]] };
 // Riverside Fire Station. ENG-1 stands nose out in bay 1 (front at park); it drives out forward and comes home by
 // stopping in the westbound lane past the bay and backing in along reverse (the path its rear end takes).
@@ -120,7 +128,8 @@ export const ORCHARD = { ax:422, ay0:71, ay1:117, ey:66, ex0:373, ex1:427, turn:
 // asphalt people only cross: a walker on it is an obstacle to traffic, and waits for a gap before stepping out
 const ROADS = [[-60, 404, 124, 138], [436, 520, 124, 138], [520, 1000, 115, 147], [533, 887, 6, 20], [533, 887, 198, 212],
   [533, 547, 6, 274], [633, 647, 2, 274], [753, 767, 6, 274], [873, 887, 6, 274], [53, 67, 138, 274], [173, 187, 138, 274], [293, 307, 138, 274], [413, 427, 138, 274], [405, 413, 138, 142.6],
-  [53, 427, 198, 212], [-60, 1000, 260, 274], [345, 384, 138, 142.6], [219, 262, 178, 198], [417, 427, 71, 117], [373, 427, 61, 71], [378, 413, 255.6, 260], [374, 378, 257.4, 260], [374, 409, 274, 276.6]];
+  [53, 427, 198, 212], [-60, 1000, 260, 274], [345, 384, 138, 142.6], [219, 262, 178, 198], [417, 427, 71, 117], [373, 427, 61, 71], [378, 413, 255.6, 260], [374, 378, 257.4, 260], [374, 409, 274, 276.6],
+  [633, 647, -20, 2], [629.5, 633, -4.5, 2]];
 // (the boulevard's median and planted strips are kerbed islands inside its asphalt: standing there is off the road)
 export const onRoad = (x, y) => (ROADS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) || Math.hypot(x - RAB.x, y - RAB.y) < 14.5
   || Math.hypot(x - ORCHARD.turn.x, y - ORCHARD.turn.y) < ORCHARD.turn.r) && !BLOCKS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);

@@ -7,7 +7,7 @@ import { BODY_LEN, beam } from './works';
 export const LOCO_LEN = 16, FLAT_LEN = 13, CARRIER_LEN = 20, WDECK = 1.25, GAP = 0.6;
 const bogies = (p, len) => { for (const x of [-2.2, -len + 2.2]) { p.box(x - 1.3, -1.05, 0.2, 2.6, 2.1, 0.55, 'kb'); for (const dx of [-0.75, 0.75]) for (const y of [1.05, -1.25]) p.cylY(x + dx, y, 0.45, 0.42, 0.2, 10, 'kb'); } };
 // a diesel: a cab at each end, a long hood between with its grilles and roof fans, a band along the side, the number
-export function buildLoco() {
+export function buildLoco(num = 'FRT-7', side = -1) {   // side: the one that faces south as it runs
   const p = new Part(), L = LOCO_LEN;
   p.box(-L, -1.45, 1.0, L, 2.9, 0.25, 'kb');
   for (const x0 of [-3.4, -L]) { p.box(x0, -1.45, 1.25, 3.4, 2.9, 2.75, 'kb'); }
@@ -16,7 +16,7 @@ export function buildLoco() {
   for (const [y, s] of [[1.45, 1], [-1.45, -1]]) {
     const C = FRONT(-3.4, y, 4.0), R = FRONT(-L, y, 4.0), H = FRONT(-L + 3.4, s > 0 ? 1.2 : -1.2, 3.7);
     for (const M of [C, R]) p.fill2(M, 0.5, 0.4, 2.0, 0.9, 'glass', 0.03 * s).rect2(M, 0.5, 0.4, 2.0, 0.9, 'koline', 0.035 * s).fill2(M, 0, 1.9, 3.4, 0.3, 'deck', 0.03 * s);
-    p.fill2(H, 0, 1.6, L - 6.8, 0.3, 'deck', 0.03 * s); if (s < 0) p.text(H, 'FRT-7', (L - 6.8) / 2, 1.25, 0.42, 'ink', 'middle', 0.035 * s);   // the number on the side the camera sees
+    p.fill2(H, 0, 1.6, L - 6.8, 0.3, 'deck', 0.03 * s); if (s === side) p.text(H, num, (L - 6.8) / 2, 1.25, 0.42, 'ink', 'middle', 0.035 * s);   // the number on the side the camera sees
     for (let u = 0.5; u < L - 7.2; u += 1.2) p.rect2(H, u, 0.25, 0.9, 0.85, 'koline', 0.035 * s);
   }
   const N = SIDE(0, 1.45, 4.0); p.fill2(N, 0.4, 0.4, 2.1, 0.9, 'glass').rect2(N, 0.4, 0.4, 2.1, 0.9, 'koline').fill2(N, 0, 1.9, 2.9, 0.3, 'deck');
@@ -43,8 +43,8 @@ export function buildCarrier() {
   return p.build('carrier');
 }
 // a finished car on a carrier, drawn into a shared part in the carrier's own frame, facing forward, front at x
-export function carAlong(p, x, tone) {
-  const L = BODY_LEN, z = WDECK, t = tone === 'k' ? 'kb' : 'nb';
+export function carAlong(p, x, tone, z = WDECK) {
+  const L = BODY_LEN, t = tone === 'k' ? 'kb' : 'nb';
   p.box(x - L, -0.9, z + 0.32, L, 1.8, 0.62, t).box(x - 3.5, -0.8, z + 0.94, 2.25, 1.6, 0.5, t);
   beam(p, [x - 0.75, 0, z + 0.95], [x - 1.27, 0, z + 1.42], 1.5, 'g', 0.04);
   beam(p, [x - 3.48, 0, z + 1.42], [x - 3.95, 0, z + 0.95], 1.5, 'g', 0.04);

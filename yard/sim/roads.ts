@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { hooks } from '../shared';
 import { clamp, wrap } from '../kernel/math';
 import { CITY, RAB } from '../layout';
 import { sim } from './core';
@@ -56,6 +57,7 @@ const segDist = (x, y, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], t = 
   return Math.hypot(a[0] + dx * t - x, a[1] + dy * t - y); };
 // may a walker step out from a to b? nothing moving will reach the crossing in the next 3 s, nothing stands on it
 export function crossClear(a, b) {
+  if (hooks.levelShut?.(a, b)) return false;   // the level crossing's barriers are down
   for (const v of roadVehicles()) {
     if (v.parked) continue;
     if (v.points.some(([x, y]) => segDist(x, y, a, b) < 1.6)) return false;

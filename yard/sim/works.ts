@@ -25,7 +25,7 @@ const zOf = k => k === 11 || k === 12 ? 1.5 : k === 18 ? 0.3 : k >= 15 ? 0.06 : 
 const shopAt = x => WORKS.shops.find(([, , a, b]) => x >= a && x < b) ?? WORKS.shops[WORKS.shops.length - 1];
 const spaceX = k => LOT.x0 - k * LOT.pitch;
 
-class Body {
+export class Body {
   constructor(seq, t0 = sim.t) {
     Object.assign(this, { kind:'carbody', seq, id:`CW-${seq}`, si:-1, t0, groups:[], pick:[-HALF, 0, 1.1] });
     this.model = pick(MODELS); this.tone = rng() < 0.5 ? 'n' : 'k';
@@ -39,25 +39,28 @@ class Body {
     this.group = g; this.groups = [g]; scene.add(g);
   }
   where() {
-    if (this.onTrain) return { shop:'FRT-7', status:`on ${this.onTrain.id} · ${this.onTrain.status()}` };
-    if (this.loading) return { shop:'the lot', status:'driving onto the train' };
+    if (this.motors) return { shop:'Sahel Motors', status:this.motors.carStatus(this) };
+    if (this.onTrain) return { shop:this.onTrain.id, status:`on ${this.onTrain.id} · ${this.onTrain.status()}` };
+    if (this.loading) return { shop:'the lot', status:`driving onto ${this.loading.train?.id ?? 'the train'}` };
     if (this.parked) return { shop:'the lot', status:'on the lot · waiting for the train' };
     if (this.drive) return { shop:'the yard', status:'driving out to the lot' };
     const st = ST[Math.max(0, this.si)], shop = shopAt(st[0])[1];
     return { shop, st, status:`${shop.toLowerCase()} · ${line.phase === 'move' ? `moving to the ${st[1]}` : st[1]}` };
   }
   info() {
-    const w = this.where(), k = this.si, done = this.parked || this.drive ? 100 : Math.round(Math.max(0, k) / (N - 1) * 95);
+    const w = this.where(), k = this.si, done = this.parked || this.drive || this.motors ? 100 : Math.round(Math.max(0, k) / (N - 1) * 95);
     const painted = ['painted', 'wheels', 'complete'].includes(this.stage);
     return { kind:`Car · ${this.model}`, title:this.id, status:w.status, bar:{ v:done, max:100, label:`${done}% built · now ${STAGE[this.stage]}` },
       rows:[['VIN', this.vin], ['Model', this.model], ['Colour', painted ? COLOUR[this.tone] : `to be ${COLOUR[this.tone]}`], ['Shop', w.shop],
-        ...(w.st ? [['Station', `${k + 1} of ${N} · ${w.st[1]}`], ['Next', k + 1 < N ? ST[k + 1][1] : 'out to the lot']] : []), ['Started', clock(this.t0)]] };
+        ...(w.st ? [['Station', `${k + 1} of ${N} · ${w.st[1]}`], ['Next', k + 1 < N ? ST[k + 1][1] : 'out to the lot']] : []), ['Started', clock(this.t0)],
+        ...(this.motors ? this.motors.carRows(this) : [])] };
   }
   readout() { return `${this.id} · ${this.where().status}`.toLowerCase(); }
   // the rest of the line, and the way out to the lot
   route() {
+    if (this.motors) return this.motors.carRoute(this);
     if (this.parked || this.onTrain) return null;
-    if (this.loading) { const l = this.loading; return l.leg === 'fwd' ? { path:l.fwd, s:l.s, next:null, stop:'FRT-7' } : null; }
+    if (this.loading) { const l = this.loading; return l.leg === 'fwd' ? { path:l.fwd, s:l.s, next:null, stop:l.train?.id ?? 'FRT-7' } : null; }
     if (this.drive) return { path:this.drive.path, s:this.drive.s, next:this.drive.to, stop:'the lot' };
     const pts = [[this.group.position.x, this.group.position.z]];
     for (let k = Math.max(0, this.si + 1); k < N; k++) pts.push([xOf(k) + HALF, LY]);
@@ -72,7 +75,10 @@ const exitPts = k => { const x = spaceX(k); return [[ST[N - 1][0] + HALF, LY], [
 
 // ---- the lot: the cars on it are drawn as one part, but for a car someone is following, which stays its own car to
 // click until they let it go ----
-export const lot = { cars:[], kept:new Set(), group:null, entity:null, spaceX,
+export const lot = { cars:[], kept:new Set(), group:null, entity:null, spaceX, holder:null,
+  // FRT-7 and the Sahel Motors shuttle share the lot and the way out of it: one loads at a time
+  claim(t) { if (this.holder && this.holder !== t) return false; this.holder = t; return true; },
+  release(t) { if (this.holder === t) this.holder = null; },
   // a space is taken from the moment a car sets off for it
   free() { for (let k = 0; k < LOT.n; k++) if (!this.cars.some(c => c.space === k) && !line.driving.some(c => c.drive.space === k)) return k; return null; },
   park(b, space) {

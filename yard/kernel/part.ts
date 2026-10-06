@@ -72,6 +72,16 @@ export class Part {
     for (let i = 0; i < e.count; i += 2) this.seg(lineK, a.fromBufferAttribute(e, i).clone(), b.fromBufferAttribute(e, i + 1).clone());
     return this;
   }
+  // another part's faces and lines, turned to heading h and set down at (x, y, z): a model drawn into a shared part
+  // at any angle (texts are left out)
+  put(q, x, y, h = 0, z = 0) {
+    const m = new THREE.Matrix4().makeRotationY(-h).setPosition(x, z, y), v = v3(0, 0, 0);
+    for (const [src, dst] of [[q.fill, this.fill], [q.lines, this.lines]]) for (const k in src) {
+      const a = src[k], o = (dst[k] ??= []);
+      for (let i = 0; i < a.length; i += 3) { v.set(a[i], a[i + 1], a[i + 2]).applyMatrix4(m); o.push(v.x, v.y, v.z); }
+    }
+    return this;
+  }
   build(name?) {
     const g = new THREE.Group(); if (name) g.name = name;
     for (const k in this.fill) {
@@ -86,6 +96,9 @@ export class Part {
     return g;
   }
 }
+// From far away (a few pixels a metre) lettering is a smudge: small text is left out there, a draw call each saved
+export const TEXT_MESHES = []; let textFar = false;
+export const setTextFar = far => { textFar = far; for (const m of TEXT_MESHES) m.visible = !far || m.userData.textSize >= 3; };
 // Text drawn flat on a plane: a canvas glyph texture (white) tinted by its token colour.
 function textMesh({ M, str, x, y, size, k, anchor, lift }) {
   const font = `500 ${TEX_PX}px ${css('--mono')}`;
@@ -99,7 +112,7 @@ function textMesh({ M, str, x, y, size, k, anchor, lift }) {
   geo.translate(...v3(0, 0, 0).setFromMatrixColumn(M, 2).normalize().multiplyScalar(-lift).toArray());
   const mat = new THREE.MeshBasicMaterial({ map:tex, transparent:true, depthWrite:false, side:THREE.DoubleSide, color:css(TEXT_TOK[k]) });
   TEXT[k].push(mat);
-  const mesh = new THREE.Mesh(geo, mat); mesh.raycast = noop; return mesh;
+  const mesh = new THREE.Mesh(geo, mat); mesh.raycast = noop; mesh.userData.textSize = size; mesh.visible = !textFar || size >= 3; TEXT_MESHES.push(mesh); return mesh;
 }
 export const pose = (o, x, y, h = 0, z = 0) => { o.position.set(x, z, y); o.rotation.y = -h; };
 // light a part up: its faces take the live colour (LineSegments2 is also a Mesh, so go by the fill key)

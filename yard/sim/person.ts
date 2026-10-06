@@ -74,7 +74,8 @@ export class Person {
       const step = Math.min(d, this.v * dt); this.x += dx / d * step; this.y += dy / d * step; return false;
     }
     this.v = 0;
-    if (st.do === 'cross') { st.t = (st.t ?? 0) + dt; if (st.t > 10 || crossClear(st.a, st.b)) return true; if (st.t > 0.4) this.label = 'waiting to cross'; return false; }
+    if (st.do === 'cross') { st.t = (st.t ?? 0) + dt; const rail = hooks.levelShut?.(st.a, st.b);
+      if (st.t > 10 && !rail || crossClear(st.a, st.b)) return true; if (st.t > 0.4) this.label = rail ? 'waiting at the level crossing' : 'waiting to cross'; return false; }
     if (st.do === 'wait') return (st.t -= dt) <= 0;
     if (st.do === 'face') { const e = wrap(st.h - this.h); if (Math.abs(e) < 0.02) { this.h = st.h; return true; } this.h += clamp(e, -7 * dt, 7 * dt); return false; }
     if (st.do === 'call') { st.fn(this); return true; }

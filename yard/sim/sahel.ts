@@ -4,7 +4,7 @@ import { W } from '../kernel/iso';
 import { rand, rng } from '../kernel/math';
 import { Site, dedupe } from '../kernel/graph';
 import { Path } from '../kernel/path';
-import { CITY, CURB, MARINA, RAB, WORLD } from '../layout';
+import { CITY, CURB, MARINA, MOTORS, RAB, WORLD } from '../layout';
 import { hourAt, kmh, night, sim } from './core';
 import { Car } from './cars';
 import { Person } from './person';
@@ -64,6 +64,8 @@ const CPED = (() => {
     for (const x of [x0, x1]) for (let k = 1; k < ys.length; k++) link([x, ys[k - 1]], [x, ys[k]]);
   }
   for (const [a, b] of crossings) link(a, b);
+  // up Najd Av's west side from the corner of the mosque's block, over North St and the main line to Sahel Motors
+  link([631.4, 21.6], [631.4, 4.4]); link([631.4, 4.4], [MOTORS.walk, -6]); link([MOTORS.walk, -6], [MOTORS.walk, MOTORS.door]);
   const px = [...promXs].sort((p, q) => p - q); for (let k = 1; k < px.length; k++) link([px[k - 1], PROM], [px[k], PROM]);
   // the jetty and its fingers
   const jx = MARINA.jetty[0] + 2.5; let prev = [jx, PROM];
@@ -86,6 +88,7 @@ for (const b of BUILDINGS) {
   cportal(k, b.id, k === 'park' ? [(x0 + x1) / 2, (b.box[2] + y1) / 2] : [(x0 + x1) / 2, y1 + 0.6], k === 'park' ? 2 : k === 'mall' ? 2 : 1);
 }
 for (const fy of MARINA.fingers) for (const x of [578, 622]) cportal('marina', 'Sahel Marina', [x, fy], 0.6);
+cportal('motors', 'Sahel Motors', [MOTORS.walk, MOTORS.door], 1);
 for (const x of [530, 552, 574]) cportal('beach', 'the beach', [x, 287], 0.7);
 const OUTDOORS = ['park', 'beach', 'marina'];
 // the times of prayer, roughly, as the town's clock keeps them
@@ -95,7 +98,7 @@ export function nextCity(from: Portal | null, avoid?: string) {
   const h = hourAt(sim.t), n = night() > 0.5, pool = CITY_PORTALS.filter(q => q !== from && q.kind !== avoid);
   const work = h > 7.5 && h < 18.5, mallOpen = h >= 10 && h < 23, pray = !!prayerNow();
   const wt = (q: Portal) => q.w * ({ office:work ? 2.2 : 0.2, home:n ? 3 : 1, hotel:1, mall:mallOpen ? 2 : 0, mosque:pray ? 5 : 0.3, library:h > 8 && h < 22 ? 0.8 : 0,
-    park:n ? 0.15 : 1.4, beach:n ? 0.05 : 1.2, marina:n ? 0.2 : 1.0, edge:1, metro:n ? 0.6 : 1.6, brt:n ? 0.3 : 1.2 } as Record<string, number>)[q.kind] * (hooks.raining() && OUTDOORS.includes(q.kind) ? 0.08 : 1);
+    park:n ? 0.15 : 1.4, beach:n ? 0.05 : 1.2, marina:n ? 0.2 : 1.0, edge:1, metro:n ? 0.6 : 1.6, brt:n ? 0.3 : 1.2, motors:h >= 9 && h < 21.5 ? 6 : 0 } as Record<string, number>)[q.kind] * (hooks.raining() && OUTDOORS.includes(q.kind) ? 0.08 : 1);
   let r = rng() * pool.reduce((s, q) => s + wt(q), 0);
   for (const q of pool) if ((r -= wt(q)) <= 0) return q;
   return pool[0];
@@ -117,6 +120,7 @@ export class Citizen extends Person {
     const t = this.to;
     if (t.kind === 'metro') { hooks.metroVisit(this, () => this.trip(nextCity(t, 'metro'))); return; }
     if (t.kind === 'brt') { hooks.brtVisit(this, () => this.trip(nextCity(t, 'brt'))); return; }
+    if (t.kind === 'motors') { hooks.motorsVisit(this, () => this.trip(nextCity(t, 'motors'))); return; }
     if (!OUTDOORS.includes(t.kind)) { this.remove(); return; }   // indoors, or off the edge
     this.from = t;
     const seat = t.kind === 'park' && SEATS.filter(s => !s.by).sort((a, b) => Math.hypot(a.at[0] - this.x, a.at[1] - this.y) - Math.hypot(b.at[0] - this.x, b.at[1] - this.y))[0];

@@ -26,7 +26,7 @@ const SLOTS_PER_CARRIER = 4, CAR_AT = k => 0.6 + k * 4.85;   // a car's front, b
 // the ramp, up it and along the carriers
 class Loader {
   constructor(b, carrier, k) {
-    Object.assign(this, { b, carrier, k, leg:'back', s:0 });
+    Object.assign(this, { b, carrier, k, leg:'back', s:0, train });
     const x = lot.spaceX(b.space), aisle = WORKS.lot.aisle, rear = WORKS.lot.front + BODY_LEN;
     this.back = new Path([[x, rear], [x, aisle], [x - 6, aisle]], 2.5);
     const [tx] = train.carSlotWorld(carrier, k);
@@ -92,15 +92,18 @@ export const train = { kind:'train', id:'FRT-7', groups:[], pick:[-8, 0, 3], s:0
     this.place();
   },
   // at Car Works: send cars over one at a time while there are places and cars, then go on
+  // (while the Sahel Motors shuttle is loading, it waits its turn, for a while)
   loadCars() {
-    const place = this.freeCarPlace();
-    if (place && lot.cars.length && sim.t >= this.nextCar) {
+    const place = this.freeCarPlace(), mine = lot.claim(this);
+    if (mine && place && lot.cars.length && sim.t >= this.nextCar) {
       const b = lot.take(); this.nextCar = sim.t + 3.6;
       if (b) this.loaders.push(new Loader(b, ...place));
     }
-    const done = !this.loaders.length && (!place || !lot.cars.length);
-    if (done && sim.t - this.tStop > 6) { this.state = 'toPlant'; this.ramp.visible = false; }
+    const done = !this.loaders.length && (!place || !lot.cars.length || !mine && sim.t - this.tStop > 50);
+    if (done && sim.t - this.tStop > 6) { lot.release(this); this.state = 'toPlant'; this.ramp.visible = false; }
   },
+  // where it is along the line, front and tail (for the level crossing at Najd Av)
+  span() { return this.state === 'away' ? null : [P.at(this.s).x, P.at(this.s - TRAIN_LEN).x]; },
   arrive() {
     this.state = 'in'; this.s = 0; this.v = 10; this.t0 = sim.t; this.trips++;
     for (const g of this.vehicles) g.visible = true;
@@ -117,7 +120,7 @@ export const train = { kind:'train', id:'FRT-7', groups:[], pick:[-8, 0, 3], s:0
   },
   place() { this.vehicles.forEach((g, i) => { const p = this.poseOf(i); pose(g, p.x, p.y, p.h); }); glow(this.beacon, this.state !== 'away' && this.v > 0.1 && sim.t % 1 < 0.5); },
   status() {
-    return { away:`next train at ${clock(this.next)}`, in:'arriving · for Car Works', works:`at Car Works · loading cars (${this.cars.length} on, ${this.loaders.length} coming)`,
+    return { away:`next train at ${clock(this.next)}`, in:'arriving · for Car Works', works:lot.holder && lot.holder !== this ? `at Car Works · waiting for ${lot.holder.id} to load` : `at Car Works · loading cars (${this.cars.length} on, ${this.loaders.length} coming)`,
       toPlant:'to Plant 01', plant:`at Plant 01 · loading pallets (${this.slots.filter(s => s.pallet).length} of ${this.slots.length})`, out:'leaving to the west' }[this.state];
   },
   info() {
