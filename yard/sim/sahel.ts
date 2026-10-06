@@ -33,7 +33,7 @@ const LOOPS: Loop[] = [
   { name:'round the Financial District', pts:[[820, 16.5], [876.5, 16.5], [876.5, L.gW], [763.5, L.gW], [763.5, 16.5], [820, 16.5]], n:2, yields:[[876.5, 109, [876, 932, 113, 124]]] },
   { name:'round the Arch', pts:[[700, 16.5], [756.5, 16.5], [756.5, L.gW], [643.5, L.gW], [643.5, 16.5], [700, 16.5]], n:2, yields:[[756.5, 109, [756, 812, 113, 124]]] },
   { name:'round Souq Sahel', pts:[[700, L.gE], [756.5, L.gE], [756.5, 201.5], [643.5, 201.5], [643.5, L.gE], [700, L.gE]], n:2, yields:[[643.5, 153, [592, 646, 138, 149]]] },
-  { name:'round the mosque', pts:[[590, L.gE], [636.5, L.gE], [636.5, 201.5], [543.5, 201.5], [543.5, L.gE], [590, L.gE]], n:2, yields:[[543.5, 153, [500, 546, 129, 149]]] },
+  { name:'round City Hall', pts:[[590, L.gE], [636.5, L.gE], [636.5, 201.5], [543.5, 201.5], [543.5, L.gE], [590, L.gE]], n:2, yields:[[543.5, 153, [500, 546, 129, 149]]] },
   { name:'round the Grand', pts:[[820, L.gE], [876.5, L.gE], [876.5, 201.5], [763.5, 201.5], [763.5, L.gE], [820, L.gE]], n:2, yields:[[763.5, 153, [712, 766, 138, 149]]] },
   { name:'round Wadi Park', pts:[[700, 208.5], [756.5, 208.5], [756.5, 263.5], [643.5, 263.5], [643.5, 208.5], [700, 208.5]], n:2, yields:[[756.5, 255, [756, 806, 258, 267]]] },
 ];
@@ -64,7 +64,7 @@ const CPED = (() => {
     for (const x of [x0, x1]) for (let k = 1; k < ys.length; k++) link([x, ys[k - 1]], [x, ys[k]]);
   }
   for (const [a, b] of crossings) link(a, b);
-  // up Najd Av's west side from the corner of the mosque's block, over North St and the main line to Sahel Motors
+  // up Najd Av's west side from the corner of City Hall's block, over North St and the main line to Sahel Motors
   link([631.4, 21.6], [631.4, 4.4]); link([631.4, 4.4], [MOTORS.walk, -6]); link([MOTORS.walk, -6], [MOTORS.walk, MOTORS.door]);
   const px = [...promXs].sort((p, q) => p - q); for (let k = 1; k < px.length; k++) link([px[k - 1], PROM], [px[k], PROM]);
   // the jetty and its fingers
@@ -74,14 +74,14 @@ const CPED = (() => {
 })();
 export const cityRoute = (a: number[], b: number[]) => dedupe([a, ...CPED.route(CPED.at(a[0], a[1]), CPED.at(b[0], b[1])), b]);
 
-// places to come from and go to. Indoor ones (offices, flats, the hotel, the mall, the mosque) take people in; the
+// places to come from and go to. Indoor ones (offices, flats, the hotel, the mall, City Hall) take people in; the
 // rest keep them a while.
 type Portal = { kind: string, name: string, p: number[], w: number, seat?: boolean };
 export const CITY_PORTALS: Portal[] = [];
 export const cportal = (kind: string, name: string, p: number[], w = 1) => { const q = { kind, name, p, w }; CITY_PORTALS.push(q); return q; };
 for (const [n, p] of [['the green belt', [524, 200]], ['the promenade west', [524, PROM]], ['the east of the boulevard', [958, 113.4]], ['the east of the boulevard', [958, 148.6]]] as [string, number[]][])
   cportal('edge', n, p, 1.5);
-const KIND: Record<string, string> = { Offices:'office', Flats:'home', Hotel:'hotel', 'Shopping centre':'mall', Mosque:'mosque', Library:'library', Park:'park' };
+const KIND: Record<string, string> = { Offices:'office', Flats:'home', Hotel:'hotel', 'Shopping centre':'mall', 'City hall':'office', Library:'library', Park:'park' };
 for (const b of BUILDINGS) {
   const k = Object.entries(KIND).find(([n]) => b.kind.startsWith(n))?.[1]; if (!k) continue;
   const [x0, x1, , y1] = b.box;
@@ -91,13 +91,10 @@ for (const fy of MARINA.fingers) for (const x of [578, 622]) cportal('marina', '
 cportal('motors', 'Sahel Motors', [MOTORS.walk, MOTORS.door], 1);
 for (const x of [530, 552, 574]) cportal('beach', 'the beach', [x, 287], 0.7);
 const OUTDOORS = ['park', 'beach', 'marina'];
-// the times of prayer, roughly, as the town's clock keeps them
-export const PRAYERS: [string, number][] = [['Fajr', 4.75], ['Dhuhr', 12.0], ['Asr', 15.35], ['Maghrib', 18.1], ['Isha', 19.6]];
-export const prayerNow = () => { const h = hourAt(sim.t); return PRAYERS.find(([, t]) => h >= t - 0.25 && h < t + 0.4); };
 export function nextCity(from: Portal | null, avoid?: string) {
   const h = hourAt(sim.t), n = night() > 0.5, pool = CITY_PORTALS.filter(q => q !== from && q.kind !== avoid);
-  const work = h > 7.5 && h < 18.5, mallOpen = h >= 10 && h < 23, pray = !!prayerNow();
-  const wt = (q: Portal) => q.w * ({ office:work ? 2.2 : 0.2, home:n ? 3 : 1, hotel:1, mall:mallOpen ? 2 : 0, mosque:pray ? 5 : 0.3, library:h > 8 && h < 22 ? 0.8 : 0,
+  const work = h > 7.5 && h < 18.5, mallOpen = h >= 10 && h < 23;
+  const wt = (q: Portal) => q.w * ({ office:work ? 2.2 : 0.2, home:n ? 3 : 1, hotel:1, mall:mallOpen ? 2 : 0, library:h > 8 && h < 22 ? 0.8 : 0,
     park:n ? 0.15 : 1.4, beach:n ? 0.05 : 1.2, marina:n ? 0.2 : 1.0, edge:1, metro:n ? 0.6 : 1.6, brt:n ? 0.3 : 1.2, motors:h >= 9 && h < 21.5 ? 6 : 0 } as Record<string, number>)[q.kind] * (hooks.raining() && OUTDOORS.includes(q.kind) ? 0.08 : 1);
   let r = rng() * pool.reduce((s, q) => s + wt(q), 0);
   for (const q of pool) if ((r -= wt(q)) <= 0) return q;
@@ -145,8 +142,7 @@ function statusOf(b: any) {
   if (b.kind.startsWith('Flats')) return lit ? 'most lights on' : 'quiet';
   if (b.kind.startsWith('Hotel')) return lit ? 'lights on · evening' : 'guests out';
   if (b.kind.startsWith('Shopping')) return h >= 10 && h < 23 ? 'open' : 'closed';
-  if (b.kind === 'Mosque') { const p = prayerNow(); if (p) return `${p[0]} prayer`;
-    const nx = PRAYERS.find(([, t]) => t > h) ?? PRAYERS[0]; return `next prayer · ${nx[0]} at ${String(Math.floor(nx[1])).padStart(2, '0')}:${String(Math.round(nx[1] % 1 * 60)).padStart(2, '0')}`; }
+  if (b.kind === 'City hall') return h >= 8 && h < 16 ? 'open · counters busy' : lit ? 'closed · the colonnade lit' : 'closed';
   if (b.kind === 'Library') return h >= 8 && h < 22 ? 'open' : 'closed';
   if (b.kind === 'Park') return h > 5 && h < 24 ? 'open' : 'closed';
   return 'open';

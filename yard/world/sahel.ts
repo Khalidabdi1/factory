@@ -37,10 +37,9 @@ export function cityLamp(p: Part, x: number, y: number, double = false, ax = 0, 
   }
 }
 // a date palm: straighter and taller than the seafront's, a heavier crown of fronds
-export function datePalm(p: Part, x: number, y: number, s = 1, z = CURB) {
+export function datePalm(p: Part, x: number, y: number, s = 1, z = CURB, a0 = rand(0, 1)) {
   const top = W(x, y, z + 7.2 * s);
   p.geo(new THREE.CylinderGeometry(0.2, 0.3, 7.2 * s, 7), new THREE.Matrix4().compose(W(x, y, z + 3.6 * s), new THREE.Quaternion(), v3(1, 1, 1)));
-  const a0 = rand(0, 1);
   for (let i = 0; i < 9; i++) { const a = a0 + i / 9 * Math.PI * 2, c = Math.cos(a), d = Math.sin(a), up = i % 2 ? 0.5 : 0.2;
     const m = top.clone().add(v3(c * 1.6 * s, up * s, d * 1.6 * s)), e = top.clone().add(v3(c * 3.0 * s, (up - 1.2) * s, d * 3.0 * s));
     p.seg('line', top, m).seg('line', m, e); }

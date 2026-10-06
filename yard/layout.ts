@@ -86,7 +86,7 @@ const CB = (() => { const c = [[547, 633], [647, 753], [767, 873]], r = [[20, 11
 // mole of rocks round the basin
 export const MARINA = { x0:566, x1:636, jetty:[597.5, 602.5], fingers:[302, 312, 322], deck:1.15, mole:334 };
 // the Metrobus: its route along the busways, turning back at Gate Av and at the east edge; its stops on the median
-export const BRT = { west:540, east:972, stops:[[592, 'Al Noor Mosque'], [704, 'Sahel Central'], [818, 'Financial District'], [930, 'Sahel Tower']] as [number, string][], len:18.2 };
+export const BRT = { west:540, east:972, stops:[[592, 'City Hall'], [704, 'Sahel Central'], [818, 'Financial District'], [930, 'Sahel Tower']] as [number, string][], len:18.2 };
 export const BRT_STOPS = BRT.stops.map(s => s[0]);
 // Sahel Metro: two lines on viaducts, driverless four-car trains, island platforms behind glass between the tracks.
 // Line 1 runs east along y 205 from Market St, at the old town's end of Market St, through Sahel Central to Port; Line 2

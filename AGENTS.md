@@ -164,7 +164,7 @@ The roadmap agreed in October 2026 is done. The full plan is in the owner's `~/.
 ## Sahel (October 2026, after the roadmap)
 
 - Phase 13: the plate widened to `WORLD`; woods round both towns (`yard/world/woods.ts`), hills along the whole north edge with terraces (`range.ts`).
-- Phase 14: Sahel (`yard/world/sahel.ts`, `towers.ts`; `yard/sim/sahel.ts`). Its pavements are their own graph (`CPED`), its people `Citizen`s choosing places with `nextCity` (weights by the hour, the times of prayer, rain). Through traffic runs between the towns via the roundabout's east arm.
+- Phase 14: Sahel (`yard/world/sahel.ts`, `towers.ts`; `yard/sim/sahel.ts`). Its pavements are their own graph (`CPED`), its people `Citizen`s choosing places with `nextCity` (weights by the hour and the rain). Through traffic runs between the towns via the roundabout's east arm.
 - Phase 15: Sahel Metro (`METRO` in `layout.ts`; `world/metro.ts`, `world/central.ts`, `sim/metro.ts`). A line's frame is (u along, v across, z); island platforms with screen doors; riders get their own height (`lz`) on escalators and platforms and are hidden only up there when a station is shut (`peek.hides`). Stations open when the camera comes in close (`peek.near`). A selection that turns into something else (a rider boarding) is kept with `hooks.handOff`.
   - Sahel Central follows Riyadh's KAFD station: `section(x)` and `shellAt(x, θ)` give the shell, its ribbons are paired waves along x (`WAVES`, `phase`), and `lattice(x, q)` says where the net is open. Line 2's platform there is u 168–226.
 - Phase 16: the Metrobus (`sim/brt.ts`, `world/brt.ts`, `models/brt.ts`): articulated buses on one closed path round the busways, pushed into `sim.trucks`.

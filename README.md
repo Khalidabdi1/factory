@@ -51,7 +51,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Railway** | One track along the foot of the hills, with a loop through the Plant 01 yard and its loading platform |
 | **Coast** | Coast Rd, the promenade, the beach, the town pier, Sunset Pier with its rides, and a breakwater with a lighthouse. A sailboat, a motorboat and the fishing boat Kestrel are out at sea. |
 | **Woods** | A strip of woods west of the old town, a green belt between the two towns with footpaths through it, and another strip east of Sahel; pines up the hills |
-| **Sahel** | The new city: four avenues (Gate, Najd, Tower and Port Av), North St, Sahel Blvd with a busway down its middle, Souq St and the Corniche. Skyscrapers in the Financial District (Sahel Tower, Sahel Arch, the Globe and more), Al Noor Mosque, Souq Sahel mall, the library, flats and hotels, Wadi Park, and Sahel Marina with its yachts. |
+| **Sahel** | The new city: four avenues (Gate, Najd, Tower and Port Av), North St, Sahel Blvd with a busway down its middle, Souq St and the Corniche. Skyscrapers in the Financial District (Sahel Tower, Sahel Arch, the Globe and more), City Hall behind its colonnade, Souq Sahel mall, the library, flats and hotels, Wadi Park, and Sahel Marina with its yachts. |
 | **Sahel Metro** | Two lines on viaducts, after Riyadh's: Line 1 from Market St in the old town through Sahel Central to Port, Line 2 from Motor District down to Sahel Central. Sahel Central, after the King Abdullah Financial District station, is a long row of white lobes woven with ribbons and eyes of lattice that glow at night. |
 | **Sahel Motors** | Car Works' showroom on a terrace at the foot of the hills: twin glass car towers, a glass hall with cars on show, a test track, and a level crossing over the main line down to Najd Av |
 | **Port** | Sahel Container Terminal, east of the marina: a quay with three ship-to-shore cranes, a yard of stacked boxes with three gantry cranes, a gate, a control tower, reefer racks, and a breakwater with a light at each end |
@@ -108,7 +108,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - They make up the hose, the household goes back in, and ENG-1 drives home and backs into its bay while the traffic waits.
     - The house's card shows the fire and has a Track ENG-1 button. The station's card shows the watch and the last call.
 
-17. **Sahel's streets:** cars come through from the old town along Riverside Rd and down Sahel Blvd, and loop round the city's blocks. People walk between the towers, the flats, the mall, the park, the beach and the marina, and to the mosque at the times of prayer.
+17. **Sahel's streets:** cars come through from the old town along Riverside Rd and down Sahel Blvd, and loop round the city's blocks. People walk between the towers, the flats, the mall, the park, the beach and the marina, and to City Hall in office hours.
 18. **Sahel Metro:**
     - Driverless four-car trains run both lines, stop behind platform screen doors, and turn back at the ends over crossovers.
     - People ride up the escalators, through the gates, wait on the island and board, and change lines at Sahel Central. Follow one and the camera goes with them onto the train.

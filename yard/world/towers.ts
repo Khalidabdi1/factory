@@ -139,43 +139,41 @@ function midRise(p: Part, x: number, y: number, w: number, d: number, h: number,
   roof(p, x, y, w, d, Z + h, { plant:w > 18 });
 }
 
-// ---- the mosque: a prayer hall under a dome on a drum, an arcaded court before it, a minaret at the corner ----
-function mosque(p: Part, x: number, y: number) {
-  const hx = x + 4, hy = y + 6, hw = 34, hd = 24, hh = 9, cx = hx + hw / 2, cy = hy + hd / 2;
-  p.box(hx, hy, Z, hw, hd, hh);
-  // pointed arches along the hall's south and east walls, lit inside after dark
-  const arch = (M: M4, u: number, v: number, aw: number, ah: number) => {
-    const r = aw / 2, segs: number[] = [u, v + ah, u, v + r, u + aw, v + ah, u + aw, v + r];
-    for (let k = 0; k < 6; k++) { const t0 = k / 6, t1 = (k + 1) / 6; const pt = (t: number, sd: number) => [u + r + sd * r * Math.cos(t * Math.PI / 2), v + r - r * Math.sin(t * Math.PI / 2) * 1.25];
-      for (const sd of [-1, 1]) { const [a1, b1] = pt(t0, sd), [a2, b2] = pt(t1, sd); segs.push(a1, b1, a2, b2); } }
-    p.fill2(M, u, v + r, aw, ah - r, 'window', 0.03).draw(M, segs, 'line', 0.04);
-  };
-  for (const [M, fw] of faces(hx, hy, hw, hd, Z, hh)) for (let u = 1.6; u < fw - 2.4; u += 3.6) arch(M, u, 2.2, 2.0, 5.6);
-  p.box(hx - 0.3, hy - 0.3, Z + hh, hw + 0.6, hd + 0.6, 0.5);
-  // the drum and the dome, a finial and crescent on top
-  p.cylZ(cx, cy, Z + hh, 7.2, 3.2, 20);
-  for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; if (Math.cos(a) + Math.sin(a) > -0.3) p.box(cx + 7.25 * Math.cos(a) - 0.4, cy + 7.25 * Math.sin(a) - 0.4, Z + hh + 1.0, 0.8, 0.8, 1.6, 'w'); }
-  p.geo(new THREE.SphereGeometry(7.4, 18, 7, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.Matrix4().compose(W(cx, cy, Z + hh + 3.2), new THREE.Quaternion(), v3(1, 1, 1)), 'n');
-  p.seg('line', W(cx, cy, Z + hh + 10.6), W(cx, cy, Z + hh + 13.4));
-  for (let k = 0; k < 8; k++) { const a0 = 0.7 + k / 8 * 4.9, a1 = 0.7 + (k + 1) / 8 * 4.9, zc = Z + hh + 14.0;   // the crescent
-    p.seg('line', W(cx + 0.6 * Math.cos(a0), cy, zc + 0.6 * Math.sin(a0)), W(cx + 0.6 * Math.cos(a1), cy, zc + 0.6 * Math.sin(a1))); }
-  // small domes at the hall's corners
-  for (const [a, b] of [[hx + 3, hy + 3], [hx + hw - 3, hy + 3], [hx + 3, hy + hd - 3], [hx + hw - 3, hy + hd - 3]])
-    p.geo(new THREE.SphereGeometry(2.2, 10, 4, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.Matrix4().compose(W(a, b, Z + hh + 0.5), new THREE.Quaternion(), v3(1, 1, 1)), 'n');
-  // the court: paved, a fountain for ablutions, arcades down its east and west sides, a gate in its south wall
-  const cy0 = hy + hd, cy1 = y + 42;
-  p.fill2(TOP(hx, cy0, Z), 0, 0, hw, cy1 - cy0, 'deck', 0.02);
-  for (let u = 2; u < hw; u += 2) p.draw(TOP(hx, cy0, Z), [u, 0, u, cy1 - cy0], 'detail', 0.03);
-  p.cylZ(cx, (cy0 + cy1) / 2, Z, 2.0, 0.6, 12).cylZ(cx, (cy0 + cy1) / 2, Z + 0.6, 0.5, 0.8, 8, 'k');
-  for (const ax of [hx, hx + hw - 3]) { p.box(ax, cy0, Z + 4.2, 3, cy1 - cy0, 0.4); for (let v = cy0 + 0.5; v < cy1; v += 2.4) p.box(ax + 2.6, v, Z, 0.3, 0.3, 4.2); }
-  p.box(hx, cy1 - 0.4, Z, 12, 0.4, 3.2).box(hx + hw - 12, cy1 - 0.4, Z, 12, 0.4, 3.2).box(cx - 2.5, cy1 - 0.6, Z + 3.2, 5, 0.8, 1.6);
-  // the minaret: a square base, an eight-sided shaft, a balcony, a slimmer shaft, a lantern and a little dome
-  const mx = hx + hw + 2.5, my = hy + 2.5;   // at the hall's north-east corner, clear of the dome as seen from the street
-  p.box(mx - 2, my - 2, Z, 4, 4, 11).cylZ(mx, my, Z + 11, 1.6, 16, 8).cylZ(mx, my, Z + 27, 2.3, 0.5, 12, 'k').cylZ(mx, my, Z + 27.5, 1.2, 5, 8);
-  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; p.seg('line', W(mx + 2.2 * Math.cos(a), my + 2.2 * Math.sin(a), Z + 27.5), W(mx + 2.2 * Math.cos(a), my + 2.2 * Math.sin(a), Z + 28.4)); }
-  p.box(mx - 0.9, my - 0.9, Z + 32.5, 1.8, 1.8, 1.6, 'w');
-  p.geo(new THREE.SphereGeometry(1.1, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.Matrix4().compose(W(mx, my, Z + 34.1), new THREE.Quaternion(), v3(1, 1, 1)), 'n');
-  p.seg('line', W(mx, my, Z + 35.2), W(mx, my, Z + 37.4));
+// ---- City Hall: a hall behind a colonnade under one deep flat roof, on a plinth over a forecourt with a long pool ----
+function cityHall(p: Part, x: number, y: number) {
+  const px = x + 2, py = y + 2, pw = 38, pd = 24, ph = 0.9, z0 = Z + ph, hh = 11;
+  // the plinth, and two steps down to the forecourt along its south side
+  p.box(px, py, Z, pw, pd, ph);
+  for (let k = 0; k < 2; k++) p.box(px + 6, py + pd + k * 0.6, Z, pw - 12, 0.6, ph - (k + 1) * 0.3);
+  // the hall, set back behind the colonnade: tall slit windows, some lit after dark, a band of little triangles under
+  // the roof (an old Najd motif), glass doors in the middle of the south front
+  const hx = px + 3, hy = py + 2, hw = pw - 6, hd = pd - 6;
+  p.box(hx, hy, z0, hw, hd, hh);
+  for (const [M, fw] of faces(hx, hy, hw, hd, z0, hh)) {
+    const tri: number[] = []; for (let u = 0.4; u < fw - 1.0; u += 1.2) tri.push(u, 1.5, u + 0.5, 0.7, u + 0.5, 0.7, u + 1.0, 1.5);
+    p.draw(M, tri, 'detail', 0.04);
+    for (let u = 1.4, i = 0; u < fw - 1.6; u += 2.4, i++) { if (fw === hw && Math.abs(u + 0.45 - fw / 2) < 4) continue;
+      p.fill2(M, u, 2.4, 0.9, hh - 3.4, i % 3 === 1 ? 'glass' : 'window', 0.03).rect2(M, u, 2.4, 0.9, hh - 3.4, 'line', 0.035); }
+  }
+  const D = FRONT(hx, hy + hd, z0 + hh);
+  p.fill2(D, hw / 2 - 3, hh - 4.6, 6, 4.6, 'window', 0.03).draw(D, [hw / 2 - 3, hh - 4.6, hw / 2 + 3, hh - 4.6, hw / 2, hh - 4.6, hw / 2, hh, hw / 2 - 3, hh - 4.6, hw / 2 - 3, hh, hw / 2 + 3, hh - 4.6, hw / 2 + 3, hh], 'line', 0.035);
+  // the colonnade along the south and east sides, and the roof slab it holds out over them, its edge lit at night
+  for (let k = 0; k <= 12; k++) p.box(px + 0.6 + k * (pw - 1.7) / 12, py + pd - 1.1, z0, 0.5, 0.5, hh);
+  for (let k = 0; k < 7; k++) p.box(px + pw - 1.1, py + 0.6 + k * (pd - 1.7) / 7, z0, 0.5, 0.5, hh);
+  const rx = px - 1.5, ry = py - 1.5, rw = pw + 3, rd = pd + 3, rz = z0 + hh;
+  p.box(rx, ry, rz, rw, rd, 1.1);
+  p.box(rx, ry + rd - 0.1, rz - 0.12, rw, 0.12, 0.12, 'l', { lines:false }).box(rx + rw - 0.1, ry, rz - 0.12, 0.12, rd, 0.12, 'l', { lines:false });
+  p.text(FRONT(rx, ry + rd, rz + 1.1), 'SAHEL CITY HALL', rw / 2, 0.85, 0.62, 'ink', 'middle', 0.05);
+  roof(p, rx, ry, rw, rd, rz + 1.1);
+  // the forecourt down to Souq St: paving, a long pool with a rim, benches beside it, a palm at each corner
+  const T = TOP(0, 0, Z), fy0 = py + pd + 1.2, fy1 = y + 42, fx0 = x, fx1 = x + 42;
+  p.fill2(T, fx0, fy0, fx1 - fx0, fy1 - fy0, 'deck', 0.02);
+  const pave: number[] = []; for (let u = fx0 + 2.4; u < fx1; u += 2.4) pave.push(u, fy0, u, fy1); p.draw(T, pave, 'detail', 0.025);
+  const qy = (fy0 + fy1) / 2;
+  p.box(x + 11, qy - 1.9, Z, 20, 3.8, 0.35);
+  p.fill2(TOP(0, 0, Z + 0.36), x + 11.4, qy - 1.5, 19.2, 3.0, 'sea', 0.02).rect2(TOP(0, 0, Z + 0.36), x + 11.4, qy - 1.5, 19.2, 3.0, 'line', 0.03);
+  for (const bx of [x + 13, x + 25]) for (const by of [qy - 3.4, qy + 2.8]) p.box(bx, by, Z, 3, 0.6, 0.45);
+  for (const [a, b, t] of [[x + 5, qy - 3, 0.2], [x + 37, qy - 3, 0.5], [x + 5, qy + 3.5, 0.7], [x + 37, qy + 3.5, 0.9]]) datePalm(p, a, b, 0.95, Z, t);
 }
 
 // ---- Souq Sahel, the mall: two floors under a glass barrel vault, its name over the doors on Souq St ----
@@ -245,8 +243,9 @@ export function buildSahelBuildings() {
   flatsTower(p, 936, 14, 18, 36, 54);
   add('North Gate Flats', 'Flats · 17 floors', [936, 954, 14, 50, 54], [['Flats', '102'], ['Street', 'Port Av']]);
   // ---- between the boulevard and Souq St ----
-  mosque(p, 548, 150);
-  add('Al Noor Mosque', 'Mosque', [552, 594, 156, 192, 37], [['Minaret', '37 m'], ['Dome', '15 m across'], ['Prayer hall', 'for 900'], ['Street', 'Gate Av']]);
+  cityHall(p, 550, 150);
+  add('Sahel City Hall', 'City hall', [550, 592, 150, 192, 15], [['Inside', 'the council chamber, and counters for permits, licences and records'], ['Hours', '08:00–16:00'],
+    ['The roof', 'one flat slab held out over a colonnade, for shade'], ['Street', 'Souq St']]);
   mall(p, 708, 152, 44, 42);
   add('Souq Sahel', 'Shopping centre', [708, 752, 152, 194, 19], [['Shops', '140 on two floors'], ['Hours', '10:00–23:00'], ['Under the vault', 'a food court'], ['Street', 'Souq St']]);
   midRise(p, 772, 152, 96, 18, 11);
