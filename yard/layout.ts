@@ -17,6 +17,8 @@ import { scene } from './shared';
 // docks           | 232 / 276      | 80         | flatbeds unload here, forklifts work from the north
 // shop            | 377.5–409.5    | 231–249    | Corner Market at Coast Rd and Hill Av: forecourt y 249–255.6, a lay-by y 255.6–260 (x 378–413,
 //                 |                |            | entered from Hill Av), seafront bays y 274–276.6 (x 374–409) across the road, a zebra at x 399;
+// car works       | 216–400        | −46 – −20  | a hall on a terrace cut into the foothills (x 209–407, y −52 – −4); the line runs east along
+//                 |                |            | y −31 through press, body, paint, assembly and end-of-line shops; the lot y −15.3 – −11, x 320–390
 // fire station    | 360–400        | 94–112     | engine hall x 360–378 (bays at x 365 and 374, doors on Riverside Rd), crew wing x 378–400,
 //                 |                |            | drill tower x 394–400 y 94–99; apron y 112–124 before the bays, crew parking x 380–393
 // avenues         | 60·180·300·420 | 138–274    | Park, Mill, Harbour and Hill Av, 14 wide; southbound lane x − 3.5, northbound x + 3.5
@@ -49,6 +51,14 @@ export const SHELF = []; for (const [y, sy] of [[98.4, 100.6], [103.6, 105.8]]) 
 export const STOCK_CAP = 12, BOXES = 4;
 export const SHOP = { in:sx(378, 109.6), out:sx(378, 114.2), counter:sx(387, 111), stockStand:sx(364.8, 100.6), front:[393.5, 254.6], zebra:399 };
 export const ZEBRA_X = 394.5;
+// Car Works. The line runs east along ly; a station every few metres (x, name, shop). A finished car leaves by the
+// door at exit and parks nose-in on the lot, the first space at lot.x0 and each next one a pitch further west.
+export const WORKS = { x0:216, x1:400, y0:-46, y1:-20, h:10, ly:-31, terrace:[209, 407, -52, -4], exit:[393, -20],
+  shops:[['press', 'Press shop', 216, 247], ['body', 'Body shop', 247, 292], ['paint', 'Paint shop', 292, 322], ['assembly', 'Assembly', 322, 367], ['eol', 'End of line', 367, 400]],
+  stations:[[224, 'blanking'], [233, 'tandem press'], [242, 'panel racks'], [251, 'underbody welding'], [260, 'framing'], [269, 'respot welding'], [278, 'doors and lids'],
+    [287, 'metal finish'], [297, 'pretreatment dip'], [307, 'paint booth'], [317, 'curing oven'], [327, 'trim'], [336, 'marriage'], [345, 'wheels'], [354, 'glazing'],
+    [363, 'seats'], [371, 'fluids and first start'], [378, 'lights test'], [385, 'rolling road'], [392, 'quality check']],
+  lot:{ x0:388, pitch:2.7, n:26, front:-15.3, aisle:-8.6 } };
 // Riverside Fire Station. ENG-1 stands nose out in bay 1 (front at park); it drives out forward and comes home by
 // stopping in the westbound lane past the bay and backing in along reverse (the path its rear end takes).
 export const STATION = { x0:360, x1:400, y0:94, y1:112, hall:378, bays:[365, 374], park:[365, 110.6], reverse:[[359, 127.5], [365, 127.5], [365, 101]] };

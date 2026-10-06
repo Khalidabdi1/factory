@@ -45,6 +45,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Warehouse** | Warehouse 01 with racks and a loading lane, two docks, a sliding gate and its guard |
 | **Shop** | Corner Market on the seafront, where Hill Av meets Coast Rd: its delivery lay-by, a zebra crossing, and parking bays across the road on the promenade |
 | **Town** | Four kinds of block:<ul><li>flats, Harbour Bank and Café Mira</li><li>the police station and Town Hall, whose clock tells the simulated time</li><li>houses with gardens</li><li>villas with pools</li></ul>Mill Park lies on the west side. Riverside Fire Station stands on Riverside Rd by the roundabout, with ENG-1 in its bay. |
+| **Car Works** | A car factory on a terrace cut into the hills behind the warehouse, its lot of finished cars in front. Inside, one line runs through a press shop, a body shop of welding robots, a paint shop, assembly and the end-of-line tests. |
 | **Coast** | Coast Rd, the promenade, the beach, the pier, and a breakwater with a lighthouse, with a sailboat and a motorboat out at sea |
 
 ## What moves
@@ -70,7 +71,13 @@ The engine runs once per page load. React draws the plate, and the engine drives
    - Now and then a man in a dark hood gets off near the park and walks to Harbour Bank. He forces the door, and the alarm goes off.
    - Both police cars leave the yard with their lights flashing. Officers get out and chase him on foot.
    - Usually they make an arrest and walk him to the car. If he reaches the end of the promenade first, he gets away.
-9. **Chimney fires:**
+9. **Car Works:**
+   - Every 14 s the line moves on one station. Steel blanks come off the coils and are pressed into panels. Robots weld the underbody, frame the sides, respot the shell and hang the doors.
+   - The body is dipped and painted chalk white or slate. In assembly it rides a hanger, the powertrain rises into it, and robots fit the wheels and glass.
+   - At the end of the line come the fluids, a lights test, a rolling road and the light tunnel. Then the car drives out to the lot.
+   - Click any car on the line to see its VIN, model, colour, station and how far built it is, with the rest of its way dashed. The factory's card has a Follow a new car button, which follows one from the press shop all the way to the lot.
+   - A full lot stops the line until the train takes cars away.
+10. **Chimney fires:**
    - Every so often a chimney catches. Smoke and flames rise from the stack, and whoever is home comes out onto the pavement.
    - A neighbour calls it in. The bell goes at Riverside Fire Station, the bay door rolls up, the watch runs to ENG-1, and it drives out with its lights flashing.
    - At the kerb the officer takes the gate and the driver the pump, while two firefighters run a hose up the garden path and put a jet on the chimney until it is out.
@@ -86,7 +93,7 @@ Each stage only runs as fast as the next one lets it:
 
 | Action | Mouse / touch | Keys |
 | --- | --- | --- |
-| Go to a place | Factory · Warehouse · Shop · Town · Coast, top right | `1`–`5` |
+| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works, top right | `1`–`6` |
 | Whole map | ⌂ button | `0` |
 | Skip ahead six hours | clock button | `N` |
 | Pan | drag | arrow keys |
@@ -101,7 +108,7 @@ When something that moves is selected, the map draws its route as a dashed line 
 - Trucks and the bus show their whole loop.
 - Cars, forklifts and people show the way ahead.
 
-The warehouse, the shop, the bank, the fire station and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in.
+The warehouse, the shop, the bank, the fire station, Car Works and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in.
 
 ## How the skill carries over to WebGL
 
@@ -126,7 +133,7 @@ three.js and the font are bundled with the site, so it runs without loading anyt
   - `look(x, y, zoom)` and `view(i)` move the camera.
   - `all()` lists everything.
   - `fire(id)` starts a chimney fire now, at that house or any house.
-  - The `incident`, `sim`, `shop`, `bank` and `fireSys` state are there too.
+  - The `incident`, `sim`, `shop`, `bank`, `fireSys` and `worksSys` state are there too.
 - `?seed=<number>` changes the random seed. The simulation runs on a fixed 1/60 s step, so a given seed always plays out the same way.
 
 ## Credits

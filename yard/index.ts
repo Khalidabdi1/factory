@@ -30,6 +30,7 @@ import { buildFair } from './sim/fair';
 import { buildFishing } from './sim/fishing';
 import { weather } from './sim/weather';
 import { buildFireService } from './sim/fire';
+import { buildWorks } from './sim/works';
 import { initView } from './view';
 
 applyTheme();
@@ -123,7 +124,7 @@ portal('home', 'Town Hall', [241, 173.6], { w:1 });
 const lighthouse = entity(buildLighthouse(), { kind:'lighthouse', id:'Harbour Light', pick:[402, 312.9, 6],
   info() { return { kind:'Lighthouse', title:'Harbour Light', status:weather.fog() > 0.3 ? 'beam on · fog signal sounding' : this.beam.visible ? 'beam on · one turn every 7 s' : 'off for the day', rows:[['Height', '14 m'], ['Range', '18 nautical miles'], ['Lit', 'dusk to dawn']] }; } });
 lighthouse.beam = lighthouse.groups[0].getObjectByName('beam');
-const range = entity(rangeG, { kind:'range', id:'Grey Peaks', pick:[228, -40, hillHeight(228, -40)],
+const range = entity(rangeG, { kind:'range', id:'Grey Peaks', pick:[160, -50, hillHeight(160, -50)],
   info() { return { kind:'Hills', title:'Grey Peaks', status:night() > 0.5 ? 'dark against the sky' : 'snow on the tops', rows:[['Highest point', '1,840 m'], ['Snow line', 'about 1,200 m'], ['Woods', 'pine on the lower slopes']] }; } });
 // bus shelters: a back wall behind where people wait, two side panels, a roof, a stop sign
 const shelters = new Part();
@@ -224,6 +225,8 @@ const waves = [0, 1].map(() => { const p = new Part();
   const g = p.build('waves'); scene.add(g); return g; });
 // Riverside Fire Station, ENG-1 and its watch, on the old shop site
 const fireSys = buildFireService();
+// Car Works on its terrace in the hills, its line full and some cars already on the lot
+const worksSys = buildWorks();
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
@@ -245,7 +248,7 @@ sim.step = dt => {
   sim.peds = sim.people.filter(p => onRoad(p.x, p.y));
   for (const p of sim.pallets) p.update(dt);
   for (const b of BOATS) b.update(dt);
-  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt);
+  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt);
   for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
   for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);
@@ -259,4 +262,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, fishingSys, fireSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, fireSys, worksSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

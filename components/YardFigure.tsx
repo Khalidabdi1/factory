@@ -22,6 +22,7 @@ export default function YardFigure() {
           <button data-view="2" title="Shop (3)">Shop</button>
           <button data-view="3" title="Town (4)">Town</button>
           <button data-view="4" title="Coast (5)">Coast</button>
+          <button data-view="5" title="Car Works (6)">Car Works</button>
         </nav>
       </div>
       <div className="stage" id="stage">

@@ -42,7 +42,7 @@ Next 16 (App Router, Turbopack), React 19, TypeScript, and `three@0.186.1` from 
 | `yard/theme.ts` | Token → material mapping, the `NIGHT` palette, `applyTheme()`, and `shade(n)`, the day/night blend. |
 | `yard/layout.ts` | World constants and the coordinate table (where everything is), plus `ROADS` / `BLOCKS`, `onRoad`, `zAt`. |
 | `yard/models/`, `yard/world/` | Builders for moving models and for the static town. |
-| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `fire` (the fire station, ENG-1, its watch, chimney fires), `boats`. |
+| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `fire` (the fire station, ENG-1, its watch, chimney fires), `works` (Car Works' line and lot), `boats`. |
 
 The React component and the engine share a contract: the engine finds the plate's elements **by id**: `clock`, `stage`, `view`, `card`, `cardRows`, `note`, `readout`, `tagSel`, and the rest. React never re-renders the plate. Per-frame UI updates are imperative.
 
@@ -143,10 +143,14 @@ Done:
   - While it backs up, `keepBack` (read by `clearAhead`) holds traffic further off. It reports four points along its rigid body, so traffic sees all of it at an angle.
   - Debug `yard.fire(id)`. A house card gets its fire rows and Track ENG-1 through `hooks.fireFor`.
 
+- Phase 10b: Car Works (`yard/world/works.ts`, `yard/models/works.ts`, `yard/sim/works.ts`, `WORKS` in `layout.ts`).
+  - The hall stands on a terrace: `hillHeight` is flat inside `WORKS.terrace` and eases back up round it; pines keep off it (`onTerrace`).
+  - The line: `WORKS.stations` along `ly`. Every `TAKT` the bodies index together; `MAKES` says what each station turns a body into (blanks → panels → floor → frame → shell → closed → painted → wheels → complete), and `PROTO.body` holds a model per stage.
+  - `ROBOTS` (built with the inside) are animated, with the press ram, the overhead buffer, the marriage lift, the test lamps and the AGVs, only while the hall is open (`works.whileOpen`). Bodies inside are hidden while it is shut.
+  - Finished cars drive to the lot (`exitPts`) and are drawn merged into one part (`carInto`). A selected car stays its own model (`lot.kept`, via `hooks.isSelected`). A space counts as taken once a car sets off for it. A full lot holds the line; `lot.take()` is for the train.
+  - View 6 and the Car Works nav button frame it; its card's Follow a new car tracks the body at the first station.
+
 Next:
-10b. Car Works: a car factory on a terrace cut into the foothills, which you can see inside.
-    - Inside: a press shop, a body-in-white robot welding line (after the owner's reference photo), a paint booth, assembly and an end-of-line test.
-    - Every car on the line can be followed with the camera.
 11. Freight train FRT-7 collecting pallets from Plant 01 and finished cars from Car Works.
 12. README, debug hooks, push to `main`.
 
