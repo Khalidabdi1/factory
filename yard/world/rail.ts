@@ -3,6 +3,7 @@ import { TOP, W } from '../kernel/iso';
 import { Part } from '../kernel/part';
 import { Path } from '../kernel/path';
 import { RAIL, WORLD } from '../layout';
+import { RAIL_PORTAL } from '../land';
 import { lampPost } from './ground';
 
 // The railway: ballast, sleepers and two rails, the length of the plate along the foot of the hills and round the
@@ -25,8 +26,8 @@ export function trackOn(p, path, s0, s1, b0 = s0, b1 = s1) {
 export function buildRail() {
   const p = new Part(), G = TOP(0, 0, 0);
   const track = (path, s0, s1, b0 = s0, b1 = s1) => trackOn(p, path, s0, s1, b0, b1);
-  // the main line, straight along y, and the loop where the route leaves it
-  const main = new Path([[WORLD.x1 + 8, RAIL.y], [WORLD.x0 - 8, RAIL.y]]);
+  // the main line, straight along y from the tunnel under Harrow Ridge, and the loop where the route leaves it
+  const main = new Path([[RAIL_PORTAL + 4, RAIL.y], [WORLD.x0 - 8, RAIL.y]]);
   track(main, 0, main.length);
   // the loop's rails from switch to switch, its bed only from where it has left the main line's
   track(RAIL_PATH, RAIL_PATH.project(214, RAIL.y), RAIL_PATH.project(78, RAIL.y), RAIL_PATH.project(207, RAIL.y + 3.4), RAIL_PATH.project(85, RAIL.y + 3.4));

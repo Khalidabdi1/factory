@@ -3,8 +3,9 @@ import { hooks, noop, scene } from '../shared';
 import { W } from '../kernel/iso';
 import { rand, rng } from '../kernel/math';
 import { Site, dedupe } from '../kernel/graph';
-import { Path } from '../kernel/path';
+import { Path, withHeights } from '../kernel/path';
 import { CITY, CURB, MARINA, MOTORS, RAB, WORLD } from '../layout';
+import { EAST, LANE, ROAD_PTS, offsetLine, roadZ } from '../land';
 import { hourAt, kmh, night, sim } from './core';
 import { Car } from './cars';
 import { Person } from './person';
@@ -16,12 +17,16 @@ import { BUILDINGS, PARK_SEATS, buildSahelBuildings } from '../world/towers';
 const L = CITY.lanes, X0 = WORLD.x0 - 8, X1 = WORLD.x1 + 8;
 
 // Through traffic between the towns: in from the west along Riverside Rd, round the roundabout, out along its east arm
-// and down the boulevard to the east edge; and the other way, giving way at the roundabout to what is already on it.
+// and down the boulevard, then up the Vale Road over Harrow Ridge, across the gorge, down into Millbrook Vale and off the
+// east edge; and the other way, giving way at the roundabout to what is already on it.
 export const boxBusy = (v: any, x0: number, x1: number, y0: number, y1: number) =>
   roadVehicles().some((o: any) => o !== v && !o.parked && o.points.some(([x, y]: number[]) => x > x0 && x < x1 && y > y0 && y < y1));
+const R2 = ROAD_PTS.map(([x, y]) => [x, y]), EAST_E = offsetLine(R2, LANE), EAST_W = offsetLine([...R2].reverse(), LANE);
+const onRoadZ = (x: number, y: number) => x > EAST.x0 ? roadZ(x, y) : 0;
+const [EX, EY] = EAST_W[0];   // where westbound traffic comes in at the east edge
 export const THROUGH = {
-  e:new Path([[X0, 134.5], [404, 134.5], [RAB.x, 143], [438, 134.5], [520, 134.5], [552, L.gE], [X1, L.gE]], 8),
-  w:new Path([[X1, L.gW], [552, L.gW], [520, 127.5], [438, 127.5], [RAB.x, 119], [404, 127.5], [X0, 127.5]], 8),
+  e:withHeights(new Path([[X0, 134.5], [404, 134.5], [RAB.x, 143], [438, 134.5], [520, 134.5], [552, L.gE], [1000, L.gE], ...EAST_E.slice(1), [X1 + 8, EAST_E[EAST_E.length - 1][1]]], 8), onRoadZ),
+  w:withHeights(new Path([[X1 + 8, EY], ...EAST_W.slice(1, -1), [1000, L.gW], [552, L.gW], [520, 127.5], [438, 127.5], [RAB.x, 119], [404, 127.5], [X0, 127.5]], 8), onRoadZ),
   nextW:3,
 };
 const giveWayAtRoundabout = [{ s:THROUGH.w.project(441, 127.5), clear:(v: any) => !boxBusy(v, 423, 441, 129, 146) }];
@@ -172,7 +177,7 @@ export function buildSahel() {
   return { buildings:ents, city, citizens:CITIZENS,
     update(dt: number) {
       const late = night() > 0.5;
-      if ((THROUGH.nextW -= dt) <= 0 && !boxBusy(null, X1 - 14, X1 + 2, L.gW - 3, L.gW + 3)) { throughWest(); THROUGH.nextW = late ? rand(12, 22) : rand(5, 9); }
+      if ((THROUGH.nextW -= dt) <= 0 && !boxBusy(null, EX - 16, EX + 10, EY - 3, EY + 3)) { throughWest(); THROUGH.nextW = late ? rand(16, 28) : rand(8, 13); }
       if ((spawn.t -= dt) <= 0) { spawn.t = rand(1.0, 2.0); if (CITIZENS().length < (late ? 8 : 22)) { const f = startCity(); new Citizen(f, nextCity(f)); } }
       for (const s of SEATS) if (s.by && !sim.people.includes(s.by)) s.by = null;
     } };

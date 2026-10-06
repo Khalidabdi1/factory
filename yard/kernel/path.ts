@@ -1,5 +1,12 @@
 // @ts-nocheck
 
+// a height along a path, from a function of (x, y): looked up every metre, so a car can stand on a road that climbs
+export function withHeights(path, zOf) {
+  const n = Math.ceil(path.length) + 2, t = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const p = path.at(i); t[i] = zOf(p.x, p.y); }
+  path.zs = s => { if (path.closed) s = ((s % path.length) + path.length) % path.length; const i = Math.max(0, Math.min(n - 2, Math.floor(s))), f = Math.max(0, Math.min(1, s - i)); return t[i] + (t[i + 1] - t[i]) * f; };
+  return path;
+}
 // A polyline with filleted corners, walked by arc length. at(s) extrapolates past both ends, or wraps
 // round when the path is a closed loop (start it in the middle of a straight).
 export class Path {
@@ -39,6 +46,18 @@ export class Path {
     if (s <= 0) { const p = this.on(S[0], 0); return { x:p.x + Math.cos(p.h) * s, y:p.y + Math.sin(p.h) * s, h:p.h }; }
     if (s >= this.length) { const g = S[S.length - 1], p = this.on(g, g.len), e = s - this.length; return { x:p.x + Math.cos(p.h) * e, y:p.y + Math.sin(p.h) * e, h:p.h }; }
     for (const g of S) if (s <= g.s + g.len) return this.on(g, s - g.s);
+  }
+  // the distance along it of the point nearest (x, y), worked out leg by leg (for long paths, where project is slow)
+  nearest(x, y) {
+    let best = Infinity, bs = 0;
+    for (const g of this.segs) {
+      let s, px, py;
+      if (g.t === 'L') { const c = Math.cos(g.h), n = Math.sin(g.h), t = Math.max(0, Math.min(g.len, (x - g.ax) * c + (y - g.ay) * n)); s = g.s + t; px = g.ax + c * t; py = g.ay + n * t; }
+      else { const a = Math.atan2(y - g.cy, x - g.cx), f = Math.max(0, Math.min(1, Math.atan2(Math.sin(a - g.a0), Math.cos(a - g.a0)) / g.da)), aa = g.a0 + g.da * f;
+        s = g.s + g.len * f; px = g.cx + g.r * Math.cos(aa); py = g.cy + g.r * Math.sin(aa); }
+      const d = Math.hypot(px - x, py - y); if (d < best) { best = d; bs = s; }
+    }
+    return bs;
   }
   project(x, y) {
     const d = s => { const p = this.at(s); return Math.hypot(p.x - x, p.y - y); };

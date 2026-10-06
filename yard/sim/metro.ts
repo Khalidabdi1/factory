@@ -15,7 +15,7 @@ import { Citizen, cportal, nextCity } from './sahel';
 type Line = typeof METRO.lines[number];
 type V3 = [number, number, number];
 const LEN = METRO.cars * (METRO.car + METRO.gap) - METRO.gap, PITCH = METRO.car + METRO.gap;
-const VMAX = 15, ACC = 0.9, DEC = 1.1;
+const VMAX = 15, VOPEN = 22, ACC = 0.9, DEC = 1.1;
 const stopU = (st: any, dir: number) => dir > 0 ? st.u0 + 1.8 + LEN : st.u0 + 1.8;
 const STYLE: Record<string, string> = { najdi:'walls pierced with Najdi triangles that glow at night', fins:'glass behind a screen of fins, a pleated roof', louvre:'glass behind louvres, a shallow vault for a roof',
   central:'a row of white lobes after KAFD station: lenses of diamond lattice, braided ribbons, lit after dark' };
@@ -81,8 +81,9 @@ export class MetroTrain {
     this.points = [];
     for (let i = 0; i < METRO.cars; i++) {
       const uf = this.s - this.dir * i * PITCH, ur = uf - this.dir * METRO.car;
-      const a = F.at(uf, this.vAt(uf)), b = F.at(ur, this.vAt(ur)), h = Math.atan2(a[1] - b[1], a[0] - b[0]);
-      for (const g of [this.cars[i], this.lites[i]]) pose(g, a[0], a[1], h, zr);
+      const a = F.at(uf, this.vAt(uf)), b = F.at(ur, this.vAt(ur)), h = Math.atan2(a[1] - b[1], a[0] - b[0]), pitch = Math.atan2(a[2] - b[2], METRO.car);
+      // out in the country the deck climbs and falls: each car stands at its front's height, tilted to its rear's
+      for (const g of [this.cars[i], this.lites[i]]) { pose(g, a[0], a[1], h, zr + a[2]); g.rotation.z = pitch; }
       this.cars[i].visible = !far; this.lites[i].visible = far;
       if (i === 0) this.front = { x:a[0], y:a[1], h };
       this.points.push([a[0], a[1]], [b[0], b[1]]);
@@ -107,7 +108,9 @@ export class MetroTrain {
       const hold = this.holdPoint(); if (hold !== null) room = Math.min(room, (hold - this.s) * this.dir);
       for (const o of TRAINS) if (o !== this && o.line === this.line && o.dir === this.dir && (o.s - this.s) * this.dir > 0) room = Math.min(room, (o.s - this.s) * this.dir - LEN - 40);
       this.state = hold !== null && room < 1 ? 'hold' : 'run';
-      const vmax = this.xover || Math.abs(this.vAt(this.s)) > METRO.track + 0.2 ? 9 : VMAX;
+      // slow over crossovers and alongside platforms; faster on the open line out to Millbrook
+      const L = this.line as any, open = L.ext && this.s > L.ext.u0 + 30 && this.s < L.xovers[L.xovers.length - 1][0] - 30;
+      const vmax = this.xover || Math.abs(this.vAt(this.s)) > METRO.track + 0.2 ? 9 : open ? VOPEN : VMAX;
       const vT = Math.min(vmax, Math.sqrt(2 * DEC * Math.max(0, room)));
       this.v = vT < this.v ? Math.max(vT, this.v - DEC * 1.6 * dt) : Math.min(vT, this.v + ACC * dt);
       this.s += this.dir * this.v * dt;
@@ -263,6 +266,10 @@ export class Rider extends Person {
   // back on the street: a walker in the old town, one of Sahel's people in Sahel
   outside(st: MetroStation, e: Entry) {
     const from = { kind:'metro', name:`${st.id} station`, p:[e.ground[0], e.ground[1]], w:1 }, o = { id:this.id, look:this.look };
+    // out at Millbrook the village takes them (or, without one, they walk off down the valley)
+    if (st.id === 'Millbrook') { const p = hooks.villageArrive?.(from, o) ?? new Person({ look:this.look, id:this.id, x:this.x, y:this.y, speed:this.speed });
+      if (!hooks.villageArrive) p.walk([[this.x + 6, this.y + 16], [this.x + 14 + rng() * 20, this.y + 60]], 'walking into the village').then((q: Person) => q.remove());
+      hooks.handOff(this, p); this.remove(); return; }
     const p = st.id === 'Market St' ? new Walker(from, nextPortal(from, 'metro'), o) : new Citizen(from as any, nextCity(from as any, 'metro'), o);
     hooks.handOff(this, p); this.remove();
   }
@@ -280,7 +287,9 @@ function nearest<T>(list: T[], p: number[], get: (q: T) => number[]) { return li
 hooks.metroVisit = (p: any, otherwise: () => void) => {
   if (RIDERS().length >= riderCap || p.dog || p.jog) { otherwise(); return; }   // no dogs on the metro; joggers run on
   const st = Object.values(STATIONS).reduce((b, s) => { const d = (q: MetroStation) => Math.min(...q.entries.map(e => Math.hypot(e.ground[0] - p.x, e.ground[1] - p.y))); return d(s) < d(b) ? s : b; });
-  const dests: [string, number][] = st.id === 'Market St' ? [['Sahel Central', 5], ['Port', 2.5], ['Motor District', 2]] : [['Market St', 5], ...Object.keys(STATIONS).filter(k => k !== st.id && k !== 'Market St').map(k => [k, 2] as [string, number])];
+  const dests: [string, number][] = st.id === 'Market St' ? [['Sahel Central', 5], ['Port', 2.5], ['Motor District', 2], ['Millbrook', 1]]
+    : st.id === 'Millbrook' ? [['Sahel Central', 5], ['Market St', 3], ['Port', 2], ['Motor District', 1.5]]
+    : [['Market St', 5], ...Object.keys(STATIONS).filter(k => k !== st.id && k !== 'Market St').map(k => [k, k === 'Millbrook' ? 1 : 2] as [string, number])];
   let r = rng() * dests.reduce((s, d) => s + d[1], 0), to = dests[0][0]; for (const [k, w] of dests) if ((r -= w) <= 0) { to = k; break; }
   const rider = new Rider({ id:p.id, look:p.look, x:p.x, y:p.y, h:p.h, hops:hopsFor(st.id, to), origin:st.id, t0:sim.t });
   hooks.handOff(p, rider); p.remove(); rider.enter(st);
@@ -291,12 +300,15 @@ export function buildMetro() {
   // the viaducts answer a click with their line
   const lineEnt = (line: Line) => ({ kind:'line', id:`${line.name} · ${line.colour}`, groups:[vg], line, pick:[0, 0, 0],
     info() { return { kind:'Metro line · Sahel Metro', title:`${line.name} · ${line.colour}`, status:`${TRAINS.filter(t => t.line === line).length} trains running`,
-      rows:[['Stations', line.stations.map(s => s.id).join(' · ')], ['Length', `${line.to - line.from} m on viaduct`], ['Trains', '4 cars, driverless'], ['Track', 'slab track, third rail']] }; },
+      rows:[['Stations', line.stations.map(s => s.id).join(' · ')], ['Length', `${(line.to - line.from).toLocaleString('en')} m ${(line as any).ext ? 'on viaducts, over the Raven Gorge arch, through two tunnels' : 'on viaduct'}`],
+        ['Trains', '4 cars, driverless'], ['Track', 'slab track, third rail']] }; },
     readout() { return `${line.name} · ${line.colour}`.toLowerCase(); } });
   const ents = METRO.lines.map(lineEnt);
   vg.userData.entity = { kind:'line', id:'Sahel Metro', groups:[vg], resolve:(pt: THREE.Vector3) => Math.abs(pt.z - 205) < 9 ? ents[0] : ents[1], info:() => ents[0].info(), readout:() => 'sahel metro' };
-  // the stations
-  for (const line of METRO.lines) for (const st of line.stations) {
+  // the stations (those out in the country are built last of all, after the rest of the town, so the town's own
+  // random numbers come out as they always have)
+  const country: [Line, any][] = [];
+  const station = (line: Line, st: any) => {
     const id = st.id; let S = STATIONS[id];
     if ((st as any).central) {
       if (!S) { S = STATIONS[id] = new MetroStation(id, true, 'central'); const g = buildCentral(); S.groups = [g]; S.peek = g.userData.peek; S.pick = [660, 236, 10]; g.userData.entity = S; scene.add(g);
@@ -314,7 +326,8 @@ export function buildMetro() {
       S.islands[line.id] = { line, st, F:plan.F, zc:plan.zc, zf:plan.zf, footU:plan.footU, topU:plan.topU, waits:plan.waits, seats:plan.seats, waiting:[] };
     }
     S.peek.hides = (x: number, y: number, p: any) => p?.lz !== undefined;
-  }
+  };
+  for (const line of METRO.lines) for (const st of line.stations) if ((st as any).country) country.push([line, st]); else station(line, st);
   // their street doors are places to walk to, in the old town and in Sahel
   for (const e of STATIONS['Market St'].entries) portal('metro', 'Market St station', [e.ground[0], e.ground[1]], { w:3 });
   for (const id of ['Sahel Central', 'Port', 'Motor District']) for (const e of STATIONS[id].entries) cportal('metro', `${id} station`, [e.ground[0], e.ground[1]], id === 'Sahel Central' ? 0.55 : 0.6);
@@ -323,8 +336,10 @@ export function buildMetro() {
   const a = new MetroTrain(L1, stopU(L1.stations[0], 1), 1, 40); a.side = -1; a.xover = L1.xovers[0];
   const b = new MetroTrain(L1, 800, -1, 120);
   const c = new MetroTrain(L2, stopU(L2.stations[0], 1), 1, 60); c.side = -1; c.xover = L2.xovers[0];
-  TRAINS.push(a, b, c);
+  // and two more for the run out to Millbrook: one on its way out, one on its way back
+  const d = new MetroTrain(L1, 1240, 1, 70), e = new MetroTrain(L1, 1660, -1, 50);
+  TRAINS.push(a, b, c, d, e);
   for (const t of [a, c]) { t.at = STATIONS[t.stops()[0].id]; t.state = 'board'; t.doors = 1; t.t = 0; }
-  return { trains:TRAINS, stations:STATIONS, viaducts:vg, hopsFor,
+  return { trains:TRAINS, stations:STATIONS, viaducts:vg, hopsFor, lines:ents, buildCountry:() => { for (const [l, st] of country) station(l, st); },
     update(dt: number) { riderCap = night() > 0.5 ? 16 : 44; for (const t of TRAINS) t.update(dt); } };
 }

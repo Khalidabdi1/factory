@@ -23,7 +23,7 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -37,8 +37,11 @@ controls.target.copy(CENTER);
 controls.listenToKeyEvents(window);
 // the places the caption links jump to: [x0, x1, y0, y1]
 const WB = [WORLD.x0, WORLD.x1, WORLD.y0, WORLD.y1];
-const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [352, 440, 212, 298], [53, 300, 138, 262], [0, 440, 255, 336], [206, 410, -58, 2], [520, 960, 0, 270], [566, 760, 120, 284], [448, 676, -56, 6], [640, 966, 276, 420]];
-let fitZoom = 1, HOME = CENTER.clone(), goal = null, follow = false, sized = false;
+const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [352, 440, 212, 298], [53, 300, 138, 262], [0, 440, 255, 336], [206, 410, -58, 2], [520, 960, 0, 270], [566, 760, 120, 284], [448, 676, -56, 6], [640, 966, 276, 420],
+  [1040, 1640, -40, 250]];
+// fitZoom frames the whole plate; baseZoom frames the two towns (the plate as it was before the east country), and the
+// closest zoom and the debug look() go by it
+let fitZoom = 1, baseZoom = 1, HOME = CENTER.clone(), goal = null, follow = false, sized = false;
 // the zoom and ground target that frame a box of the world (z0..z1 high) in a w × h view
 function frame(w, h, [x0, x1, y0, y1], [z0, z1] = [0, 12]) {
   camera.updateMatrixWorld();
@@ -51,7 +54,8 @@ function resize() {
   const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
   renderer.setSize(w, h, false);
   Object.assign(camera, { left:-w / 2, right:w / 2, top:h / 2, bottom:-h / 2 });
-  const f = frame(w, h, WB, [-4, 50]); fitZoom = f.zoom; HOME = f.target; controls.minZoom = fitZoom * 0.6; controls.maxZoom = fitZoom * 36;
+  const f = frame(w, h, WB, [-4, 50]); fitZoom = f.zoom; HOME = f.target; baseZoom = frame(w, h, [WORLD.x0, 1000, WORLD.y0, WORLD.y1], [-4, 50]).zoom;
+  controls.minZoom = fitZoom * 0.6; controls.maxZoom = baseZoom * 36;
   if (!sized) { sized = true; const v = w < 600 ? frame(w, h, VIEWS[0]) : f; camera.zoom = v.zoom; moveTarget(v.target); }
   camera.zoom = clamp(camera.zoom, controls.minZoom, controls.maxZoom); camera.updateProjectionMatrix();
   for (const m of Object.values(LINE)) m.resolution.set(w, h);
@@ -129,7 +133,7 @@ let cardActs = [];
 // Track: select a vehicle, follow it and come in close
 hooks.select = ent => select(ent);
 hooks.isSelected = ent => !!ent && selected === ent;
-hooks.track = ent => { select(ent); setFollow(true); goal = { zoom:Math.max(camera.zoom, fitZoom * 5.5) }; };
+hooks.track = ent => { select(ent); setFollow(true); goal = { zoom:Math.max(camera.zoom, baseZoom * 5.5) }; };
 // Look inside: frame the building close enough to see its rooms (it is open while it is selected)
 hooks.lookInside = ent => { const pk = ent.groups[0].userData.peek, [x0, x1, y0, y1] = pk.box; setFollow(false); goal = frame(stage.clientWidth, stage.clientHeight, [x0 - 4, x1 + 4, y0 - 4, y1 + 4], pk.z ?? [0, 5]); };
 // someone selected turns into someone else (a walker into a metro rider, a rider onto a train): the selection, and
@@ -245,7 +249,7 @@ window.addEventListener('keydown', e => {
   if (e.key.startsWith('Arrow')) { goal = null; setFollow(false); return; }
   const act = { Escape:() => select(null), f:() => setFollow(!follow), F:() => setFollow(!follow), ']':() => cycle(1), '[':() => cycle(-1), ' ':togglePause,
     '+':() => zoomBy(1.4), '=':() => zoomBy(1.4), '-':() => zoomBy(1 / 1.4), '_':() => zoomBy(1 / 1.4), '0':resetView, Home:resetView, t:toggleTheme, T:toggleTheme,
-    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5), 7:() => goView(6), 8:() => goView(7), 9:() => goView(8), p:() => goView(9), P:() => goView(9) }[e.key];
+    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5), 7:() => goView(6), 8:() => goView(7), 9:() => goView(8), p:() => goView(9), P:() => goView(9), e:() => goView(10), E:() => goView(10) }[e.key];
   if (act) { act(); e.preventDefault(); }
 });
 
@@ -279,7 +283,7 @@ function tick(now) {
   // people's detail by how big they are on screen (zoom is screen px per metre): a lite figure under about 4 px a
   // metre, none at all under about 1.5
   const tiny = camera.zoom < 4.2, far = camera.zoom < 1.5;
-  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); setTextFar(far); motorsSys.detail(!tiny); portSys.detail(far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place(); for (const b of brtSys.buses) b.place();
+  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); setTextFar(far); motorsSys.detail(!tiny); portSys.detail(far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place(); for (const b of brtSys.buses) b.place(); for (const f of sim.forklifts) f.place();
     // a pallet a few pixels across is its load and nothing else: one draw call instead of four
     for (const pl of sim.pallets) for (const m of pl.group.children) if (m.userData.fill !== 'kob') m.visible = !far; }
   updatePeek();
@@ -305,7 +309,7 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [...eastSys.places, eastSys.road, ...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
@@ -313,7 +317,7 @@ if (DEBUG) {
     all:() => all().map(e => ({ id:e.id, kind:e.kind, status:e.info().status })),
     step:s => { for (let t = 0; t < s; t += STEP) sim.step(STEP); },
     skip:hours => { shift.goal += hours; shift.h = shift.goal; },
-    look:(x, y, k) => { goal = null; setFollow(false); moveTarget(W(x, y, 0)); camera.zoom = fitZoom * k; camera.updateProjectionMatrix(); },
+    look:(x, y, k) => { goal = null; setFollow(false); moveTarget(W(x, y, 0)); camera.zoom = baseZoom * k; camera.updateProjectionMatrix(); },
     view:i => { const v = frame(stage.clientWidth, stage.clientHeight, VIEWS[i]); goal = null; moveTarget(v.target); camera.zoom = v.zoom; camera.updateProjectionMatrix(); },
     select:id => select(find(id) ?? null), selected:() => selected?.id ?? null, find,
     // run one frame now (works in a hidden window, where the browser holds animation frames) and count its draw calls
@@ -323,7 +327,7 @@ if (DEBUG) {
     // start the bank job now (when the town is quiet)
     robbery:() => { if (incident.phase === 'quiet') incident.next = sim.t; return incident.phase; },
     // a chimney fire now, at a house by id or any house with a chimney (when none is burning): returns the house
-    worksSys, trainSys, metroSys, brtSys, motorsSys, portSys,
+    worksSys, trainSys, metroSys, brtSys, motorsSys, portSys, eastSys,
     // the next train now (when none is in): returns its state
     train:() => { if (trainSys.state === 'away') trainSys.next = sim.t; return trainSys.state; },
     fire:id => fireSys.blaze.phase === 'quiet' ? fireSys.blaze.start(id ? find(id) : undefined).id : `busy: ${fireSys.blaze.phase}`, fireSys,

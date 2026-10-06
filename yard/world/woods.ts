@@ -5,6 +5,7 @@ import { rand } from '../kernel/math';
 import { CITY, CURB, MOTORS, SEA_Z, WOODS, WORLD } from '../layout';
 import { crown, lampPost, palm, pine, tree, yaw } from './ground';
 import { hillHeight, onTerrace } from './range';
+import { COAST_BRIDGE, EAST } from '../land';
 
 // The woods round both towns. West of the old town a strip of mixed wood runs from the foot of the hills to the
 // promenade, with Riverside Rd, Coast Rd and the railway cut through it and a footpath out from Mill Park's gate.
@@ -26,6 +27,10 @@ const CLEAR: Rect[] = [
   [EX0 - 4, WORLD.x1 + 10, CITY.blvd[0] - 4, CITY.blvd[1] + 4], [EX0 - 4, WORLD.x1 + 10, CITY.north[0] - 4, CITY.north[1] + 4],
 ];
 export const inClearing = (x: number, y: number) => CLEAR.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);
+// cleared since: Line 1's viaduct out east over the strip of wood beyond Sahel. A tree here is still worked out (so the
+// rest of the wood comes out as it always has) but drawn into a part that is thrown away.
+const FELLED: Rect[] = [[952, 1004, 196, 214]];
+const felled = (x: number, y: number) => FELLED.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);
 
 // a broad-leaved tree with two crowns, one a little higher and to the side of the other
 function oak(p: Part, x: number, y: number, s = 1) {
@@ -45,7 +50,8 @@ function wood(p: Part, [x0, x1, y0, y1]: Rect, step = 6.4) {
   for (let gx = x0 + step / 2; gx < x1; gx += step) for (let gy = y0 + step / 2; gy < y1; gy += step) {
     const x = gx + rand(-2.4, 2.4), y = gy + rand(-2.4, 2.4), kind = rand(0, 1), s = rand(0.78, 1.25);
     if (x < x0 + 0.8 || x > x1 - 0.8 || y < y0 + 0.8 || y > y1 - 0.8 || inClearing(x, y) || kind < 0.06) { rand(0, 3); continue; }
-    if (kind < 0.42) tree(p, x, y, s); else if (kind < 0.66) pine(p, x, y, s * 1.1); else if (kind < 0.86) oak(p, x, y, s * 0.9); else poplar(p, x, y, s);
+    const q = felled(x, y) ? new Part() : p;
+    if (kind < 0.42) tree(q, x, y, s); else if (kind < 0.66) pine(q, x, y, s * 1.1); else if (kind < 0.86) oak(q, x, y, s * 0.9); else poplar(q, x, y, s);
   }
 }
 
@@ -74,7 +80,7 @@ export function buildWoods() {
   // roads: Riverside Rd and Coast Rd west to the edge, Riverside Rd's east arm through the green belt, Coast Rd east
   const nearAv = (x: number) => CITY.av.some(a => Math.abs(x - a) < 8);
   road(p, WX0, 0, 124, 138); road(p, WX0, 0, 260, 274);
-  road(p, 436, BX1, 124, 138); road(p, 440, WORLD.x1, 260, 274, nearAv);
+  road(p, 436, BX1, 124, 138); road(p, 440, COAST_BRIDGE.x[0] - COAST_BRIDGE.ramp, 260, 274, nearAv); road(p, COAST_BRIDGE.x[1] + COAST_BRIDGE.ramp, WORLD.x1, 260, 274);
   p.text(G, 'COAST RD', BX0 + 8, 269.6, 1.3, 'paint').text(G, 'RIVERSIDE RD', BX0 + 6, 133.6, 1.3, 'paint');
   // footpaths: out of Mill Park's west gate, and across the green belt from the end of Market St
   p.fill2(G, WX0, FOOT_Y - 0.9, -WX0, 1.8, 'deck', 0.025).fill2(G, 436, FOOT_Y - 0.9, BX1 - 436, 1.8, 'deck', 0.025);
@@ -83,7 +89,7 @@ export function buildWoods() {
   wood(p, [WX0, -1.5, -4, 256]); wood(p, [BX0, BX1, -4, 256]); wood(p, [EX0, EX1, -4, 256]);
   // pines over the hills, thick on the lower slopes and thinning out towards the snow line; none on the terraces,
   // nor on the levelled strip along the railway
-  for (let gx = WORLD.x0 + 3; gx < WORLD.x1 - 2; gx += 7) for (let gy = -70; gy < -7; gy += 7) {
+  for (let gx = WORLD.x0 + 3; gx < EAST.x0 - 2; gx += 7) for (let gy = -70; gy < -7; gy += 7) {
     const x = gx + rand(-2.6, 2.6), y = gy + rand(-2.6, 2.6), s = rand(0.7, 1.15), r = rand(0, 1), z = hillHeight(x, y);
     const keep = z < 16 ? 0.62 : z < 24 ? 0.3 : z < 30 ? 0.08 : 0;
     if (r > keep || y > -8 || onTerrace(x - 2, y) || onTerrace(x + 2, y + 2) || inClearing(x, y) || x > 400 && x < MOTORS.sidingX[1] + 30 && y > -13) { rand(0, 3); continue; }

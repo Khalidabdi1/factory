@@ -10,6 +10,7 @@ import { hooks } from '../shared';
 import { WDECK } from '../models/train';
 import { DECK, VAN_DECK, VAN_LEN } from '../models/vehicles';
 import { PROTO, conveyor, kmh, sim } from './core';
+import { FAR } from './person';
 
 // Plant 01: the lane past the belt and staging, and a corridor up the east side to the rail platform's lane
 export const PLANT = new Site({ name:'Plant 01', lane:66,
@@ -48,7 +49,8 @@ export class Forklift {
     scene.add(this.group); sim.forklifts.push(this); site.forklifts.push(this); this.place();
   }
   place() {
-    pose(this.group, this.x, this.y, this.h); this.carriage.position.y = this.fork;
+    // from far off (the whole map) a forklift is a couple of pixels: not drawn at all
+    pose(this.group, this.x, this.y, this.h); this.group.visible = !FAR; this.carriage.position.y = this.fork;
     this.mast2.position.y = Math.max(0, this.fork + 1.25 - 4.55);   // the inner mast telescopes up for the top rack level
     glow(this.beacon, this.v > 0.05 && sim.t % 0.8 < 0.4);
   }

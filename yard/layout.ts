@@ -1,10 +1,13 @@
 // @ts-nocheck
 import { scene } from './shared';
+import { EAST, L1X, MILLBROOK, RAIL_EAST, l1Rise, landZ } from './land';
 
 // ---- layout (skill coords: +x east, +y south toward the sea, +z up) ----
 // thing           | x              | y          | notes
-// world           | −60–1000       | −84–420    | slab z −4–0; hills on y −84 to −4, the sea from y 296 (surface z −0.6); the old town
-//                 |                |            | on x 0–440, woods to the west of it (x −60–0), a green belt x 440–520, woods east of x 960
+// world           | −60–1900       | −84–420    | slab z −4–0; hills on y −84 to −4, the sea from y 296 (surface z −0.6); the old town
+//                 |                |            | on x 0–440, woods to the west of it (x −60–0), a green belt x 440–520, Sahel x 520–960,
+//                 |                |            | woods to x 1060, then the east country (land.ts): Harrow Ridge, Raven Gorge
+//                 |                |            | (x ≈ 1262–1282), the plateau of High Moor, a second ridge, Millbrook Vale x 1622–1900
 // main road       | −60–404        | 124–138    | Riverside Rd: westbound lane y 127.5, eastbound 134.5, roundabout at (422,131); its east
 //                 |                |            | arm (x 436–520) runs on through the green belt
 // plant yard      | 2–196          | 4–118      | gate gap x 112–130 (out lane x 118, in lane x 124), automatic barriers
@@ -31,8 +34,9 @@ import { scene } from './shared';
 // Orchard Lane    | 358–440        | 4–117      | north from the roundabout (x 417–427), west along y 61–71 to a turning circle at (373,66);
 //                 |                |            | six houses on lots y 4–61 facing it, a playground y 71–92, a footway up from the shop zebra at x 407
 // Sunset Pier     | 308–352        | 279–317    | neck x 326–334 from the promenade, platform y 297–317: Ferris wheel, carousel, coaster (deck z 1.2)
-export const WORLD = { x0:-60, x1:1000, y0:-84, y1:420 };
+export const WORLD = { x0:-60, x1:EAST.x1, y0:-84, y1:420 };
 // the woods round both towns: a strip west of the old town, the green belt between the towns, a strip east of Sahel
+// (on to the foot of Harrow Ridge, drawn with the east country)
 export const WOODS = { west:[-60, 0], belt:[440, 520], east:[960, 1000] };
 export const RAB = { x:422, y:131 };   // roundabout centre
 export const BAYS = [{ id:1, bx:28, truck:null }, { id:2, bx:74, truck:null }];
@@ -97,14 +101,19 @@ export const BRT_STOPS = BRT.stops.map(s => s[0]);
 // escalators climb to it from the ground at its entry end (−1 the low-u end, 1 the high-u end) either side of the line.
 export const METRO = { track:2.2, wide:4.4, island:2.85, plat:58, car:13, gap:0.8, cars:4, escSlope:Math.tan(Math.PI / 6),
   lines:[
-    { id:1, name:'Line 1', colour:'Blue', axis:'x', at:205, from:438, to:932, deck:10.5, conc:5.0,
-      stations:[{ id:'Market St', u0:442, conc:[4, 24], entry:-1, style:'najdi' }, { id:'Sahel Central', u0:629, central:true }, { id:'Port', u0:872, conc:[34, 54], entry:1, style:'fins' }],
-      xovers:[[516, 536], [840, 860]] },
+    { id:1, name:'Line 1', colour:'Blue', axis:'x', at:205, from:438, to:MILLBROOK.to, deck:10.5, conc:5.0, ext:{ u0:L1X.u0, path:L1X.path, rise:l1Rise },
+      stations:[{ id:'Market St', u0:442, conc:[4, 24], entry:-1, style:'najdi' }, { id:'Sahel Central', u0:629, central:true }, { id:'Port', u0:872, conc:[34, 54], entry:1, style:'fins' },
+        { id:'Millbrook', u0:MILLBROOK.u0, conc:[34, 54], entry:1, style:'louvre', country:true }],
+      xovers:[[516, 536], [840, 860], MILLBROOK.xo] },
     { id:2, name:'Line 2', colour:'Red', axis:'y', at:658, from:26, to:228, deck:19.5, conc:11.5,
       stations:[{ id:'Motor District', u0:28, conc:[36, 56], entry:1, style:'louvre' }, { id:'Sahel Central', u0:168, central:true }],
       xovers:[[100, 118], [144, 162]] }] };
-// a point of a line's frame (u along, v across, z up) in the town's
-export const metroAt = (line, u, v, z = 0) => line.axis === 'x' ? [u, line.at + v, z] : [line.at - v, u, z];
+// a point of a line's frame (u along, v across, z up) in the town's. Past Port, Line 1 follows its path out into the
+// country (u along it, v to its right), its deck rising and falling with the land (rise: metres over the town's 10.5)
+export const metroAt = (line, u, v, z = 0) => {
+  if (line.ext && u > line.ext.u0) { const p = line.ext.path.at(u - line.ext.u0); return [p.x - Math.sin(p.h) * v, p.y + Math.cos(p.h) * v, z + line.ext.rise(u)]; }
+  return line.axis === 'x' ? [u, line.at + v, z] : [line.at - v, u, z];
+};
 // Sahel Motors, the showroom Car Works sells through, on a terrace cut into the foothills north of the railway. Its car
 // shuttle runs on a siding of its own north of the main line: from the dock at Car Works' lot (the shuttle's tail at
 // dock) to the showroom (its loco's nose at stop), where a ramp rises out of the track behind it (high end at ramp).
@@ -126,7 +135,7 @@ export const PORT = { x0:650, x1:958, y0:279, y1:340, z:2.0, quay:340, rails:[32
   blocks:[[686, 737], [745, 796], [804, 855]], row0:285.0, pitch:2.9, rows:5, bay:12.8, bays:4, rtg:[283.2, 310.2],
   cranes:[760, 800, 840], ship:{ x:790, y:354, half:74, beam:12, in:370, bays:8, bay0:-46, pitch:13 },
   breakwater:[700, 950, 410, 416], gate:[866, 894], ramp:[873, 887, 279, 293], reefer:[652, 676], tugs:[[931, 346], [955, 346]] };
-export const RAIL = { y:-1.5, loopY:7, lane:12.5, ramp:400, route:[[WORLD.x1 + 12, -1.5], [212, -1.5], [200, 7], [96, 7], [80, -1.5], [WORLD.x0 - 30, -1.5]] };
+export const RAIL = { y:-1.5, loopY:7, lane:12.5, ramp:400, route:[[RAIL_EAST.from + 12, -1.5], [212, -1.5], [200, 7], [96, 7], [80, -1.5], [WORLD.x0 - 30, -1.5]] };
 // Riverside Fire Station. ENG-1 stands nose out in bay 1 (front at park); it drives out forward and comes home by
 // stopping in the westbound lane past the bay and backing in along reverse (the path its rear end takes).
 export const STATION = { x0:360, x1:400, y0:94, y1:112, hall:378, bays:[365, 374], park:[365, 110.6], reverse:[[359, 127.5], [365, 127.5], [365, 101]] };
@@ -138,8 +147,10 @@ export const ORCHARD = { ax:422, ay0:71, ay1:117, ey:66, ex0:373, ex1:427, turn:
 // asphalt people only cross: a walker on it is an obstacle to traffic, and waits for a gap before stepping out
 const ROADS = [[-60, 404, 124, 138], [436, 520, 124, 138], [520, 1000, 115, 147], [533, 887, 6, 20], [533, 887, 198, 212],
   [533, 547, 6, 274], [633, 647, 2, 274], [753, 767, 6, 274], [873, 887, 6, 274], [53, 67, 138, 274], [173, 187, 138, 274], [293, 307, 138, 274], [413, 427, 138, 274], [405, 413, 138, 142.6],
-  [53, 427, 198, 212], [-60, 1000, 260, 274], [345, 384, 138, 142.6], [219, 262, 178, 198], [417, 427, 71, 117], [373, 427, 61, 71], [378, 413, 255.6, 260], [374, 378, 257.4, 260], [374, 409, 274, 276.6],
-  [633, 647, -20, 2], [629.5, 633, -4.5, 2]];
+  [53, 427, 198, 212], [-60, EAST.x1, 260, 274], [345, 384, 138, 142.6], [219, 262, 178, 198], [417, 427, 71, 117], [373, 427, 61, 71], [378, 413, 255.6, 260], [374, 378, 257.4, 260], [374, 409, 274, 276.6],
+  [633, 647, -20, 2], [629.5, 633, -4.5, 2],
+  // the Vale Road through Millbrook, where the village crosses it
+  [1744, 1763, 60, 166], [1756, EAST.x1, 162, 183]];
 // (the boulevard's median and planted strips are kerbed islands inside its asphalt: standing there is off the road)
 export const onRoad = (x, y) => (ROADS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) || Math.hypot(x - RAB.x, y - RAB.y) < 14.5
   || Math.hypot(x - ORCHARD.turn.x, y - ORCHARD.turn.y) < ORCHARD.turn.r) && !BLOCKS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);
@@ -154,5 +165,5 @@ export const DECKS = [[196, 202, 278.7, 313, 1.15, true], [326, 334, 278.7, 297.
   [597.5, 602.5, 278.7, 327, 1.15, true], [571, 629, 300.8, 303.2, 1.15, false], [571, 629, 310.8, 313.2, 1.15, false], [571, 629, 320.8, 323.2, 1.15, false]];
 export const zAt = (x, y) => {
   for (const [x0, x1, y0, y1, z, ramp] of DECKS) if (x > x0 && x < x1 && y > y0 && y < y1) return ramp ? Math.min(z, CURB + (y - y0) * 0.45) : z;
-  return BLOCKS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) ? CURB : 0;
+  return BLOCKS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) ? CURB : x > EAST.x0 ? landZ(x, y) : 0;
 };

@@ -38,6 +38,7 @@ import { buildMetro } from './sim/metro';
 import { buildBrt } from './sim/brt';
 import { buildMotors } from './sim/motors';
 import { buildPort } from './sim/port';
+import { buildEastSys } from './sim/east';
 import { initView } from './view';
 
 applyTheme();
@@ -249,6 +250,8 @@ const brtSys = buildBrt();
 const motorsSys = buildMotors();
 // Sahel Container Terminal: the quay and its cranes, the yard, the tractors, the ship and her tugs, the breakwater
 const portSys = buildPort();
+// the east country: Harrow Ridge, Raven Gorge, High Moor, Millbrook; Line 1's way out there and the Vale Road
+const eastSys = buildEastSys(metroSys);
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
@@ -257,9 +260,9 @@ sim.step = dt => {
   sim.t += dt;
   const late = night() > 0.5;
   conveyor.update(dt); tickOrders(dt); fairSys.update(dt); fishingSys.update(dt); weather.update(dt);
-  if ((ROAD.next -= dt) <= 0 && entryClear(WORLD.x0 - 8, 134.5)) { new Car({ path:rng() < 0.45 ? THROUGH.e : ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
-  if ((COAST.nextE -= dt) <= 0 && entryClear(WORLD.x0 - 8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(16, 30) : rand(7, 13); }
-  if ((COAST.nextW -= dt) <= 0 && entryClear(WORLD.x1 + 8, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(16, 30) : rand(7, 13); }
+  if ((ROAD.next -= dt) <= 0 && entryClear(WORLD.x0 - 8, 134.5)) { new Car({ path:rng() < 0.38 ? THROUGH.e : ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
+  if ((COAST.nextE -= dt) <= 0 && entryClear(WORLD.x0 - 8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(22, 40) : rand(11, 18); }
+  if ((COAST.nextW -= dt) <= 0 && entryClear(WORLD.x1 + 8, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(22, 40) : rand(11, 18); }
   if ((custNext.t -= dt) <= 0) { const sp = SPOTS.find(s => !s.car); if (sp && entryClear(WORLD.x0 - 8, 270.5)) customerCar(sp); custNext.t = late ? rand(60, 120) : rand(20, 40); }
   if ((shop.next -= dt) <= 0) { if (SHOPPERS().length < 10) new Shopper(); shop.next = late ? rand(14, 22) : rand(4.5, 7.5); }
   if ((walkSpawn.t -= dt) <= 0) { walkSpawn.t = rand(1.0, 2.2); if (WALKERS().length < (late ? 8 : 24)) { const f = startPortal(); new Walker(f, nextPortal(f)); } }
@@ -270,7 +273,7 @@ sim.step = dt => {
   sim.peds = sim.people.filter(p => onRoad(p.x, p.y));
   for (const p of sim.pallets) p.update(dt);
   for (const b of BOATS) b.update(dt);
-  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt); sahelSys.update(dt); metroSys.update(dt); motorsSys.update(dt); portSys.update(dt);
+  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt); sahelSys.update(dt); metroSys.update(dt); motorsSys.update(dt); portSys.update(dt); eastSys.update(dt);
   for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
   for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);
@@ -284,4 +287,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

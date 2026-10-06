@@ -4,7 +4,8 @@ A live isometric town drawn with WebGL in the hairline style of [ai-iso-skill](h
 
 Goods go from a factory to a warehouse along the main road of a small seaside town, and on to a shop by the sea. East of
 the town, past a green belt of woods, lies Sahel, a new city of towers, with a metro, a Metrobus, a car showroom and a
-container port:
+container port. Beyond Sahel the land rises into mountains, and the metro runs out through them to Millbrook, a valley
+of farms:
 - Behind both towns are hills; in front of them, the sea. Woods ring them round.
 - A day passes in six minutes. Windows, street lamps, headlights and the lighthouse come on at dusk.
 - There is no dashboard. Click anything and a card shows its live details; click a vehicle and its route appears.
@@ -48,13 +49,14 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Shop** | Corner Market on the seafront, where Hill Av meets Coast Rd: its delivery lay-by, a zebra crossing, and parking bays across the road on the promenade |
 | **Town** | Flats, Harbour Bank, Café Mira, the police station, Town Hall (whose clock tells the simulated time), houses with gardens and villas with pools. Orchard Lane, a new street of six houses, runs off the roundabout. Riverside Fire Station stands on Riverside Rd with ENG-1 in its bay. Mill Park lies on the west side. |
 | **Car Works** | A car factory on a terrace cut into the hills behind the warehouse, its lot of finished cars in front. Inside, one line runs through a press shop, a body shop of welding robots, a paint shop, assembly and the end-of-line tests. |
-| **Railway** | One track along the foot of the hills, with a loop through the Plant 01 yard and its loading platform |
+| **Railway** | One track along the foot of the hills, out of a tunnel under Harrow Ridge, with a loop through the Plant 01 yard and its loading platform |
 | **Coast** | Coast Rd, the promenade, the beach, the town pier, Sunset Pier with its rides, and a breakwater with a lighthouse. A sailboat, a motorboat and the fishing boat Kestrel are out at sea. |
 | **Woods** | A strip of woods west of the old town, a green belt between the two towns with footpaths through it, and another strip east of Sahel; pines up the hills |
 | **Sahel** | The new city: four avenues (Gate, Najd, Tower and Port Av), North St, Sahel Blvd with a busway down its middle, Souq St and the Corniche. Skyscrapers in the Financial District (Sahel Tower, Sahel Arch, the Globe and more), City Hall behind its colonnade, Souq Sahel mall, the library, flats and hotels, Wadi Park, and Sahel Marina with its yachts. |
-| **Sahel Metro** | Two lines on viaducts, after Riyadh's: Line 1 from Market St in the old town through Sahel Central to Port, Line 2 from Motor District down to Sahel Central. Sahel Central, after the King Abdullah Financial District station, is a long row of white lobes woven with ribbons and eyes of lattice that glow at night. |
+| **Sahel Metro** | Two lines on viaducts, after Riyadh's: Line 1 from Market St in the old town through Sahel Central and Port and on out to Millbrook, Line 2 from Motor District down to Sahel Central. Sahel Central, after the King Abdullah Financial District station, is a long row of white lobes woven with ribbons and eyes of lattice that glow at night. |
 | **Sahel Motors** | Car Works' showroom on a terrace at the foot of the hills: twin glass car towers, a glass hall with cars on show, a test track, and a level crossing over the main line down to Najd Av |
 | **Port** | Sahel Container Terminal, east of the marina: a quay with three ship-to-shore cranes, a yard of stacked boxes with three gantry cranes, a gate, a control tower, reefer racks, and a breakwater with a light at each end |
+| **East** | The country beyond Sahel. Harrow Ridge, which the Vale Road climbs in hairpins; Raven Gorge, with the Raven Beck and alders and willows on its floor, crossed by Line 1 on a concrete arch and by the road on a suspension bridge; the plateau of High Moor with Beacon Hill standing on it; Long Edge; and Millbrook Vale, the valley at the end of the line, and its village, Millbrook. Snow on the high peaks behind. |
 
 ![Sahel by day: Sahel Central's woven lattice among the Financial District's towers, Sahel Motors and its car towers at the foot of the hills, the metro's viaducts, and the container terminal on the waterfront](docs/sahel.png)
 
@@ -122,6 +124,10 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - When she is done the booms go up, the tugs pull her off and she sails on east. Every crane, gantry, tractor, tug and box has a card.
 
     ![Sahel Container Terminal: a feeder alongside under three ship-to-shore cranes, STS 2 selected waiting to set a box on a tractor, the yard's gantries behind, the tugs at their pontoon and the breakwater's lights](docs/port.png)
+22. **Out east:**
+    - Line 1's trains run on from Port over the woods, into Harrow Ridge, out of its cliff onto the arch over Raven Gorge, across High Moor in a cutting, through Long Edge and down a viaduct to Millbrook, where they turn back. They go faster on the open line.
+    - Through traffic from the old town takes the Vale Road: up the hairpins, over the suspension bridge, through the tunnel, round the curving viaduct into the valley and on east. Coast Rd runs on along the shore, over a low bridge at the gorge's mouth.
+    - FRT-7 comes out of its tunnel under Harrow Ridge.
 
 Each stage only runs as fast as the next one lets it:
 - A full shop keeps the box trucks waiting at the warehouse.
@@ -134,7 +140,7 @@ Each stage only runs as fast as the next one lets it:
 
 | Action | Mouse / touch | Keys |
 | --- | --- | --- |
-| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port, top right | `1`–`9`, `P` |
+| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East, top right | `1`–`9`, `P`, `E` |
 | Whole map | ⌂ button | `0` |
 | Skip ahead six hours | clock button | `N` |
 | Pan | drag | arrow keys |

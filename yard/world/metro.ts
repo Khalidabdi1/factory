@@ -35,11 +35,15 @@ export class Frame {
   constructor(line: Line) { this.line = line; this.vis = visSide(line); }
   at(u: number, v: number, z = 0): V3 { return metroAt(this.line, u, v, z) as V3; }
   // and back: a town point's (u, v) on this line
-  uv(x: number, y: number) { return this.line.axis === 'x' ? [x, y - this.line.at] : [y, this.line.at - x]; }
+  uv(x: number, y: number) {
+    const L = this.line as any;
+    if (L.ext && x > L.ext.u0) { const s = L.ext.path.nearest(x, y), p = L.ext.path.at(s); return [L.ext.u0 + s, -(x - p.x) * Math.sin(p.h) + (y - p.y) * Math.cos(p.h)]; }
+    return L.axis === 'x' ? [x, y - L.at] : [y, L.at - x];
+  }
   w(u: number, v: number, z = 0) { return W(...this.at(u, v, z)); }
   box(p: Part, u0: number, u1: number, v0: number, v1: number, z0: number, h: number, tone?: string, o?: any) {
-    const a = this.at(u0, v0), b = this.at(u1, v1);
-    p.box(Math.min(a[0], b[0]), Math.min(a[1], b[1]), z0, Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), h, tone, o);
+    const a = this.at(u0, v0), b = this.at(u1, v1), dz = this.at((u0 + u1) / 2, 0)[2];
+    p.box(Math.min(a[0], b[0]), Math.min(a[1], b[1]), z0 + dz, Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), h, tone, o);
     return this;   // so boxes chain in the line's frame
   }
   // a profile in (u, z) at v0, swept across to v1
@@ -54,12 +58,12 @@ export class Frame {
   }
   // the long face the camera sees, at v (on its side), from u0 to u1, top at z: its matrix, and where u falls on it
   long(v: number, u0: number, u1: number, z: number) {
-    if (this.line.axis === 'x') return { M:FRONT(u0, this.line.at + v, z), s:(u: number) => u - u0, w:u1 - u0 };
+    if (this.line.axis === 'x') { const a = this.at(u0, v, z); return { M:FRONT(a[0], a[1], a[2]), s:(u: number) => u - u0, w:u1 - u0 }; }
     return { M:SIDE(this.line.at - v, u1, z), s:(u: number) => u1 - u, w:u1 - u0 };
   }
   // the end face the camera sees, at u (the high end), across v0..v1 (v1 the camera's side for Line 1), top at z
   end(u: number, hw: number, z: number) {
-    if (this.line.axis === 'x') return { M:SIDE(u, this.line.at + hw, z), s:(v: number) => hw - v, w:2 * hw };
+    if (this.line.axis === 'x') { const a = this.at(u, hw, z); return { M:SIDE(a[0], a[1], a[2]), s:(v: number) => hw - v, w:2 * hw }; }
     return { M:FRONT(this.line.at - hw, u, z), s:(v: number) => hw - v, w:2 * hw };
   }
   // the heading of a walk across the line toward side s (+v or −v)
@@ -71,7 +75,7 @@ export class Frame {
 // ---- the viaduct between stations ----
 // the deck from u0 to u1: top, the edge and web on the camera's side, a parapet each side; the tracks on it, the
 // crossovers, lamps along the parapet
-function deckRun(p: Part, F: Frame, u0: number, u1: number) {
+export function deckRun(p: Part, F: Frame, u0: number, u1: number) {
   const line = F.line, { zd } = levels(line), vis = F.vis, us: number[] = [];
   for (let u = u0; u < u1; u += 2) us.push(u); us.push(u1);
   for (let i = 1; i < us.length; i++) {
@@ -140,9 +144,9 @@ export function stationPlan(line: Line, st: Station): Plan {
   const gU = cEnd - e * 6.5, gates = [-3, -1.5, 0, 1.5, 3].map(v => F.at(gU, v, zc));
   const lo = Math.min(iFoot, iTop) - 1.8, hi = Math.max(iFoot, iTop) + 1.8, waits: number[][] = [], seats: Plan["seats"] = [];
   for (let u = u0 + 3; u < u0 + PLAT - 2; u += 2.6) { if (u > lo && u < hi) continue;
-    for (const s of [-1, 1]) { const [x, y] = F.at(u, s * 1.7); waits.push([x, y, zf, F.heading(s), u, s * 1.7]); } }
+    for (const s of [-1, 1]) { const [x, y, z] = F.at(u, s * 1.7, zf); waits.push([x, y, z, F.heading(s), u, s * 1.7]); } }
   for (let u = u0 + 6; u < u0 + PLAT - 4; u += 13) { if (u > lo - 2 && u < hi + 2) continue;
-    for (const k of [-0.5, 0.5]) for (const s of [-1, 1]) { const [x, y] = F.at(u + k, s * 0.35); seats.push({ at:[x, y], h:F.heading(s), z:0.45, lz:zf, by:null, u:u + k, v:s * 0.35 }); } }
+    for (const k of [-0.5, 0.5]) for (const s of [-1, 1]) { const [x, y, z] = F.at(u + k, s * 0.35, zf); seats.push({ at:[x, y], h:F.heading(s), z:0.45, lz:z, by:null, u:u + k, v:s * 0.35 }); } }
   const b0 = F.at(u0 - 4, -10.6), b1 = F.at(u0 + 62, 10.6), bx = [Math.min(b0[0], b1[0]), Math.max(b0[0], b1[0]), Math.min(b0[1], b1[1]), Math.max(b0[1], b1[1])];
   // the box takes in the escalators down to the ground at the entry end
   const fx = F.at(foot + e * 1, 0); bx[0] = Math.min(bx[0], fx[0]); bx[1] = Math.max(bx[1], fx[0]); bx[2] = Math.min(bx[2], fx[1]); bx[3] = Math.max(bx[3], fx[1]);
@@ -285,7 +289,7 @@ export function buildStation(line: Line, st: Station, plan: Plan) {
   for (const s of [-1, 1]) for (const o of screenDoors(F, u0, s, zf, f)) { o.visible = true; inside.add(o); }
   for (const seat of plan.seats.filter((_, i) => i % 4 === 0)) { const uu = seat.u + 0.5;
     F.box(f, uu - 1.0, uu + 1.0, -0.6, 0.6, zf, 0.42).box(f, uu - 1.0, uu + 1.0, -0.06, 0.06, zf + 0.42, 0.5); }
-  for (let u = u0 + 4.5; u < u0 + PLAT - 3; u += 8.6) if (u < oLo - 1 || u > oHi + 1) f.cylZ(F.at(u, 0)[0], F.at(u, 0)[1], zf, 0.18, zt - zf - 0.5, 8);
+  for (let u = u0 + 4.5; u < u0 + PLAT - 3; u += 8.6) if (u < oLo - 1 || u > oHi + 1) { const c = F.at(u, 0, zf); f.cylZ(c[0], c[1], c[2], 0.18, zt - zf - 0.5, 8); }
   for (const s of [-1, 1]) for (let u = u0 + 1; u < u0 + PLAT - 1; u += 2) F.seg(f, 'detail', F.at(u, s * (ISL - 0.6), zf + 0.02), F.at(u + 1, s * (ISL - 0.6), zf + 0.02));
   // signs over the island: the line and where its trains go, a screen of the next trains
   for (const u of [u0 + 10, u0 + PLAT - 12]) if (u < oLo - 3 || u > oHi + 3) {

@@ -4,6 +4,7 @@ import { Part, v3 } from '../kernel/part';
 import { ease, rand } from '../kernel/math';
 import { pine } from './ground';
 import { MOTORS, WORKS, WORLD } from '../layout';
+import { EAST, hillNatural } from '../land';
 
 // The hills behind the towns: a height field, faceted and gridded, snow on the tops and pines low down. Car Works and
 // Sahel Motors stand on terraces cut into them: flat inside, the slopes easing back up over a couple of grid cells
@@ -19,17 +20,9 @@ export function hillHeight(x, y) {
   if (x > 400 && x < MOTORS.sidingX[1] + 30 && y > -20) h *= Math.max(k((-12 - y) / 8), k((x - MOTORS.sidingX[1] - 8) / 22));
   return h;
 }
-function hillNatural(x, y, t) {
-  // the Grey Peaks behind the old town, a shoulder west of it, and the lower Sahel hills behind the new city
-  const peaks = [[-42, 26], [30, 30], [95, 44], [160, 33], [228, 48], [300, 38], [362, 46], [425, 34],
-    [496, 28], [574, 24], [652, 32], [738, 27], [818, 36], [898, 30], [978, 38]];
-  const ridge = Math.max(...peaks.map(([px, ph]) => ph * Math.exp(-(((x - px) / 34) ** 2)))) + 7;
-  const s = t < 0.72 ? ease(t / 0.72) : 1 - 0.3 * (t - 0.72) / 0.28;
-  return Math.max(0, ridge * s + (2.4 * Math.sin(x * 0.19 + y * 0.31) + 1.8 * Math.sin(x * 0.07 - y * 0.23)) * Math.min(1, t * 2));
-}
 export function buildRange() {
   const p = new Part(), X = [], Y = [];
-  X.push(WORLD.x0); for (let x = Math.ceil(WORLD.x0 / 11 + 1e-9) * 11; x < WORLD.x1; x += 11) X.push(x); X.push(WORLD.x1);
+  X.push(WORLD.x0); for (let x = Math.ceil(WORLD.x0 / 11 + 1e-9) * 11; x < EAST.x0; x += 11) X.push(x); X.push(EAST.x0);   // the east country's own mesh takes over at x0
   for (let y = -84; y <= -4; y += 8) Y.push(y);
   const P = X.map(x => Y.map(y => W(x, y, hillHeight(x, y))));
   // on the terrace the hills are flat at the slab's own height: those faces and grid lines would fight the slab's top
@@ -48,9 +41,6 @@ export function buildRange() {
   const off = x => TERRACES.every(([X0, X1]) => x < X0 || x > X1), offSeg = (a, b) => TERRACES.every(([X0, X1]) => b <= X0 || a >= X1);
   for (let i = 0; i < X.length; i++) for (let j = 0; j < Y.length - 1; j++) if (!flat(P[i][j], P[i][j + 1]) || off(X[i])) p.seg('detail', P[i][j], P[i][j + 1]);
   for (let j = 0; j < Y.length; j++) for (let i = 0; i < X.length - 1; i++) if (!flat(P[i][j], P[i + 1][j]) || offSeg(X[i], X[i + 1])) p.seg(j === 3 ? 'line' : 'detail', P[i][j], P[i + 1][j]);
-  // the cut face at the plate's east edge
-  const E = P[X.length - 1];
-  for (let j = 0; j < Y.length - 1; j++) { const a = E[j], b = E[j + 1]; p.poly('body', [W(WORLD.x1, Y[j], 0), a, b, W(WORLD.x1, Y[j + 1], 0)]); p.seg('line', a, b); }
   for (let k = 0, n = 0; k < 400 && n < 90; k++) { const x = rand(3, 437), y = rand(-46, -6), z = hillHeight(x, y); if (z < 15 && !onTerrace(x - 2, y) && !onTerrace(x + 2, y + 2)) { pine(p, x, y, rand(0.7, 1.1), z - 0.2); n++; } }
   return p.build('range');
 }

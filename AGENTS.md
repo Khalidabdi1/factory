@@ -172,3 +172,28 @@ The roadmap agreed in October 2026 is done. The full plan is in the owner's `~/.
 - Phase 18: the port (`world/port.ts`, `models/port.ts`, `sim/port.ts`). Each ship-to-shore crane is paired with a yard gantry and two tractors; the tractors share one circuit (`LOOP`) and pass in a second lane. Exports go out to a tractor only once its crane is loading, so no tractor waits under a crane with one while the crane waits for an empty tractor. Boxes are `Cbox`es, drawn into the ship's cargo part and one part for the whole yard unless they move or are selected.
 - Keys `7`–`9` and `P` and the nav buttons frame Sahel, the metro, Motors and the port; `0` is still the whole map.
 - Phase 19: the README covers all of it; `docs/sahel.png` and `docs/port.png` are captured from the static build like the other figures.
+
+## The east country (agreed October 2026, second round)
+
+In order: 20 the land east and Line 1 out to it; 21 the farming village at the end of the line; 22 robbery crews (bank, Corner
+Market, the port) with endings and a police helicopter (gunfire, nobody dies); 23 freight between Plant 01, Warehouse 01 and
+the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship factory and launch site (researched first);
+27 docs, figures, and one push of everything to `main` (the owner chose to push at the end).
+
+- Phase 20: `WORLD.x1` is 1900. `yard/land.ts` is plain arithmetic, no scene: `natural(x, y)` (the hills band, Harrow Ridge,
+  Raven Gorge along `gorgeC(y)`, High Moor with Beacon Hill, Long Edge, Millbrook), and three `Corridor`s
+  sampled every metre, each sample `tunnel`, `carried` or `cut` by how far it lies under or over the land. The cut ones
+  flatten the land to them; the result is a 5 × 4 m grid (`GRID`), read back on its own triangles by `landZ`, which
+  layout's `zAt` uses east of x 1000. `range.ts` stops at x 1000 and takes `hillNatural` from here; the woods' loops still
+  stop at 1000 (their `rand()` order is the town's), and trees under Line 1's new viaduct are drawn into a throwaway part.
+  - Line 1 has `ext:{ u0, path, rise }`: past u 932 `metroAt` follows `L1X.path` (u is arc length, v to the right) and adds
+    `l1Rise(u)` (its deck climbs at about 1 in 20). `Frame.box/long/end/uv` go through `at()`, so a station on an
+    x-aligned straight of the path works as in town. Cars on it are posed at their height and pitched. Millbrook
+    (`MILLBROOK`) is the terminus; the open line runs at 22 m/s. `world/east.ts` draws the land, the gorge, the woods
+    beyond Sahel, Line 1's runs (viaduct piers on the land, the arch over the gorge, portals with hoods), the Vale Road
+    (`ROAD_PTS`, three hairpins, the suspension bridge, a tunnel, a curving viaduct) and the coast road's bridge.
+  - `withHeights(path, zOf)` gives a `Path` its `zs(s)`; `Car.place` stands on it. Sahel's `THROUGH` paths run the Wadi
+    Road's lanes (`offsetLine`), `COAST` and the customers' paths `coastZ`. FRT-7's route starts inside Harrow Ridge
+    (`RAIL_EAST`); its track is drawn from `RAIL_PORTAL`.
+  - `fitZoom` frames the whole plate; `baseZoom` the two towns, and the closest zoom, `hooks.track` and the debug
+    `look(x, y, k)` go by it. Forklifts are not drawn at FAR. View 10 and key `E` frame the east.
