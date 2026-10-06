@@ -7,7 +7,7 @@ import { Part, TEX_PX, glow, pose } from './kernel/part';
 import { clamp, ease, pick, rand, rng } from './kernel/math';
 import { Path } from './kernel/path';
 import './kernel/graph';
-import { BAYS, CURB, DOCKS, ORCHARD, RACK, SEA_Z, SHELF, STAGE, SX, SY, onRoad } from './layout';
+import { BAYS, CURB, DOCKS, ORCHARD, RACK, SEA_Z, SHELF, STAGE, SX, SY, WORLD, onRoad } from './layout';
 import { buildWorld } from './world/ground';
 import { buildRange, hillHeight } from './world/range';
 import { bayLamp, buildBooth, buildConveyor, buildFactory, buildGate, buildShop, buildShopBox, buildWarehouse, buildWhGate } from './world/industry';
@@ -32,6 +32,7 @@ import { weather } from './sim/weather';
 import { buildFireService } from './sim/fire';
 import { buildWorks } from './sim/works';
 import { buildTrain } from './sim/train';
+import { buildWoods } from './world/woods';
 import { initView } from './view';
 
 applyTheme();
@@ -44,8 +45,8 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setClearColor(0x000000, 0);
 // Anything outside the world's slab is cut, so traffic and walkers slide in and out of the plate's edge.
 renderer.clippingPlanes = [
-  new THREE.Plane(new THREE.Vector3(1, 0, 0), 0.05), new THREE.Plane(new THREE.Vector3(-1, 0, 0), 440.05),
-  new THREE.Plane(new THREE.Vector3(0, 0, 1), 84.05), new THREE.Plane(new THREE.Vector3(0, 0, -1), 336.05)];
+  new THREE.Plane(new THREE.Vector3(1, 0, 0), -WORLD.x0 + 0.05), new THREE.Plane(new THREE.Vector3(-1, 0, 0), WORLD.x1 + 0.05),
+  new THREE.Plane(new THREE.Vector3(0, 0, 1), -WORLD.y0 + 0.05), new THREE.Plane(new THREE.Vector3(0, 0, -1), WORLD.y1 + 0.05)];
 gfx.aniso = renderer.capabilities.getMaxAnisotropy();
 
 // ---- assemble ----
@@ -230,6 +231,8 @@ const fireSys = buildFireService();
 const worksSys = buildWorks();
 // the railway and FRT-7, which calls at Car Works and Plant 01
 const trainSys = buildTrain();
+// the woods round both towns, and the pines up the hills
+const woodsG = buildWoods(); woodsG.traverse(o => { o.raycast = noop; }); scene.add(woodsG);
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
@@ -238,10 +241,10 @@ sim.step = dt => {
   sim.t += dt;
   const late = night() > 0.5;
   conveyor.update(dt); tickOrders(dt); fairSys.update(dt); fishingSys.update(dt); weather.update(dt);
-  if ((ROAD.next -= dt) <= 0 && entryClear(-8, 134.5)) { new Car({ path:ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
-  if ((COAST.nextE -= dt) <= 0 && entryClear(-8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(10, 20) : rand(4, 9); }
-  if ((COAST.nextW -= dt) <= 0 && entryClear(448, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(10, 20) : rand(4, 9); }
-  if ((custNext.t -= dt) <= 0) { const sp = SPOTS.find(s => !s.car); if (sp && entryClear(-8, 270.5)) customerCar(sp); custNext.t = late ? rand(60, 120) : rand(20, 40); }
+  if ((ROAD.next -= dt) <= 0 && entryClear(WORLD.x0 - 8, 134.5)) { new Car({ path:ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
+  if ((COAST.nextE -= dt) <= 0 && entryClear(WORLD.x0 - 8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(10, 20) : rand(4, 9); }
+  if ((COAST.nextW -= dt) <= 0 && entryClear(WORLD.x1 + 8, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(10, 20) : rand(4, 9); }
+  if ((custNext.t -= dt) <= 0) { const sp = SPOTS.find(s => !s.car); if (sp && entryClear(WORLD.x0 - 8, 270.5)) customerCar(sp); custNext.t = late ? rand(60, 120) : rand(20, 40); }
   if ((shop.next -= dt) <= 0) { if (SHOPPERS().length < 10) new Shopper(); shop.next = late ? rand(14, 22) : rand(4.5, 7.5); }
   if ((walkSpawn.t -= dt) <= 0) { walkSpawn.t = rand(1.0, 2.2); if (WALKERS().length < (late ? 8 : 24)) { const f = startPortal(); new Walker(f, nextPortal(f)); } }
   for (const t of sim.trucks) t.update(dt);

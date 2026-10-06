@@ -48,7 +48,8 @@ export const ring = (cx, cy, r, z, n = 40) => { const s = []; for (let i = 0; i 
 export function buildWorld() {
   const p = new Part(), G = TOP(0, 0, 0);
   // the slab in section: land to the beach crest, the beach shelving into the sea, the sea floor
-  p.extrude([[0, WORLD.y0, -4], [0, WORLD.y1, -4], [0, WORLD.y1, SEA_Z], [0, 296, SEA_Z], [0, 289, 0], [0, WORLD.y0, 0]], [WORLD.x1, 0, 0], 'gr');
+  const X0 = WORLD.x0;
+  p.extrude([[X0, WORLD.y0, -4], [X0, WORLD.y1, -4], [X0, WORLD.y1, SEA_Z], [X0, 296, SEA_Z], [X0, 289, 0], [X0, WORLD.y0, 0]], [WORLD.x1 - X0, 0, 0], 'gr');
   // asphalt: the main road, the roundabout, the truck park, the yards' own roads, then the town's streets
   p.fill2(G, 0, 124, 404, 14, 'glass', 0.02);
   const disk = []; for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2; disk.push(W(RAB.x + 14.5 * Math.cos(a), RAB.y + 14.5 * Math.sin(a), 0.02)); }
@@ -70,7 +71,7 @@ export function buildWorld() {
   for (const a of AV) dashes(a, a === 420 ? 146 : 139, a, 260, (x, y) => y > 197 && y < 213);
   const outer = ring(RAB.x, RAB.y, 14.5, 0.05, 48); for (let i = 0; i < outer.length; i += 2) {
     const m = outer[i].clone().add(outer[i + 1]).multiplyScalar(0.5);
-    if (m.x < kx + 0.5 && Math.abs(m.z - RAB.y) < 7.2 || m.z > RAB.y + 6 && m.x > 412.5 && m.x < 427.5 || m.z < RAB.y - 6 && m.x > 416.5 && m.x < 427.5) continue; p.seg('line', outer[i], outer[i + 1]); }
+    if (Math.abs(m.z - RAB.y) < 7.2 && (m.x < kx + 0.5 || m.x > RAB.x + 8) || m.z > RAB.y + 6 && m.x > 412.5 && m.x < 427.5 || m.z < RAB.y - 6 && m.x > 416.5 && m.x < 427.5) continue; p.seg('line', outer[i], outer[i + 1]); }
   for (let a = 0; a < Math.PI * 2; a += Math.PI / 12) { const r0 = 8.5, r1 = 10; p.draw(G, [RAB.x + r0 * Math.cos(a), RAB.y + r0 * Math.sin(a), RAB.x + r1 * Math.cos(a + 0.12), RAB.y + r1 * Math.sin(a + 0.12)], 'detail', 0.05); }
   p.cylZ(RAB.x, RAB.y, 0, 5, 0.35, 24); tree(p, RAB.x, RAB.y, 1.1);
   p.text(G, 'TRUCKS', 146, 123.3, 1.1, 'paint');
@@ -185,8 +186,8 @@ function buildCoast(p, G) {
   p.fill2(G, 0, 279, 440, 10, 'sand', 0.015);
   for (let i = 0; i < 260; i++) { const x = rand(1, 438), y = rand(280, 294.5), z = y > 289 ? (y - 289) / 7 * SEA_Z : 0; p.seg('detail', W(x, y, z + 0.04), W(x + 0.35, y + 0.2, z + 0.04)); }
   p.poly('sand', [W(0, 289, 0.015), W(440, 289, 0.015), W(440, 296, SEA_Z + 0.015), W(0, 296, SEA_Z + 0.015)]);
-  p.fill2(TOP(0, 296, SEA_Z), 0, 0, 440, 40, 'sea', 0.02);
-  p.fill2(FRONT(0, WORLD.y1, SEA_Z), 0, 0, 440, 3.4, 'sea', 0.02);
+  p.fill2(TOP(WORLD.x0, 296, SEA_Z), 0, 0, WORLD.x1 - WORLD.x0, WORLD.y1 - 296, 'sea', 0.02);
+  p.fill2(FRONT(WORLD.x0, WORLD.y1, SEA_Z), 0, 0, WORLD.x1 - WORLD.x0, 3.4, 'sea', 0.02);
   for (const x of [99, 299]) for (let i = 0; i < 3; i++) p.box(x + 0.5, 279 + i * 0.5, 0, 4, 0.5, CURB * (3 - i) / 3);
   // beach umbrellas and towels
   const um = new THREE.ConeGeometry(1.5, 0.6, 8);

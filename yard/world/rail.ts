@@ -2,7 +2,7 @@
 import { TOP, W } from '../kernel/iso';
 import { Part } from '../kernel/part';
 import { Path } from '../kernel/path';
-import { RAIL } from '../layout';
+import { RAIL, WORLD } from '../layout';
 import { lampPost } from './ground';
 
 // The railway: ballast, sleepers and two rails, the length of the plate along the foot of the hills and round the
@@ -25,7 +25,7 @@ export function buildRail() {
     for (const rail of [L, R]) for (let i = 1; i < rail.length; i++) p.seg('line', W(...rail[i - 1], 0.14), W(...rail[i], 0.14));
   };
   // the main line, straight along y, and the loop where the route leaves it
-  const main = new Path([[448, RAIL.y], [-8, RAIL.y]]);
+  const main = new Path([[WORLD.x1 + 8, RAIL.y], [WORLD.x0 - 8, RAIL.y]]);
   track(main, 0, main.length);
   // the loop's rails from switch to switch, its bed only from where it has left the main line's
   track(RAIL_PATH, RAIL_PATH.project(214, RAIL.y), RAIL_PATH.project(78, RAIL.y), RAIL_PATH.project(207, RAIL.y + 3.4), RAIL_PATH.project(85, RAIL.y + 3.4));

@@ -32,7 +32,9 @@ for (const f of files) {
     for (const sp of st.specifiers) if (sp.type === 'ImportSpecifier' && !ex.names.has(sp.imported.name)) { console.log(`${path.relative(ROOT, f)}: ${sp.imported.name} is not exported by ${st.source.value}`); bad++; }
   }
   const free = new Set();
-  traverse(ast, { ReferencedIdentifier(p) { const n = p.node.name; if (!p.scope.hasBinding(n) && !BROWSER.has(n) && !(n in globalThis)) free.add(n); } });
+  // names inside type annotations ((x: number) => boolean) are not references to anything at run time
+  const inType = p => !!p.findParent(q => q.node.type.startsWith('TS') && !['TSAsExpression', 'TSNonNullExpression', 'TSSatisfiesExpression'].includes(q.node.type));
+  traverse(ast, { ReferencedIdentifier(p) { const n = p.node.name; if (!p.scope.hasBinding(n) && !BROWSER.has(n) && !(n in globalThis) && !inType(p)) free.add(n); } });
   for (const n of free) { console.log(`${path.relative(ROOT, f)}: free ${n}`); bad++; }
 }
 console.log(bad ? `${bad} problem(s)` : `clean (${files.length} files)`);

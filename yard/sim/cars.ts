@@ -3,7 +3,7 @@ import { hooks, scene } from '../shared';
 import { pose } from '../kernel/part';
 import { rand, rng } from '../kernel/math';
 import { Path } from '../kernel/path';
-import { RAB } from '../layout';
+import { RAB, WORLD } from '../layout';
 import { PROTO, kmh, sim } from './core';
 import { bendLimit, clearAhead, compass, nextRoadSeq, roadBusy, streetAt } from './roads';
 import { Customer } from './people';
@@ -11,8 +11,8 @@ import { Customer } from './people';
 // ---- cars ----
 // Through traffic comes in from the west and goes round the roundabout; town traffic drives closed loops of
 // right turns round the blocks, giving way where it joins a busier street; customers park opposite the shop.
-export const ROAD = { path:new Path([[-8, 134.5], [404, 134.5], [RAB.x, 143], [434, RAB.y], [RAB.x, 119], [404, 127.5], [-8, 127.5]], 8), next:0 };
-export const COAST = { e:new Path([[-8, 270.5], [448, 270.5]]), w:new Path([[448, 263.5], [-8, 263.5]]), nextE:2, nextW:5 };
+export const ROAD = { path:new Path([[WORLD.x0 - 8, 134.5], [404, 134.5], [RAB.x, 143], [434, RAB.y], [RAB.x, 119], [404, 127.5], [WORLD.x0 - 8, 127.5]], 8), next:0 };
+export const COAST = { e:new Path([[WORLD.x0 - 8, 270.5], [WORLD.x1 + 8, 270.5]]), w:new Path([[WORLD.x1 + 8, 263.5], [WORLD.x0 - 8, 263.5]]), nextE:2, nextW:5 };
 const plate = () => `${String.fromCharCode(65 + Math.floor(rng() * 26))}${String.fromCharCode(65 + Math.floor(rng() * 26))} ${Math.floor(rand(100, 999))}`;
 const ROLE = { through:'passing through', local:'town traffic', coast:'on the coast road', customer:'shopping' };
 export class Car {
@@ -83,7 +83,7 @@ for (const L of LOOPS) { L.path = new Path(L.pts, 6, true); L.ys = L.yields.map(
 export const SPOTS = [388, 399.5].map(S => ({ S, car:null }));
 export const custNext = { t:6 };
 export function customerCar(spot) {
-  const S = spot.S, path = new Path([[-8, 270.5], [S - 7, 270.5], [S + 1, 275.3], [S + 8, 275.3], [S + 16, 270.5], [448, 270.5]], 6);
+  const S = spot.S, path = new Path([[WORLD.x0 - 8, 270.5], [S - 7, 270.5], [S + 1, 275.3], [S + 8, 275.3], [S + 16, 270.5], [WORLD.x1 + 8, 270.5]], 6);
   const stop = { s:path.project(S + 8, 275.3), name:'shop parking', label:'parked · driver shopping',
     arrive:car => { car.parked = true; car.driver = new Customer(car, spot); },
     release:car => car.back && !roadBusy(car, S - 34, S + 12, 270.5),

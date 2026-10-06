@@ -3,7 +3,7 @@ import { hooks, scene } from '../shared';
 import { Part, glow, pose } from '../kernel/part';
 import { clamp, rand } from '../kernel/math';
 import { Path } from '../kernel/path';
-import { RAIL, WORKS, slotAt } from '../layout';
+import { RAIL, WORKS, WORLD, slotAt } from '../layout';
 import { CARRIER_LEN, FLAT_LEN, GAP, LOCO_LEN, WDECK, buildCarrier, buildFlatWagon, buildLoco, buildRamp, carAlong } from '../models/train';
 import { BODY_LEN } from '../models/works';
 import { RAIL_PATH, buildRail } from '../world/rail';
@@ -18,7 +18,7 @@ import { line, lot } from './works';
 const CONSIST = [['loco', LOCO_LEN], ...Array(4).fill(['flat', FLAT_LEN]), ...Array(3).fill(['carrier', CARRIER_LEN])];
 let off = 0; const VEH = CONSIST.map(([kind, len]) => { const o = { kind, len, off }; off += len + GAP; return o; });
 const TRAIN_LEN = off - GAP, P = RAIL_PATH;
-const S_WORKS = P.project(RAIL.ramp, RAIL.y) + TRAIN_LEN, S_PLANT = P.project(100, RAIL.loopY), S_GONE = P.project(-8, RAIL.y) + TRAIN_LEN;
+const S_WORKS = P.project(RAIL.ramp, RAIL.y) + TRAIN_LEN, S_PLANT = P.project(100, RAIL.loopY), S_GONE = P.project(WORLD.x0 - 8, RAIL.y) + TRAIN_LEN;
 const LOOP = [P.project(216, RAIL.y), P.project(76, RAIL.y)];
 const SLOTS_PER_CARRIER = 4, CAR_AT = k => 0.6 + k * 4.85;   // a car's front, behind its carrier's front
 

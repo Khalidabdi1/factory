@@ -20,7 +20,7 @@ export class Part {
   seg(k, a, b) { (this.lines[k] ??= []).push(a.x, a.y, a.z, b.x, b.y, b.z); return this; }
   // A flat polygon swept along e. Faces are turned to point away from the solid's middle; up-facing ones take the
   // deck fill, and only those steeper than 35° downward are left out, since the camera never sees them at any heading.
-  extrude(pts, e, tone = 'n', { seams = true, lines = true } = {}) {
+  extrude(pts, e, tone = 'n', { seams = true, lines = true }: { seams?: boolean, lines?: boolean } = {}) {
     const [bodyK, deckK, lineK] = TONE[tone];
     const A = pts.map(p => W(...p)), E = W(...e), B = A.map(p => p.clone().add(E));
     const mid = [...A, ...B].reduce((s, p) => s.add(p), v3(0, 0, 0)).multiplyScalar(1 / (A.length * 2));
@@ -37,10 +37,10 @@ export class Part {
     return this;
   }
   // box at (x,y,z), size w along x, d along y, h along z — same signature as the skill's box()
-  box(x, y, z, w, d, h, tone, o) { return this.extrude([[x, y, z], [x + w, y, z], [x + w, y + d, z], [x, y + d, z]], [0, 0, h], tone, o); }
-  cylZ(cx, cy, z, r, h, n = 12, tone) { const p = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a), z]); }
+  box(x, y, z, w, d, h, tone?, o?) { return this.extrude([[x, y, z], [x + w, y, z], [x + w, y + d, z], [x, y + d, z]], [0, 0, h], tone, o); }
+  cylZ(cx, cy, z, r, h, n = 12, tone?) { const p = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a), z]); }
     return this.extrude(p, [0, 0, h], tone, { seams:false }); }
-  cylY(cx, y, cz, r, len, n = 10, tone) { const p = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; p.push([cx + r * Math.cos(a), y, cz + r * Math.sin(a)]); }
+  cylY(cx, y, cz, r, len, n = 10, tone?) { const p = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; p.push([cx + r * Math.cos(a), y, cz + r * Math.sin(a)]); }
     return this.extrude(p, [0, len, 0], tone, { seams:false }); }
   // 2D linework in a face's local units, like drawing inside the skill's <g transform="${FRONT(…)}">.
   // lift nudges it off the face along the outward normal (negative for faces whose plane normal points out).
@@ -50,7 +50,7 @@ export class Part {
     for (let i = 0; i < segs.length; i += 4) this.seg(k, at(segs[i], segs[i + 1]), at(segs[i + 2], segs[i + 3]));
     return this;
   }
-  rect2(M, x, y, w, h, k, lift) { return this.draw(M, [x, y, x + w, y, x + w, y, x + w, y + h, x + w, y + h, x, y + h, x, y + h, x, y], k, lift); }
+  rect2(M, x, y, w, h, k?, lift?) { return this.draw(M, [x, y, x + w, y, x + w, y, x + w, y + h, x + w, y + h, x, y + h, x, y + h, x, y], k, lift); }
   fill2(M, x, y, w, h, k = 'glass', lift = 0.03) {
     const off = v3(0, 0, 0).setFromMatrixColumn(M, 2).normalize().multiplyScalar(-lift);
     const at = (u, v) => v3(u, v, 0).applyMatrix4(M).add(off);
@@ -72,7 +72,7 @@ export class Part {
     for (let i = 0; i < e.count; i += 2) this.seg(lineK, a.fromBufferAttribute(e, i).clone(), b.fromBufferAttribute(e, i + 1).clone());
     return this;
   }
-  build(name) {
+  build(name?) {
     const g = new THREE.Group(); if (name) g.name = name;
     for (const k in this.fill) {
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(this.fill[k], 3));

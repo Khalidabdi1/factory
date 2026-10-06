@@ -27,14 +27,15 @@ export function buildRain() {
 export function buildFog() {
   const g = new THREE.Group(); g.name = 'fog'; g.visible = false;
   // [y from, y to, height, strength]: thick over the sea, the coast road and the beach, a thin veil over town
-  const sheets = [[255, 360, 0.5, 1], [262, 360, 2.0, 0.9], [270, 360, 4.2, 0.7], [190, 360, 1.2, 0.5], [-10, 360, 0.8, 0.3]].map(([y0, y1, z, k]) => {
+  const Y1 = WORLD.y1 + 24, CX = (WORLD.x0 + WORLD.x1) / 2, SPAN = WORLD.x1 - WORLD.x0 + 120;
+  const sheets = [[255, Y1, 0.5, 1], [262, Y1, 2.0, 0.9], [270, Y1, 4.2, 0.7], [190, Y1, 1.2, 0.5], [-10, Y1, 0.8, 0.3]].map(([y0, y1, z, k]) => {
     const m = new THREE.MeshBasicMaterial({ transparent:true, opacity:0, depthWrite:false, side:THREE.DoubleSide });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(WORLD.x1 + 120, y1 - y0).rotateX(-Math.PI / 2), m);
-    mesh.position.set(WORLD.x1 / 2, z, (y0 + y1) / 2); mesh.raycast = noop; mesh.renderOrder = 2; g.add(mesh);
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(SPAN, y1 - y0).rotateX(-Math.PI / 2), m);
+    mesh.position.set(CX, z, (y0 + y1) / 2); mesh.raycast = noop; mesh.renderOrder = 2; g.add(mesh);
     return { mesh, m, k };
   });
   return { group:g, update(dt, t, amount) {
     g.visible = amount > 0.02; if (!g.visible) return;
-    sheets.forEach((s, i) => { s.m.color.copy(FILL.deck.color); s.m.opacity = 0.32 * s.k * amount; s.mesh.position.x = WORLD.x1 / 2 + Math.sin(t * 0.05 + i * 1.7) * 30; });
+    sheets.forEach((s, i) => { s.m.color.copy(FILL.deck.color); s.m.opacity = 0.32 * s.k * amount; s.mesh.position.x = CX + Math.sin(t * 0.05 + i * 1.7) * 30; });
   } };
 }

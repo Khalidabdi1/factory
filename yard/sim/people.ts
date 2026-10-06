@@ -2,7 +2,7 @@
 import { hooks } from '../shared';
 import { ease, rand, rng } from '../kernel/math';
 import { Site, dedupe } from '../kernel/graph';
-import { BOXES, ORCHARD, SHELF, SHOP, STOCK_CAP, SX, SY, ZEBRA_X, sx } from '../layout';
+import { BOXES, ORCHARD, SHELF, SHOP, STOCK_CAP, SX, SY, WOODS, WORLD, ZEBRA_X, sx } from '../layout';
 import { NAMES, STAFF, clock, kmh, night, sim } from './core';
 import { streetAt } from './roads';
 import { SPOTS } from './cars';
@@ -142,7 +142,7 @@ export const SHOPPERS = () => sim.people.filter(p => p instanceof Shopper);
 export class Shopper extends Person {
   constructor(o = {}) {
     // on foot, from up Hill Av or along the promenade
-    const start = o.car ? null : rng() < 0.5 ? [444, 200] : [444, PROM];
+    const start = o.car ? null : rng() < 0.5 ? EAST_PATH : [EAST, PROM];
     super({ look:'shopper', id:`Shopper ${shopperSeq++}`, x:start?.[0], y:start?.[1], h:Math.PI, speed:rand(1.2, 1.5), want:1 + Math.floor(rng() * 3), got:[], start, ...o });
     if (!this.car) this.go(pedRoute(start, SHOP.front), 'walking to Corner Market').walk([SHOP.out, SHOP.in], 'walking in').then(p => p.choose());
   }
@@ -218,6 +218,9 @@ export class Guard extends Person {
 
 // ---- walkers: a graph of pavements and crossings, places to come from and go to ----
 export const PC = [51.7, 68.3, 171.7, 188.3, 291.7, 308.3, 411.7, 428.3], PR = [139.3, 196.7, 213.3, 258.7], PROM = 276.5;
+// where people come in from and go out to: the west edge through the woods, and east along the promenade or the footpath
+// through the green belt
+const WEST = WORLD.x0 - 4, EAST = WOODS.belt[1] + 4, EAST_PATH = [EAST, 200];
 const PED = (() => {
   const nodes = {}, segs = [], add = (x, y) => { const k = `${x}|${y}`; nodes[k] = [x, y]; return k; };
   const link = (a, b) => segs.push([add(...a), add(...b)]);
@@ -238,17 +241,17 @@ const PED = (() => {
     link([x, x === 308.3 || x === 411.7 ? 143.9 : x === 428.3 ? 147.3 : 139.3], [x, 196.7]);
     link([x, 196.7], [x, 213.3]); link([x, 213.3], x === 411.7 ? [x, F] : [x, 258.7]); link([x, 258.7], [x, PROM]);
   }
-  const prom = [-4, ...PC, 444]; for (let i = 0; i < prom.length - 1; i++) if (prom[i] !== 308.3) link([prom[i], PROM], [prom[i + 1], PROM]);
+  const prom = [WEST, ...PC, EAST]; for (let i = 0; i < prom.length - 1; i++) if (prom[i] !== 308.3) link([prom[i], PROM], [prom[i + 1], PROM]);
   for (const [a, b] of [[[308.3, PROM], [373, PROM]], [[373, PROM], [374.6, 277.7]], [[374.6, 277.7], [Z, 277.7]], [[Z, 277.7], [409.6, 277.7]], [[409.6, 277.7], [411.7, PROM]]]) link(a, b);
   // Mill Park: the loop round the pond, the west gate, links to the pavements
   for (const [a, b] of [[[8, 150], [42, 150]], [[42, 150], [42, 196.7]], [[42, 196.7], [42, 250]], [[42, 250], [8, 250]], [[8, 250], [8, 200]], [[8, 200], [8, 150]],
-    [[-4, 200], [8, 200]], [[42, 196.7], [51.7, 196.7]], [[42, 150], [42, 139.3]], [[42, 139.3], [51.7, 139.3]], [[42, 250], [42, 258.7]], [[42, 258.7], [51.7, 258.7]]]) link(a, b);
+    [[WEST, 200], [8, 200]], [[428.3, 196.7], [436, 200]], [[436, 200], EAST_PATH], [[42, 196.7], [51.7, 196.7]], [[42, 150], [42, 139.3]], [[42, 139.3], [51.7, 139.3]], [[42, 250], [42, 258.7]], [[42, 258.7], [51.7, 258.7]]]) link(a, b);
   return new Site({ name:'pavements', nodes, segs });
 })();
 export const pedRoute = (a, b) => dedupe([a, ...PED.route(PED.at(...a), PED.at(...b)), b]);
 export const PORTALS = [];
 export const portal = (kind, name, p, o = {}) => { const q = { kind, name, p, w:1, ...o }; PORTALS.push(q); return q; };
-for (const [n, p, w] of [['the west end of the promenade', [-4, PROM], 3], ['the east end of the promenade', [444, PROM], 3], ['the park gate', [-4, 200], 2], ['Hill Av', [444, 200], 1]])
+for (const [n, p, w] of [['the west end of the promenade', [WEST, PROM], 3], ['the east end of the promenade', [EAST, PROM], 3], ['the woods west of the park', [WEST, 200], 2], ['the green belt', EAST_PATH, 1]])
   portal('edge', n, p, { w });
 portal('cafe', 'Café Mira', [151, 193.2], { w:2 }); portal('pier', 'the pier', [199, 309]);
 for (const x of [40, 92, 136, 226, 280, 336, 384]) portal('beach', 'the beach', [x, 285.5]);
