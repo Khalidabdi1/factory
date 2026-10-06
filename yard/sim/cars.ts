@@ -5,7 +5,7 @@ import { rand, rng } from '../kernel/math';
 import { Path } from '../kernel/path';
 import { RAB } from '../layout';
 import { PROTO, kmh, sim } from './core';
-import { bendLimit, clearAhead, compass, gapE, nextRoadSeq, roadBusy, streetAt } from './roads';
+import { bendLimit, clearAhead, compass, nextRoadSeq, roadBusy, streetAt } from './roads';
 import { Customer } from './people';
 
 // ---- cars ----
@@ -78,15 +78,15 @@ export const LOOPS = [
     yields:[[176.5, 256.5, 170, 214, 263.5]] },
 ];
 for (const L of LOOPS) { L.path = new Path(L.pts, 6, true); L.ys = L.yields.map(([x, y, x0, x1, ly]) => ({ s:L.path.project(x, y), clear:v => !roadBusy(v, x0, x1, ly) })); }
-// customer parking: three spots in the parking lane opposite the shop, entered from the eastbound lane
-// two spots for customers; the third (x 368) is the parcel van's
-export const SPOTS = [348, 358].map(S => ({ S, car:null }));
+// customer parking: the seafront bays across Coast Rd from the shop, entered from the eastbound lane; two spots either
+// side of the zebra for customers, the parcel van's at the west end (x 377.6–383)
+export const SPOTS = [388, 399.5].map(S => ({ S, car:null }));
 export const custNext = { t:6 };
 export function customerCar(spot) {
-  const S = spot.S, path = new Path([[-8, 134.5], [S - 7, 134.5], [S + 1, 140.3], [S + 8, 140.3], [S + 16, 134.5], [404, 134.5], [RAB.x, 143], [434, RAB.y], [RAB.x, 119], [404, 127.5], [-8, 127.5]], 6);
-  const stop = { s:path.project(S + 8, 140.3), name:'shop parking', label:'parked · driver shopping',
+  const S = spot.S, path = new Path([[-8, 270.5], [S - 7, 270.5], [S + 1, 275.3], [S + 8, 275.3], [S + 16, 270.5], [448, 270.5]], 6);
+  const stop = { s:path.project(S + 8, 275.3), name:'shop parking', label:'parked · driver shopping',
     arrive:car => { car.parked = true; car.driver = new Customer(car, spot); },
-    release:car => car.back && gapE(car, S - 34, S + 12),
+    release:car => car.back && !roadBusy(car, S - 34, S + 12, 270.5),
     wait:car => car.back ? 'pulling out · waiting for a gap' : null,
     left:car => { car.parked = false; spot.car = null; } };
   const car = new Car({ role:'customer', path, stops:[stop] }); spot.car = car; return car;

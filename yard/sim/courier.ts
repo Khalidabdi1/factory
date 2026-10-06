@@ -16,12 +16,12 @@ const pullIn = pts => { const n = pts.length, P = pts[n - 1], Q = pts[n - 2], h 
   return [...pts.slice(0, -1), [P[0] - c * k, P[1] - s * k], kerbward([P[0] - c * k * 0.35, P[1] - s * k * 0.35], h, 1.9), kerbward(P, h, 1.9)]; };   // ending parallel to the kerb
 
 // Online orders from Corner Market. A home orders; a shop assistant picks the boxes, packs the parcel at the counter and
-// carries it over the zebra to the parcel van in the shop parking; the van drives to the house, the courier walks it to
+// carries it over the zebra to the parcel van in the seafront bays; the van drives to the house, the courier walks it to
 // the door, and the van comes back. Every step is timed, so an order can be tracked from the house or the van.
 export const orders = hooks.orders = { list:[], seq:1001, next:30, delivered:0 };
 export const STAGES = { placed:'ordered', packing:'being packed', packed:'packed', out:'out for delivery', arriving:'at the door', delivered:'delivered' };
-// the van's spot in the shop parking, entered from the eastbound lane like the customers' spots
-const SPOT = [376, 140.3], IN = [[361, 134.5], [369, 140.3], SPOT], OUT = [SPOT, [381, 140.3], [388, 134.5]];
+// the van's spot at the west end of the seafront bays, entered from the eastbound lane like the customers' spots
+const SPOT = [383, 275.3], IN = [[369, 270.5], [376, 275.3], SPOT], OUT = [SPOT, [387, 275.3], [393, 270.5]];
 const AVG = 8.5;   // m/s, the van's typical speed through town, for the estimate
 
 export function tickOrders(dt) {

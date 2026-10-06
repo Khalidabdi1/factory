@@ -37,7 +37,7 @@ controls.target.copy(CENTER);
 controls.listenToKeyEvents(window);
 // the places the caption links jump to: [x0, x1, y0, y1]
 const WB = [WORLD.x0, WORLD.x1, WORLD.y0, WORLD.y1];
-const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [336, 440, 80, 160], [53, 300, 138, 262], [0, 440, 255, 336]];
+const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [352, 440, 212, 298], [53, 300, 138, 262], [0, 440, 255, 336]];
 let fitZoom = 1, HOME = CENTER.clone(), goal = null, follow = false, sized = false;
 // the zoom and ground target that frame a box of the world (z0..z1 high) in a w × h view
 function frame(w, h, [x0, x1, y0, y1], [z0, z1] = [0, 12]) {

@@ -15,7 +15,9 @@ import { scene } from './shared';
 // warehouse       | 228–308        | 14–58      | drive lane y 20, rack rows B (y 29.8) and A (y 33), aisles y 26 and 40.6, receiving y 48.5;
 //                 |                |            | shelving, packing and pickers in the west strip x 228–235, office in the south-east corner
 // docks           | 232 / 276      | 80         | flatbeds unload here, forklifts work from the north
-// shop            | 362–394        | 94–112     | delivery lay-by y 118.5–124 (x 344–384), zebra at x 394.5, customer parking y 138–142.6
+// shop            | 377.5–409.5    | 231–249    | Corner Market at Coast Rd and Hill Av: forecourt y 249–255.6, a lay-by y 255.6–260 (x 378–413,
+//                 |                |            | entered from Hill Av), seafront bays y 274–276.6 (x 374–409) across the road, a zebra at x 399;
+//                 |                |            | the old site off Riverside Rd (x 358–404) is free
 // avenues         | 60·180·300·420 | 138–274    | Park, Mill, Harbour and Hill Av, 14 wide; southbound lane x − 3.5, northbound x + 3.5
 // Market St       | 53–427         | 198–212    | eastbound lane y 208.5, westbound 201.5
 // Coast Rd        | 0–440          | 260–274    | eastbound lane y 270.5, westbound 263.5; promenade 274–279, beach to 296
@@ -38,10 +40,13 @@ export const RACK = []; for (const [row, level] of [['A', 0], ['A', 1], ['A', 2]
   const x = 246 + 6 * b, y = row === 'A' ? 33 : 29.8;
   RACK.push(slotAt({ id:`${row}${b + 1}·${level + 1}`, label:`rack ${row}${b + 1} · level ${level + 1}`, x, y, row, level, local:[x, y, level * 3.0] })); }
 // shop shelves: two units, two boards each, six boxes a board; staff stand in the aisle south of each unit
+// Corner Market's inside is drawn in its own frame (x 362–394, y 94–112) and stands at SX, SY from it: sx() turns a
+// point of that frame into the town's
+export const SX = 15.5, SY = 137, sx = (x, y) => [x + SX, y + SY];
 export const SHELF = []; for (const [y, sy] of [[98.4, 100.6], [103.6, 105.8]]) for (const z of [0.95, 1.65]) for (let i = 0; i < 6; i++)
-  SHELF.push({ x:367.6 + 3.5 * i, y, z, stand:[367.6 + 3.5 * i, sy], sku:null, reserved:null, mesh:null });
+  SHELF.push({ x:367.6 + SX + 3.5 * i, y:y + SY, z, stand:sx(367.6 + 3.5 * i, sy), sku:null, reserved:null, mesh:null });
 export const STOCK_CAP = 12, BOXES = 4;
-export const SHOP = { in:[378, 109.6], out:[378, 114.2], counter:[387, 111], stockStand:[364.8, 100.6] };
+export const SHOP = { in:sx(378, 109.6), out:sx(378, 114.2), counter:sx(387, 111), stockStand:sx(364.8, 100.6), front:[393.5, 254.6], zebra:399 };
 export const ZEBRA_X = 394.5;
 export const CURB = 0.15, SEA_Z = -0.6;
 export const AV = [60, 180, 300, 420];
@@ -50,12 +55,13 @@ export const ORCHARD = { ax:422, ay0:71, ay1:117, ey:66, ex0:373, ex1:427, turn:
   lots:[0, 1, 2, 3, 4, 5].map(i => [358.4 + 13.6 * i, 13.6]) };
 // asphalt people only cross: a walker on it is an obstacle to traffic, and waits for a gap before stepping out
 const ROADS = [[0, 404, 124, 138], [53, 67, 138, 274], [173, 187, 138, 274], [293, 307, 138, 274], [413, 427, 138, 274], [405, 413, 138, 142.6],
-  [53, 427, 198, 212], [0, 440, 260, 274], [345, 384, 138, 142.6], [219, 262, 178, 198], [417, 427, 71, 117], [373, 427, 61, 71]];
+  [53, 427, 198, 212], [0, 440, 260, 274], [345, 384, 138, 142.6], [219, 262, 178, 198], [417, 427, 71, 117], [373, 427, 61, 71], [378, 413, 255.6, 260], [374, 378, 257.4, 260], [374, 409, 274, 276.6]];
 export const onRoad = (x, y) => ROADS.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1) || Math.hypot(x - RAB.x, y - RAB.y) < 14.5
   || Math.hypot(x - ORCHARD.turn.x, y - ORCHARD.turn.y) < ORCHARD.turn.r;
 // raised blocks: a pavement round the edge, lots inside; the promenade is one too
 export const BLOCKS = [[67, 173, 138, 198], [187, 293, 138, 178], [187, 219, 178, 198], [262, 293, 178, 198], [307, 413, 142.6, 198], [307, 345, 138, 142.6], [384, 405, 138, 142.6],
-  [67, 173, 212, 260], [187, 293, 212, 260], [307, 413, 212, 260], [427, 440, 146, 260], [0, 53, 138, 260], [0, 440, 274, 279],
+  [67, 173, 212, 260], [187, 293, 212, 260], [307, 413, 212, 255.6], [307, 374, 255.6, 260], [374, 378, 255.6, 257.4], [427, 440, 146, 260], [0, 53, 138, 260],
+  [0, 374, 274, 279], [374, 409, 276.6, 279], [409, 440, 274, 279],
   [358, 440, 4, 61], [358, 417, 71, 92], [427, 440, 71, 117]];
 // the piers' decks, people walk on them: [x0, x1, y0, y1, height, ramp] (a ramp rises from the promenade over its first 2.3 m)
 export const PIER = { neck:[326, 334], y0:278.7, platform:[308, 352, 297, 317], deck:1.2, wheel:{ x:344, y:307.5, z:11.85, r:8 }, carousel:{ x:322, y:304, r:4.2 } };

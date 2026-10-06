@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Factory Yard: project guide
 
-A live isometric seaside town drawn with three.js/WebGL in the hairline style of [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill). Goods go factory → warehouse → shop along the main road of a small town, with hills behind and the sea in front. A day passes in 6 minutes. There is no dashboard: you click anything and a card shows its live details. The README describes what the user sees; this file covers how the code works.
+A live isometric seaside town drawn with three.js/WebGL in the hairline style of [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill). Goods go factory → warehouse along the main road of a small town, then down to a shop on the seafront, with hills behind and the sea in front. A day passes in 6 minutes. There is no dashboard: you click anything and a card shows its live details. The README describes what the user sees; this file covers how the code works.
 
 ## Commands
 
@@ -132,9 +132,13 @@ Done:
   - `RACK` now has rows A and B, three levels, 48 slots. `LOC.rack` faces by row, and forklifts have a telescoping `mast2`.
   - Shelving, a packing bench and pickers (`Picker`).
   - People inside a shut building are hidden via `hooks.closedAt`.
+- Corner Market moved to the seafront, at Coast Rd and Hill Av (on Villa Eira's old lot), at the owner's request.
+  - `buildShop` still draws in the old frame (x 362–394, y 94–112); the group is placed at `SX`, `SY` (and `CURB`). `SHELF` and `SHOP` are in town coordinates, and `shop.routeTo` / `routeOut` convert with `sx()`. A shop entity's `pick` stays in the local frame.
+  - Box trucks come down Hill Av into the lay-by, leave along Coast Rd, and cross Riverside Rd from Harbour Av straight into the warehouse gate once the gate is open and both lanes are clear.
+  - Customers and PKG-1 park in the seafront bays (y 274–276.6); the pavements step round the lay-by onto the forecourt, and a zebra crosses Coast Rd at x 399.
 
 Next:
-10. Fire station and ENG-1, with chimney fires.
+10. Fire station and ENG-1, with chimney fires, on the old shop site off Riverside Rd (x 358–404, y 92–124).
 10b. Car Works: a car factory on a terrace cut into the foothills, which you can see inside.
     - Inside: a press shop, a body-in-white robot welding line (after the owner's reference photo), a paint booth, assembly and an end-of-line test.
     - Every car on the line can be followed with the camera.

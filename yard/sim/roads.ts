@@ -62,9 +62,13 @@ export function crossClear(a, b) {
 export const compass = h => { const c = Math.cos(h), s = Math.sin(h); return c > 0.7 ? 'eastbound' : c < -0.7 ? 'westbound' : s > 0.7 ? 'southbound' : s < -0.7 ? 'northbound' : 'turning'; };
 export function streetAt(x, y) {
   if (Math.hypot(x - RAB.x, y - RAB.y) < 16) return 'the roundabout';
-  if (y > 138 && y < 142.7 && x > 345 && x < 384) return 'the shop parking';
-  if (y > 117 && y < 140) return x > 136 && x < 198 && y < 124 ? 'the truck park' : x > 344 && x < 384 && y < 124 ? 'the delivery lay-by' : 'Riverside Rd';
+  if (y > 138 && y < 142.7 && x > 345 && x < 384) return 'the parking on Riverside Rd';
+  if (y > 117 && y < 140) return x > 136 && x < 198 && y < 124 ? 'the truck park' : 'Riverside Rd';
   if (y > 196 && y < 214 && x > 50) return 'Market St';
+  // Corner Market: its lay-by and forecourt on the north side of Coast Rd, its parking bays on the seafront
+  if (x > 374 && x < 413 && y > 255.5 && y < 260) return 'the Corner Market lay-by';
+  if (x > 377 && x < 413 && y > 249 && y < 256) return 'the Corner Market forecourt';
+  if (x > 374 && x < 409 && y > 273.9 && y < 276.7) return 'the shop parking';
   if (y > 258 && y < 274) return 'Coast Rd';
   if (y >= 274) return y < 279 ? 'the promenade' : y < 296 ? 'the beach' : 'the sea';
   if (y < -4) return 'the hills';
@@ -72,6 +76,6 @@ export function streetAt(x, y) {
   if (av && y > 138) return av[0];
   if (x > 218 && x < 263 && y > 176 && y < 199) return 'the police yard';
   if (x > 356 && (y < 93 || x > 404 && y < 117)) return x > 360 && x < 403 && y > 72 && y < 91 ? 'Orchard Green' : 'Orchard Ln';
-  if (y < 118) return x < 200 ? 'the Plant 01 yard' : x < 358 ? 'the Warehouse 01 yard' : 'the shop forecourt';
+  if (y < 118) return x < 200 ? 'the Plant 01 yard' : x < 358 ? 'the Warehouse 01 yard' : 'Riverside Rd';
   return 'town';
 }

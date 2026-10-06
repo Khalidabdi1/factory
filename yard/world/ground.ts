@@ -49,20 +49,20 @@ export function buildWorld() {
   const p = new Part(), G = TOP(0, 0, 0);
   // the slab in section: land to the beach crest, the beach shelving into the sea, the sea floor
   p.extrude([[0, WORLD.y0, -4], [0, WORLD.y1, -4], [0, WORLD.y1, SEA_Z], [0, 296, SEA_Z], [0, 289, 0], [0, WORLD.y0, 0]], [WORLD.x1, 0, 0], 'gr');
-  // asphalt: the main road, the roundabout, the two lay-bys, the yards' own roads, then the town's streets
+  // asphalt: the main road, the roundabout, the truck park, the yards' own roads, then the town's streets
   p.fill2(G, 0, 124, 404, 14, 'glass', 0.02);
   const disk = []; for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2; disk.push(W(RAB.x + 14.5 * Math.cos(a), RAB.y + 14.5 * Math.sin(a), 0.02)); }
   p.poly('glass', disk);
-  p.fill2(G, 344, 118.5, 40, 5.5, 'glass', 0.02); p.fill2(G, 136, 118.5, 62, 5.5, 'glass', 0.02);
+  p.fill2(G, 136, 118.5, 62, 5.5, 'glass', 0.02);
   for (const r of [[113, 89, 16, 35], [4, 89, 125, 10], [4, 89, 8.5, 28], [4, 107, 125, 10], [20, 76, 42, 13], [66, 76, 42, 13],
     [314, 89, 16, 35], [322.6, 17, 6.8, 72], [208, 89, 122, 10], [208, 17, 8, 100], [208, 105, 122, 10], [216, 17, 12, 6], [308, 17, 15, 6],
     [224, 76, 42, 13], [268, 76, 42, 13], [219, 178, 43, 20]]) p.fill2(G, ...r, 'road', 0.02);
   for (const r of [[53, 138, 14, 136], [173, 138, 14, 136], [293, 138, 14, 136], [413, 138, 14, 136], [405, 138, 8, 4.6], [53, 198, 374, 14], [0, 260, 440, 14],
-    [345, 138, 39, 4.6]]) p.fill2(G, ...r, 'glass', 0.02);
-  // road paint: the main road's north kerb (gaps for the gates and lay-bys), centre lines, the roundabout's edges
+    [345, 138, 39, 4.6], [378, 255.6, 35, 4.4], [374, 257.4, 4, 2.6], [374, 274, 35, 2.6]]) p.fill2(G, ...r, 'glass', 0.02);
+  // road paint: the main road's north kerb (gaps for the gates and the truck park), centre lines, the roundabout's edges
   const kx = RAB.x - Math.sqrt(14.5 ** 2 - 7 ** 2);
-  p.draw(G, [0, 124, 112, 124, 130, 124, 136, 124, 198, 124, 314, 124, 332, 124, 340, 124, 390, 124, kx, 124,
-    344, 118.5, 384, 118.5, 340, 124, 344, 118.5, 384, 118.5, 390, 124, 136, 124, 140, 118.5, 140, 118.5, 194, 118.5, 194, 118.5, 198, 124], 'line', 0.05);
+  p.draw(G, [0, 124, 112, 124, 130, 124, 136, 124, 198, 124, 314, 124, 332, 124, kx, 124,
+    136, 124, 140, 118.5, 140, 118.5, 194, 118.5, 194, 118.5, 198, 124], 'line', 0.05);
   const dashes = (x0, y0, x1, y1, skip = () => false) => { const L = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / L, uy = (y1 - y0) / L;
     for (let d = 1; d < L - 3; d += 6) { const x = x0 + ux * d, y = y0 + uy * d; if (!skip(x, y) && !skip(x + ux * 3, y + uy * 3)) p.draw(G, [x, y, x + ux * 3, y + uy * 3], 'line', 0.05); } };
   const nearAv = x => AV.some(a => Math.abs(x - a) < 8);
@@ -73,20 +73,24 @@ export function buildWorld() {
     if (m.x < kx + 0.5 && Math.abs(m.z - RAB.y) < 7.2 || m.z > RAB.y + 6 && m.x > 412.5 && m.x < 427.5 || m.z < RAB.y - 6 && m.x > 416.5 && m.x < 427.5) continue; p.seg('line', outer[i], outer[i + 1]); }
   for (let a = 0; a < Math.PI * 2; a += Math.PI / 12) { const r0 = 8.5, r1 = 10; p.draw(G, [RAB.x + r0 * Math.cos(a), RAB.y + r0 * Math.sin(a), RAB.x + r1 * Math.cos(a + 0.12), RAB.y + r1 * Math.sin(a + 0.12)], 'detail', 0.05); }
   p.cylZ(RAB.x, RAB.y, 0, 5, 0.35, 24); tree(p, RAB.x, RAB.y, 1.1);
-  p.text(G, 'DELIVERIES', 348, 123.3, 1.1, 'paint').text(G, 'TRUCKS', 146, 123.3, 1.1, 'paint');
+  p.text(G, 'TRUCKS', 146, 123.3, 1.1, 'paint');
   p.text(G, 'RIVERSIDE RD', 6, 133.6, 1.3, 'paint').text(G, 'MARKET ST', 76, 207.6, 1.3, 'paint').text(G, 'MARKET ST', 316, 207.6, 1.3, 'paint')
     .text(G, 'COAST RD', 8, 269.6, 1.3, 'paint').text(G, 'COAST RD', 316, 269.6, 1.3, 'paint');
-  // zebra crossings: wherever the pavements meet across a street, and the one in front of the shop
+  // zebra crossings: wherever the pavements meet across a street, the Orchard Lane footway's, and Corner Market's
   const zebra = (x0, y0, x1, y1) => { const L = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / L, uy = (y1 - y0) / L;
     for (let d = 0.9; d < L - 0.6; d += 1.1) { const cx = x0 + ux * d, cy = y0 + uy * d;
       p.poly('deck', [[-0.28, -1.4], [0.28, -1.4], [0.28, 1.4], [-0.28, 1.4]].map(([a, b]) => W(cx + ux * a - uy * b, cy + uy * a + ux * b, 0.04))); } };
-  zebra(ZEBRA_X, 124, ZEBRA_X, 138);
+  zebra(ZEBRA_X, 124, ZEBRA_X, 138); zebra(399, 260, 399, 274);
   for (const a of AV) for (const r of a === 420 ? [196.7, 213.3, 258.7] : [139.3, 196.7, 213.3, 258.7]) zebra(a - 7, r, a + 7, r);
   for (const c of [68.3, 171.7, 188.3, 291.7, 308.3, 411.7]) zebra(c, 198, c, 212);
   for (const c of [51.7, 68.3, 171.7, 188.3, 291.7, 308.3, 411.7, 428.3]) zebra(c, 260, c, 274);
-  // customer parking in front of the houses opposite the shop
+  // parking in front of the houses on Riverside Rd
   for (const x of [349.5, 359.5, 369.5, 379.5]) p.draw(G, [x, 138.4, x, 142.6], 'line', 0.05);
-  p.text(G, 'SHOP PARKING', 350, 141.4, 0.8, 'paint');
+  p.text(G, 'PARKING', 350, 141.4, 0.8, 'paint');
+  // Corner Market: the delivery lay-by in front, and across Coast Rd the seafront bays, the parcel van's at the west end
+  p.text(G, 'DELIVERIES', 401.2, 259.3, 1.0, 'paint');
+  for (const x of [384.8, 390.2, 397.4, 400.6]) p.draw(G, [x, 274.3, x, 276.6], 'line', 0.05);
+  p.text(G, 'PARCELS', 377.4, 276.2, 0.6, 'paint').text(G, 'SHOP', 391.6, 276.2, 0.6, 'paint').text(G, 'SHOP', 402.6, 276.2, 0.6, 'paint');
   // plant yard paint: stop line, lane words, bays, staging, chargers, forklift ways, belt pickup stations
   p.draw(G, [113, 121.4, 121, 121.4], 'line', 0.05);
   p.text(G, 'OUT', 118, 104, 1.6, 'paint', 'middle').text(G, 'IN', 124.6, 104, 1.6, 'paint', 'middle');
@@ -114,9 +118,12 @@ export function buildWorld() {
   for (let i = 0; i <= 14; i++) { const x = 140 + i * 3.4; p.draw(G, [x, 10, x, 15.5, x, 31.5, x, 37], 'detail', 0.05); }
   p.draw(G, [140, 15.5, 187.6, 15.5, 140, 31.5, 187.6, 31.5], 'detail', 0.05);
   p.text(G, 'STAFF', 140, 24.4, 1.5, 'paint');
-  // shop forecourt paving
+  // paving: the old forecourt off Riverside Rd, which the Orchard Lane footway crosses, and Corner Market's on the kerb
   for (let x = 358; x <= 398; x += 2) p.draw(G, [x, 112, x, 118.4], 'detail', 0.05);
   for (let y = 113.6; y < 118.4; y += 1.6) p.draw(G, [358, y, 398, y], 'detail', 0.05);
+  const GC = TOP(0, 0, CURB);
+  for (let x = 379.5; x <= 411; x += 2) p.draw(GC, [x, 249.2, x, 255.4], 'detail', 0.03);
+  for (let y = 250.6; y < 255.4; y += 1.6) p.draw(GC, [377.6, y, 412.8, y], 'detail', 0.03);
   // yard-side trees
   for (const [x, y] of [[136, 46], [146, 46], [190, 46], [192, 10], [134, 8], [121, 22], [124, 8], [8, 70], [8, 30], [184, 108], [140, 108], [160, 110],
     [201, 30], [201, 80], [220, 8], [342, 12], [350, 32], [344, 52], [350, 72], [342, 92], [359.5, 86], [372, 86], [388, 84], [402, 98], [414, 104], [432, 100], [436, 86]]) tree(p, x, y, rand(0.8, 1.1));
@@ -164,7 +171,7 @@ function buildTown(p, G, fence) {
   for (const y of [152, 178, 226, 248]) { lampPost(p, 52.4, y, 1, 0); lampPost(p, 187.6, y, -1, 0); lampPost(p, 307.6, y, -1, 0); lampPost(p, 412.4, y, 1, 0); }
   // the promenade: a rail on the beach side (gaps for the stairs and the pier), palms, lamps and benches
   for (const [a, b] of [[0, 98.5], [103.5, 195.5], [202.5, 298.5], [303.5, 325.6], [334.4, 440]]) fence(a, 278.7, b, 278.7, CURB, 1.0);
-  for (let x = 10; x < 440; x += 22) palm(p, x, 275.1, rand(0.85, 1.05), CURB);
+  for (let x = 10; x < 440; x += 22) { const s = rand(0.85, 1.05); if (x > 374 && x < 409) rand(0, 1), rand(0, 1); else palm(p, x, 275.1, s, CURB); }   // none in the shop's bays
   for (let x = 21; x < 440; x += 44) lampPost(p, x, 274.8, 0, -1);
   for (const x of [40, 140, 250, 350]) bench(p, x, 277.8, 's');
 }

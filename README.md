@@ -2,7 +2,7 @@
 
 A live isometric town drawn with WebGL in the hairline style of [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill).
 
-Goods go from a factory to a warehouse and on to a shop, along the main road of a small seaside town:
+Goods go from a factory to a warehouse along the main road of a small seaside town, and on to a shop by the sea:
 - Behind the town are hills; in front of it, the sea.
 - A day passes in six minutes. Windows, street lamps, headlights and the lighthouse come on at dusk.
 - There is no dashboard. Click anything and a card shows its live details; click a vehicle and its route appears.
@@ -43,7 +43,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | --- | --- |
 | **Factory** | Plant 01, its conveyor, staging, two loading bays, and a truck park for flatbeds waiting for a free bay |
 | **Warehouse** | Warehouse 01 with racks and a loading lane, two docks, a sliding gate and its guard |
-| **Shop** | Corner Market, its delivery lay-by, a zebra crossing and customer parking across the road |
+| **Shop** | Corner Market on the seafront, where Hill Av meets Coast Rd: its delivery lay-by, a zebra crossing, and parking bays across the road on the promenade |
 | **Town** | Four kinds of block:<ul><li>flats, Harbour Bank and Café Mira</li><li>the police station and Town Hall, whose clock tells the simulated time</li><li>houses with gardens</li><li>villas with pools</li></ul>Mill Park lies on the west side. |
 | **Coast** | Coast Rd, the promenade, the beach, the pier, and a breakwater with a lighthouse, with a sailboat and a motorboat out at sea |
 
@@ -55,8 +55,8 @@ The engine runs once per page load. React draws the plate, and the engine drives
    - It goes round the roundabout, and the guard opens the warehouse gate.
    - On the way back it waits in the truck park until a bay is free.
 3. **Warehouse 01:** forklifts FL-04 to FL-06 unload the flatbeds into the racks. They load the covered box trucks from the rear, in the loading lane.
-4. **Box trucks (DLV-01 to DLV-03):** they carry four pallets to the shop, open their rear doors in the lay-by, and four staff carry the boxes in.
-5. **Shoppers:** they walk in from the east, or drive in, park opposite the shop and cross at the zebra. They take boxes off the shelves, pay and leave.
+4. **Box trucks (DLV-01 to DLV-03):** they carry four pallets down Hill Av to the shop, open their rear doors in the lay-by, and four staff carry the boxes in. They go back along Coast Rd and up Harbour Av, and cross Riverside Rd straight into the warehouse gate.
+5. **Shoppers:** they walk in down Hill Av or along the promenade, or drive in, park in the bays on the seafront and cross at the zebra. They take boxes off the shelves, pay and leave.
 6. **Traffic:**
    - Cars pass through on Riverside Rd and Coast Rd.
    - Town cars loop round the blocks and give way where they join a busier street.

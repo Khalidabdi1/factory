@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { FRONT, SIDE, TOP, W, plane } from '../kernel/iso';
 import { Part, pose } from '../kernel/part';
-import { lampPost, ring } from './ground';
+import { CURB, SX, SY } from '../layout';
+import { lampPost, ring, tree } from './ground';
 
 export function buildFactory() {
   const p = new Part();
@@ -209,6 +210,7 @@ export function buildBooth() {
   return p.build('booth');
 }
 
+// Corner Market, in its own frame (x 362–394, y 94–112); see SX, SY in the layout
 export function buildShop() {
   const g = new THREE.Group(); g.name = 'shop';
   const X0 = 362, X1 = 394, Y0 = 94, Y1 = 112, H = 5.4, SILL = 0.9, T = 0.4;
@@ -223,6 +225,11 @@ export function buildShop() {
   }
   p.box(383, 108.4, 0, 8, 1.6, 1.05); p.box(388.6, 108.6, 1.05, 1.2, 0.9, 0.5);
   p.rect2(TOP(0, 0, 0), 362.8, 94.8, 3.6, 2.8, 'detail', 0.03);
+  // the back yard, between the shop and Market St: bins and empty crates by the back door, a hedge, two trees
+  p.box(364, 91.4, 0, 1.2, 1.4, 1.3).box(365.6, 91.4, 0, 1.2, 1.4, 1.3);
+  for (const [x, y, z] of [[368.6, 91.6, 0], [369.9, 91.6, 0], [368.6, 91.6, 0.6]]) p.box(x, y, z, 1.1, 1.1, 0.6, 'k');
+  for (const x0 of [X0, X1 - 0.6]) p.box(x0, 78.4, 0, 0.6, 13.4, 1.1, 'gs');
+  tree(p, 374, 84.5, 1.0); tree(p, 388, 82.6, 0.9);
   g.add(p.build('shopBase'));
   // the cut: a low sill and mullions on the street side, the fascia with its name, the roof as an outline
   const c = new Part();
@@ -257,7 +264,9 @@ export function buildShop() {
   for (const [x, y] of [[366, 97], [372, 97]]) { s.box(x, y, H + 0.3, 2.4, 1.8, 0.9); s.draw(FRONT(x, y + 1.8, H + 1.2), [0.3, 0.3, 2.1, 0.3, 0.3, 0.6, 2.1, 0.6]); }
   s.draw(TOP(X0, Y0, H + 0.3), [0.6, 0.6, X1 - X0 - 0.2, 0.6, X1 - X0 - 0.2, 0.6, X1 - X0 - 0.2, Y1 - Y0 - 0.2, X1 - X0 - 0.2, Y1 - Y0 - 0.2, 0.6, Y1 - Y0 - 0.2, 0.6, Y1 - Y0 - 0.2, 0.6, 0.6]);
   const shell = s.build('shopShell'); g.add(shell);
-  g.userData.peek = { shell, cut, box:[X0, X1, Y0, Y1] };
+  // drawn in its own frame, the shop stands by the sea at the corner of Coast Rd and Hill Av, on the kerb like the houses
+  g.position.copy(W(SX, SY, CURB));
+  g.userData.peek = { shell, cut, box:[X0 + SX, X1 + SX, Y0 + SY, Y1 + SY] };
   return g;
 }
 export function buildShopBox() {

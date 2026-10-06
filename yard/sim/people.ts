@@ -2,7 +2,7 @@
 import { hooks } from '../shared';
 import { ease, rand, rng } from '../kernel/math';
 import { Site, dedupe } from '../kernel/graph';
-import { BOXES, ORCHARD, SHELF, SHOP, STOCK_CAP, ZEBRA_X } from '../layout';
+import { BOXES, ORCHARD, SHELF, SHOP, STOCK_CAP, SX, SY, ZEBRA_X, sx } from '../layout';
 import { NAMES, STAFF, clock, kmh, night, sim } from './core';
 import { streetAt } from './roads';
 import { SPOTS } from './cars';
@@ -17,15 +17,20 @@ let guard = null;
 export const setGuard = g => { guard = g; };
 
 // The shop: shelves, a stockroom stack, and the staff who carry boxes in from the delivery truck.
+// Its aisles are worked out in the frame the shop was drawn in (L turns a town point into it, sx turns it back).
+const L = p => [p[0] - SX, p[1] - SY];
 export const shop = {
   kind:'shop', id:'Corner Market', pick:[370, 112, 5.0], stock:[], next:3,
   // where a person walks from the door to reach a spot in the aisle south of a shelf unit
   routeTo(stand) {
-    const back = stand[1] < 102;   // the back unit is reached round the end of the front one
-    const side = stand[0] < 377 ? 364.2 : 392.2;
-    return back ? [[stand[0] < 377 ? 372 : 381, 106.8], [side, 106.8], [side, 101], stand] : [[stand[0], 107.2], stand];
+    const [x, y] = L(stand), back = y < 102;   // the back unit is reached round the end of the front one
+    const side = x < 377 ? 364.2 : 392.2;
+    return (back ? [[x < 377 ? 372 : 381, 106.8], [side, 106.8], [side, 101], [x, y]] : [[x, 107.2], [x, y]]).map(q => sx(...q));
   },
-  routeOut(from) { return from[1] < 102 ? [[from[0] < 377 ? 364.2 : 392.2, 101], [from[0] < 377 ? 364.2 : 392.2, 106.8], [from[0] < 377 ? 372 : 381, 106.8], SHOP.in] : [[from[0], 107.2], SHOP.in]; },
+  routeOut(from) {
+    const [x, y] = L(from), side = x < 377 ? 364.2 : 392.2;
+    return [...(y < 102 ? [[side, 101], [side, 106.8], [x < 377 ? 372 : 381, 106.8]] : [[x, 107.2]]).map(q => sx(...q)), SHOP.in];
+  },
   onShelf() { return SHELF.filter(s => s.sku).length; },
   freeShelf() { const f = SHELF.filter(s => !s.sku && !s.reserved); return f[Math.floor(rng() * f.length)] ?? null; },
   stockFree() { return STOCK_CAP - this.stock.length; },
@@ -57,15 +62,16 @@ export const shop = {
 };
 const STAFFERS = [];
 export class Staff extends Person {
-  constructor(k) { const home = [[387, 106.2], [372, 106.2], [367, 106.6], [384.5, 106.4]][k]; super({ look:'staff', id:STAFF[k], k, home, x:home[0], y:home[1], h:-Math.PI / 2, speed:2.0 }); STAFFERS.push(this); }
+  constructor(k) { const home = sx(...[[387, 106.2], [372, 106.2], [367, 106.6], [384.5, 106.4]][k]); super({ look:'staff', id:STAFF[k], k, home, x:home[0], y:home[1], h:-Math.PI / 2, speed:2.0 }); STAFFERS.push(this); }
   think() {
     const t = shop.truckReady();
     if (t && (shop.freeShelf() || shop.stockFree() > 0)) {
       t.boxRes++; this.truck = t; this.task = `unloading ${t.id}`;
-      const spot = [370.6, 120.3 + 0.8 * this.k];
-      this.walk([SHOP.in, SHOP.out, [372.8, 117], spot], `to ${t.id}`).face(Math.PI).wait(0.5, 'taking a box')
+      // behind the truck in the lay-by, its rear doors open
+      const spot = [395.6, 256.2 + 0.8 * this.k];
+      this.walk([SHOP.in, SHOP.out, [395.6, 253.6], spot], `to ${t.id}`).face(Math.PI).wait(0.5, 'taking a box')
         .then(p => { p.carrying = shop.takeBox(t); })
-        .walk([[372.8, 117]], 'carrying a box in').then(p => { p.truck = null; })
+        .walk([[395.6, 253.6]], 'carrying a box in').then(p => { p.truck = null; })
         .walk([SHOP.out, SHOP.in]).then(p => p.stockBox());
       return;
     }
@@ -88,14 +94,14 @@ export class Staff extends Person {
   }
   packOrder(o) {
     o.state = 'packing'; this.task = `packing ${o.id} for ${o.house.id}`;
-    const sh = SHELF.find(s => s.sku && !s.reserved), toCounter = from => [...shop.routeOut(from).slice(0, -1), [381.5, 111], SHOP.counter];
+    const sh = SHELF.find(s => s.sku && !s.reserved), toCounter = from => [...shop.routeOut(from).slice(0, -1), sx(381.5, 111), SHOP.counter];
     if (sh) { sh.reserved = this;
       this.walk(shop.routeTo(sh.stand), `picking ${o.id}`).face(-Math.PI / 2).wait(0.8, `picking ${o.id}`)
         .then(p => { p.carrying = o.sku = sh.sku; sh.sku = null; sh.reserved = null; sh.mesh.visible = false; }).walk(toCounter(sh.stand), `carrying ${o.id} to the counter`); }
     else this.walk(shop.routeTo(SHOP.stockStand), `picking ${o.id}`).face(-Math.PI / 2).wait(0.6)
       .then(p => { p.carrying = o.sku = shop.stock.pop(); shop.drawStock(); }).walk(toCounter(SHOP.stockStand), `carrying ${o.id} to the counter`);
-    // over the zebra to the van's kerb side in the shop parking, and back
-    const toVan = [[381.5, 111], SHOP.in, SHOP.out, [389, 115.4], [ZEBRA_X, 117.2], [ZEBRA_X, 122.6], [ZEBRA_X, 139.4], [ZEBRA_X, 143.9], [373.6, 143.9], [373.6, 142.4]];
+    // over the zebra to the van's kerb side in the seafront bays, and back
+    const Z = SHOP.zebra, toVan = [sx(381.5, 111), SHOP.in, SHOP.out, SHOP.front, [Z, 254.6], [Z, 277.7], [380.4, 277.7], [380.4, 277.3]];
     this.face(-Math.PI / 2).wait(2.5, `packing ${o.id}`).then(() => { o.state = 'packed'; o.tPacked = sim.t; })
       .go(toVan, `taking ${o.id} to the van`).face(-Math.PI / 2).wait(1.2, 'loading the van')
       .then(p => { p.carrying = null; p.done++; hooks.courier.dispatch(o); p.task = null; })
@@ -135,15 +141,17 @@ export class Picker extends Person {
 export const SHOPPERS = () => sim.people.filter(p => p instanceof Shopper);
 export class Shopper extends Person {
   constructor(o = {}) {
-    super({ look:'shopper', id:`Shopper ${shopperSeq++}`, x:444, y:115.2, h:Math.PI, speed:rand(1.2, 1.5), want:1 + Math.floor(rng() * 3), got:[], ...o });
-    if (!this.car) this.walk([[384, 115.2], SHOP.out, SHOP.in], 'walking in').then(p => p.choose());
+    // on foot, from up Hill Av or along the promenade
+    const start = o.car ? null : rng() < 0.5 ? [444, 200] : [444, PROM];
+    super({ look:'shopper', id:`Shopper ${shopperSeq++}`, x:start?.[0], y:start?.[1], h:Math.PI, speed:rand(1.2, 1.5), want:1 + Math.floor(rng() * 3), got:[], start, ...o });
+    if (!this.car) this.go(pedRoute(start, SHOP.front), 'walking to Corner Market').walk([SHOP.out, SHOP.in], 'walking in').then(p => p.choose());
   }
-  inside() { return this.x > 362 && this.x < 394 && this.y > 94 && this.y < 112; }
+  inside() { return this.x > 377.5 && this.x < 409.5 && this.y > 231 && this.y < 249; }
   choose() {
     const shelf = SHELF.filter(s => s.sku && !s.reserved), sh = shelf[Math.floor(rng() * shelf.length)];
     if (!sh) {
       if (this.got.length) { this.pay(this.from); return; }
-      this.walk([[372, 107]], 'looking for stock').wait(2.5, 'nothing on the shelves').walk([[378, 107.2], SHOP.in]).then(p => p.leave()); return;
+      this.walk([sx(372, 107)], 'looking for stock').wait(2.5, 'nothing on the shelves').walk([sx(378, 107.2), SHOP.in]).then(p => p.leave()); return;
     }
     sh.reserved = this;
     this.walk(this.from ? [...shop.routeOut(this.from).slice(0, -1), ...shop.routeTo(sh.stand).slice(1)] : shop.routeTo(sh.stand), 'browsing')
@@ -152,24 +160,25 @@ export class Shopper extends Person {
         if (p.got.length < p.want) p.choose(); else p.pay(sh.stand); });
   }
   pay(from) {
-    this.walk([...shop.routeOut(from).slice(0, -1), [381.5, 111], SHOP.counter], 'to the counter').face(-Math.PI / 2).wait(2, 'paying')
-      .then(p => { sim.stats.sold += p.got.length; p.paid = true; p.walk([[381.5, 111], SHOP.in]).then(q => q.leave()); });
+    this.walk([...shop.routeOut(from).slice(0, -1), sx(381.5, 111), SHOP.counter], 'to the counter').face(-Math.PI / 2).wait(2, 'paying')
+      .then(p => { sim.stats.sold += p.got.length; p.paid = true; p.walk([sx(381.5, 111), SHOP.in]).then(q => q.leave()); });
   }
-  leave() { this.walk([SHOP.out, [392, 115.2], [446, 115.2]], 'leaving').then(p => p.remove()); }
+  leave() { this.walk([SHOP.out, SHOP.front], 'leaving').go(pedRoute(SHOP.front, this.start).slice(1), 'leaving').then(p => p.remove()); }
   info() {
     return { kind:'Shopper', title:this.id, status:this.status(),
       rows:[['Arrived', clock(this.t0)], ['Shopping for', `${this.want} ${this.want > 1 ? 'boxes' : 'box'}`], [this.paid ? 'Bought' : 'Basket', this.got.length ? this.got.join(', ') : 'empty']] };
   }
 }
-// A customer who drove: from the parking spot over the zebra to the shop, and back to the car.
+// A customer who drove: from the seafront bay along the promenade, over the zebra to the shop, and back to the car.
 export class Customer extends Shopper {
   constructor(car, spot) {
-    const door = [spot.S + 5.6, 142.3];
+    const door = [spot.S + 5.6, 277.2], Z = SHOP.zebra;
     super({ car, spot, door, x:door[0], y:door[1], h:Math.PI / 2 });
-    this.go([door, [door[0], 143.9], [ZEBRA_X, 143.9], [ZEBRA_X, 139.4], [ZEBRA_X, 122.6], [ZEBRA_X, 117.2], [389, 115.4], SHOP.out, SHOP.in], 'walking to Corner Market').then(p => p.choose());
+    this.way = [door, [door[0], 277.7], [Z, 277.7], [Z, 254.6], SHOP.front, SHOP.out];
+    this.go(this.way, 'walking to Corner Market').walk([SHOP.in]).then(p => p.choose());
   }
   leave() {
-    this.go([SHOP.out, [389, 115.4], [ZEBRA_X, 117.2], [ZEBRA_X, 122.6], [ZEBRA_X, 139.4], [ZEBRA_X, 143.9], [this.door[0], 143.9], this.door], 'walking back to the car')
+    this.go([SHOP.in, ...[...this.way].reverse()], 'walking back to the car')
       .then(p => { p.car.back = true; p.car.driver = null; p.remove(); });
   }
   info() { const i = super.info(); i.kind = 'Customer · drove here'; i.rows.unshift(['Car', this.car.id]); return i; }
@@ -213,7 +222,12 @@ const PED = (() => {
   const nodes = {}, segs = [], add = (x, y) => { const k = `${x}|${y}`; nodes[k] = [x, y]; return k; };
   const link = (a, b) => segs.push([add(...a), add(...b)]);
   // along each row, inside the blocks and over the avenues (B3's north side is set back, block E starts further south)
-  for (const y of PR) for (let i = 0; i < PC.length - 1; i++) { if (y === 139.3 && PC[i] >= 308.3) continue; link([PC[i], y], [PC[i + 1], y]); }
+  for (const y of PR) for (let i = 0; i < PC.length - 1; i++) { if (y === 139.3 && PC[i] >= 308.3 || y === 258.7 && PC[i] === 308.3) continue; link([PC[i], y], [PC[i + 1], y]); }
+  // Corner Market: the pavement steps up onto the forecourt round the lay-by, the promenade steps back behind the seafront
+  // bays, and a zebra over Coast Rd joins the two
+  const Z = SHOP.zebra, F = SHOP.front[1];
+  for (const [a, b] of [[[308.3, 258.7], [373.4, 258.7]], [[373.4, 258.7], [377.4, 256.4]], [[377.4, 256.4], [377.4, F]], [[377.4, F], [SHOP.front[0], F]],
+    [[SHOP.front[0], F], [Z, F]], [[Z, F], [411.7, F]], [[411.7, F], [411.7, 258.7]], [[Z, F], [Z, 277.7]]]) link(a, b);
   link([308.3, 139.3], [308.3, 143.9]); link([308.3, 143.9], [ZEBRA_X, 143.9]); link([ZEBRA_X, 143.9], [411.7, 143.9]); link([411.7, 143.9], [428.3, 147.3]);
   // up to Orchard Lane: over Riverside Rd at the shop's zebra, up the footway, over the lane to the houses' pavement
   const O = ORCHARD;
@@ -222,9 +236,10 @@ const PED = (() => {
   // down each column, over Market St and Coast Rd
   for (const x of PC) {
     link([x, x === 308.3 || x === 411.7 ? 143.9 : x === 428.3 ? 147.3 : 139.3], [x, 196.7]);
-    link([x, 196.7], [x, 213.3]); link([x, 213.3], [x, 258.7]); link([x, 258.7], [x, PROM]);
+    link([x, 196.7], [x, 213.3]); link([x, 213.3], x === 411.7 ? [x, F] : [x, 258.7]); link([x, 258.7], [x, PROM]);
   }
-  const prom = [-4, ...PC, 444]; for (let i = 0; i < prom.length - 1; i++) link([prom[i], PROM], [prom[i + 1], PROM]);
+  const prom = [-4, ...PC, 444]; for (let i = 0; i < prom.length - 1; i++) if (prom[i] !== 308.3) link([prom[i], PROM], [prom[i + 1], PROM]);
+  for (const [a, b] of [[[308.3, PROM], [373, PROM]], [[373, PROM], [374.6, 277.7]], [[374.6, 277.7], [Z, 277.7]], [[Z, 277.7], [409.6, 277.7]], [[409.6, 277.7], [411.7, PROM]]]) link(a, b);
   // Mill Park: the loop round the pond, the west gate, links to the pavements
   for (const [a, b] of [[[8, 150], [42, 150]], [[42, 150], [42, 196.7]], [[42, 196.7], [42, 250]], [[42, 250], [8, 250]], [[8, 250], [8, 200]], [[8, 200], [8, 150]],
     [[-4, 200], [8, 200]], [[42, 196.7], [51.7, 196.7]], [[42, 150], [42, 139.3]], [[42, 139.3], [51.7, 139.3]], [[42, 250], [42, 258.7]], [[42, 258.7], [51.7, 258.7]]]) link(a, b);

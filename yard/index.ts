@@ -7,7 +7,7 @@ import { Part, TEX_PX, glow, pose } from './kernel/part';
 import { clamp, ease, pick, rand, rng } from './kernel/math';
 import { Path } from './kernel/path';
 import './kernel/graph';
-import { BAYS, CURB, DOCKS, ORCHARD, RACK, SEA_Z, SHELF, STAGE, onRoad } from './layout';
+import { BAYS, CURB, DOCKS, ORCHARD, RACK, SEA_Z, SHELF, STAGE, SX, SY, onRoad } from './layout';
 import { buildWorld } from './world/ground';
 import { buildRange, hillHeight } from './world/range';
 import { bayLamp, buildBooth, buildConveyor, buildFactory, buildGate, buildShop, buildShopBox, buildWarehouse, buildWhGate } from './world/industry';
@@ -60,12 +60,13 @@ whGateG.add(buildBooth());
 world.traverse(o => { o.raycast = noop; });   // ground, streets, trees: nothing to click, and the heaviest mesh to test on every hover
 scene.add(world, rangeG, factoryG, conveyorG, gateG, whG, whGateG, shopG, ...BAYS.map(bayLamp), ...DOCKS.map(bayLamp));
 whGate.panel = whGateG.getObjectByName('panel');
-// the boxes on the shelves and in the stockroom are drawn only while the shop is open to view
-const boxProto = PROTO.shopBox = buildShopBox(), shopInside = new THREE.Group(); shopInside.name = 'shopInside'; shopInside.visible = false; shopG.add(shopInside);
+// the boxes on the shelves and in the stockroom are drawn only while the shop is open to view; they are posed in the
+// town's frame, so they hang off the scene rather than the shop, which stands moved from where it was drawn
+const boxProto = PROTO.shopBox = buildShopBox(), shopInside = new THREE.Group(); shopInside.name = 'shopInside'; shopInside.visible = false; scene.add(shopInside);
 shopG.userData.peek.inside = shopInside;
-for (const s of SHELF) { s.mesh = boxProto.clone(); pose(s.mesh, s.x, s.y, 0, s.z); s.mesh.visible = false; shopInside.add(s.mesh); }
+for (const s of SHELF) { s.mesh = boxProto.clone(); pose(s.mesh, s.x, s.y, 0, s.z + CURB); s.mesh.visible = false; shopInside.add(s.mesh); }
 shop.stockMeshes = []; for (let l = 0; l < 2; l++) for (let j = 0; j < 2; j++) for (let i = 0; i < 3; i++) {
-  const m = boxProto.clone(); pose(m, 363.6 + 1.1 * i, 95.6 + 1.0 * j, 0, 0.56 * l); shopInside.add(m); shop.stockMeshes.push(m); }
+  const m = boxProto.clone(); pose(m, 363.6 + SX + 1.1 * i, 95.6 + SY + 1.0 * j, 0, 0.56 * l + CURB); shopInside.add(m); shop.stockMeshes.push(m); }
 // staff cars, nose in: the north row faces +y, the south row faces −y
 for (const [i, row, van] of [[0, 0, 0], [2, 0, 1], [5, 0, 0], [9, 0, 0], [1, 1, 0], [4, 1, 1], [7, 1, 0], [11, 1, 0]]) {
   const c = buildCar(!!van, rng() < 0.4 ? 'k' : 'n', false), x = 141.7 + 3.4 * i;
@@ -89,8 +90,7 @@ for (let i = 0; i < 5; i++) {
 const VILLAS = [['Villa Aster', 189.6, 50.4, 22, 13, [189.6 + 30, 236, 12, 6], [[189.6 + 46, 232], [192, 250], [189.6 + 44, 251]]],
   ['Villa Brisa', 240.4, 50, 22, 13, [240.4 + 30, 236, 12, 6], [[240.4 + 46, 232], [243, 250], [240.4 + 44, 251]]],
   ['Villa Cala', 309.6, 33.6, 18, 12, [309.6 + 4, 240, 11.5, 5.5], [[309.6 + 29.5, 228], [309.6 + 28, 251]]],
-  ['Villa Dune', 343.2, 33.6, 18, 12, [343.2 + 4, 240, 11.5, 5.5], [[343.2 + 29.5, 228], [343.2 + 28, 251]]],
-  ['Villa Eira', 376.8, 33.6, 18, 12, [376.8 + 4, 240, 11.5, 5.5], [[376.8 + 29.5, 228], [376.8 + 28, 251]]]];
+  ['Villa Dune', 343.2, 33.6, 18, 12, [343.2 + 4, 240, 11.5, 5.5], [[343.2 + 29.5, 228], [343.2 + 28, 251]]]];   // Corner Market has the corner lot
 for (const [id, x, w, bw, bd, pool, palms] of VILLAS) {
   const g = buildVilla({ x, y:214.6, w, bw, bd, pool, palms, lotY1:257.4, gardens });
   home(g, { id, villa:true, street:'Coast Rd', door:[x + 3 + bw - 3.2, 214.6 + 7 + bd + 0.6], kerb:[x + 3 + bw - 3.2, 259] });
@@ -176,7 +176,7 @@ const gate = {
   },
   readout() { return `plant gate · ${sim.stats.plantOut} trucks out`; },
 };
-whGate.groups = [whGateG]; shop.groups = [shopG];
+whGate.groups = [whGateG]; shop.groups = [shopG]; shopInside.userData.entity = shop;
 for (const [g, e] of [[factoryG, factory], [conveyorG, conveyor], [gateG, gate], [whG, warehouse], [whGateG, whGate], [shopG, shop]]) g.userData.entity = e;
 
 const guard = new Guard(); setGuard(guard);
@@ -194,7 +194,7 @@ BAYS[0].truck = T1; DOCKS[1].truck = T2; DOCKS[0].truck = T3;
 const V1h = vanHolds(), V2h = vanHolds(), V3h = vanHolds();
 const V1 = new Truck({ model:'van', id:'DLV-01', driver:DRIVERS[2], path:VAN_LOOP, holds:V1h, s:V1h.find(h => h.name === 'load').s });
 const V2 = new Truck({ model:'van', id:'DLV-02', driver:DRIVERS[3], path:VAN_LOOP, holds:V2h, s:V2h.find(h => h.name === 'shop').s });
-const V3 = new Truck({ model:'van', id:'DLV-03', driver:DRIVERS[5], path:VAN_LOOP, holds:V3h, s:VAN_LOOP.project(336, 127.5) });
+const V3 = new Truck({ model:'van', id:'DLV-03', driver:DRIVERS[5], path:VAN_LOOP, holds:V3h, s:VAN_LOOP.project(340, 263.5) });
 const BUS = new Truck({ model:'bus', id:'BUS-1', driver:DRIVERS[4], path:BUS_PATH, holds:busHolds(), s:BUS_PATH.project(200, 208.5), pax:12 });
 for (const t of sim.trucks) t.place();
 const stockOf = (slot, age) => { const p = new Pallet(); p.t0 = age; putIn(slot, p); return p; };
@@ -232,7 +232,7 @@ sim.step = dt => {
   if ((ROAD.next -= dt) <= 0 && entryClear(-8, 134.5)) { new Car({ path:ROAD.path }); ROAD.next = late ? rand(7, 14) : rand(3, 7); }
   if ((COAST.nextE -= dt) <= 0 && entryClear(-8, 270.5)) { new Car({ role:'coast', path:COAST.e }); COAST.nextE = late ? rand(10, 20) : rand(4, 9); }
   if ((COAST.nextW -= dt) <= 0 && entryClear(448, 263.5)) { new Car({ role:'coast', path:COAST.w }); COAST.nextW = late ? rand(10, 20) : rand(4, 9); }
-  if ((custNext.t -= dt) <= 0) { const sp = SPOTS.find(s => !s.car); if (sp && entryClear(-8, 134.5)) customerCar(sp); custNext.t = late ? rand(60, 120) : rand(20, 40); }
+  if ((custNext.t -= dt) <= 0) { const sp = SPOTS.find(s => !s.car); if (sp && entryClear(-8, 270.5)) customerCar(sp); custNext.t = late ? rand(60, 120) : rand(20, 40); }
   if ((shop.next -= dt) <= 0) { if (SHOPPERS().length < 10) new Shopper(); shop.next = late ? rand(14, 22) : rand(4.5, 7.5); }
   if ((walkSpawn.t -= dt) <= 0) { walkSpawn.t = rand(1.0, 2.2); if (WALKERS().length < (late ? 8 : 24)) { const f = startPortal(); new Walker(f, nextPortal(f)); } }
   for (const t of sim.trucks) t.update(dt);

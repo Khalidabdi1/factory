@@ -160,15 +160,24 @@ export function flatVariant(bay, dock) {
   holds.sort((a, b) => a.s - b.s);
   const v = { path, holds }; FLAT.set(key, v); return v;
 }
-export const VAN_LOOP = new Path([[350, 134.5], [404, 134.5], [RAB.x, 143], [434, RAB.y], [RAB.x, 119], [404, 127.5], [390, 127.5], [382, 121], [352, 121], [344, 127.5],
-  [326, 127.5], [326, 20], [212, 20], [212, 110], [320, 110], [320, 134.5], [350, 134.5]], 6, true);
+// The delivery trucks: east to the roundabout, down Hill Av into Corner Market's lay-by, out along Coast Rd, up Harbour Av
+// and straight over Riverside Rd into the warehouse gate, which faces the end of the avenue.
+export const VAN_LOOP = new Path([[350, 134.5], [404, 134.5], [RAB.x, 143], [416.5, 153], [416.5, 257.8], [377, 257.8], [371, 263.5], [303.5, 263.5],
+  [303.5, 141.5], [326, 124], [326, 20], [212, 20], [212, 110], [320, 110], [320, 134.5], [350, 134.5]], 6, true);
 export function vanHolds() {
   const P = VAN_LOOP;
   return [
-    holdOn(P, 356, 121, { name:'shop', stop:'Corner Market', toward:'to Corner Market', label:'unloading at Corner Market · rear doors open',
+    holdOn(P, 381, 257.8, { name:'shop', stop:'Corner Market', toward:'to Corner Market', label:'unloading at Corner Market · rear doors open',
       arrive:t => { t.doorsTo = 1; t.boxes = t.boxMax = t.loaded() * BOXES; t.boxRes = 0; },
       release:t => { if (t.boxes > 0 || t.boxRes > 0 || shop.staffAt(t)) return false; t.doorsTo = 0; return t.doors === 0; },
       wait:t => t.boxes || t.boxRes || shop.staffAt(t) ? null : 'closing the rear doors', left:t => t.trips++ }),
+    // out of the lay-by into the westbound lane of Coast Rd, and across the westbound lane of Riverside Rd to the gate
+    holdOn(P, 379.5, 257.8, { name:'shopOut', soft:4, toward:'back to Warehouse 01', label:'waiting for a gap in traffic', release:t => !roadBusy(t, 362, 432, 263.5) }),
+    // give way up Harbour Av over Market St; at the top, wait for the gate to open and both lanes of Riverside Rd to clear,
+    // then cross in one go (a truck this long, stopped half across, would block both lanes)
+    holdOn(P, 303.5, 219.5, { name:'yield', soft:14, toward:'', label:'giving way', release:t => !roadBusy(t, 300, 340, 201.5) && !roadBusy(t, 262, 310, 208.5) }),
+    holdOn(P, 303.5, 145, { name:'yield', soft:14, toward:'', label:'waiting to cross to the warehouse gate',
+      release:t => { whGate.want(t); return whGate.isOpen() && gapE(t, 262, 318) && gapW(t, 300, 362); } }),
     holdOn(P, 326, 120.5, { name:'gateIn', stop:'the warehouse gate', gate:whGate, toward:'back to Warehouse 01', label:'waiting at the warehouse gate', release:() => whGate.isOpen() }),
     holdOn(P, 317, 20, { name:'enter', stop:'the loading lane', toward:'to the loading lane', label:'waiting for the loading lane to clear',
       release:t => !sim.trucks.some(o => o !== t && o.model === 'van' && o.inLane()) && !WH.forklifts.some(f => Math.abs(f.y - 20) < 4.5 && f.x > 230 && f.x < 312) }),
