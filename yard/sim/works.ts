@@ -15,7 +15,7 @@ import { Person } from './person';
 // on the body in it, the robots weld, paint, fit wheels or glass, and when that work is done the body becomes what
 // the station makes of it. If the lot is full the line waits, the last car at the quality check, until the train
 // takes some away.
-const ST = WORKS.stations, N = ST.length, TAKT = 16, MOVE = 4, WORK = TAKT - MOVE, LY = WORKS.ly, LOT = WORKS.lot, HALF = BODY_LEN / 2;
+const ST = WORKS.stations, N = ST.length, TAKT = 18, MOVE = 4, WORK = TAKT - MOVE, LY = WORKS.ly, LOT = WORKS.lot, HALF = BODY_LEN / 2;
 const MAKES = { 1:'panels', 3:'floor', 4:'frame', 5:'shell', 6:'closed', 9:'painted', 13:'wheels', 14:'complete' };
 const STAGE = { blanks:'steel blanks', panels:'stamped panels', floor:'the underbody', frame:'a framed body', shell:'a body in white', closed:'a body in white, doors on',
   painted:'a painted body', wheels:'a painted body on its wheels', complete:'a finished car' };

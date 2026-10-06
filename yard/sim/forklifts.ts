@@ -152,7 +152,16 @@ function dispatch(f) {
   if (f.battery < 22) { if (f.atCharger) assign({ text:'charging to 80%' }, [{ do:'charge', min:80, label:'charging' }]); else assign({ text:'low battery' }, park(f, 'low battery · to charger')); return; }
   const move = (p, from, to, slot, task) => { p.reserved = f; slot.reserved = f; assign(task, [...leaveCharger(f), ...pickup(p, from), ...dropAt(p, to, slot)]); };
   if (f.site === PLANT) {
-    // load a flatbed waiting at a bay; otherwise clear the belt into staging
+    // the train at the platform comes first (it keeps a timetable; a flatbed can wait a little): load its flat wagons,
+    // oldest pallets first, two forklifts at most
+    const tr = hooks.train?.loadable?.(), ti = tr ? tr.freeSlot() : -1;
+    if (tr && ti >= 0 && PLANT.forklifts.filter(o => o.task?.train).length < 2) {
+      const c = conveyor.pickable().map(p => ({ p, loc:LOC.belt(p) }));
+      for (const s of STAGE) if (ready(s.pallet)) c.push({ p:s.pallet, loc:LOC.stage(s) });
+      c.sort((a, b) => a.p.t0 - b.p.t0);
+      if (c[0]) return move(c[0].p, c[0].loc, LOC.wagon(tr, ti), tr.slots[ti], { text:`${c[0].p.id} → ${tr.id}`, to:'by rail', train:true });
+    }
+    // then a flatbed waiting at a bay; otherwise clear the belt into staging
     const t = sim.trucks.filter(t => t.at?.name === 'bay' && t.freeSlot() >= 0).sort((a, b) => b.loaded() - a.loaded())[0];
     if (t) {
       const c = conveyor.pickable().map(p => ({ p, loc:LOC.belt(p) }));
@@ -160,14 +169,6 @@ function dispatch(f) {
       // older pallets first (rough FIFO), nearer ones break ties
       c.sort((a, b) => (a.p.t0 - b.p.t0) / 20 + Math.hypot(a.loc.SO[0] - f.x, a.loc.SO[1] - f.y) / 60 - Math.hypot(b.loc.SO[0] - f.x, b.loc.SO[1] - f.y) / 60);
       if (c[0]) { const i = t.freeSlot(); return move(c[0].p, c[0].loc, LOC.flat(PLANT, t, i), t.slots[i], { text:`${c[0].p.id} → ${t.id}`, to:'Warehouse 01' }); }
-    }
-    // the train at the platform: load its flat wagons, oldest pallets first, two forklifts at most
-    const tr = hooks.train?.loadable?.(), ti = tr ? tr.freeSlot() : -1;
-    if (tr && ti >= 0 && PLANT.forklifts.filter(o => o.task?.train).length < 2) {
-      const c = conveyor.pickable().map(p => ({ p, loc:LOC.belt(p) }));
-      for (const s of STAGE) if (ready(s.pallet)) c.push({ p:s.pallet, loc:LOC.stage(s) });
-      c.sort((a, b) => a.p.t0 - b.p.t0);
-      if (c[0]) return move(c[0].p, c[0].loc, LOC.wagon(tr, ti), tr.slots[ti], { text:`${c[0].p.id} → ${tr.id}`, to:'by rail', train:true });
     }
     const e = conveyor.pickable().sort((a, b) => b.s - a.s)[0];
     const free = STAGE.filter(s => !s.pallet && !s.reserved).sort((a, b) => Math.hypot(a.x - 153, a.y - 63) - Math.hypot(b.x - 153, b.y - 63))[0];

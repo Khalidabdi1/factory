@@ -79,7 +79,7 @@ export function putIn(slot, p) {
 
 // Line A: pallets appear inside the factory and roll out to the pickup stations.
 export const conveyor = {
-  kind:'conveyor', id:'Line A', path:new Path([[86, 44], [86, 58], [148.5, 58]], 3), items:[], next:2, held:false, rate:34, pick:[118.9, 60.8, 0.8],
+  kind:'conveyor', id:'Line A', path:new Path([[86, 44], [86, 58], [148.5, 58]], 3), items:[], next:2, held:false, rate:26, pick:[118.9, 60.8, 0.8],
   // the last stretch of belt has no rail on the yard side; pallets come to rest there at three stations, 3.1 apart
   inZone(p) { return p.s >= this.path.length - 6.3; },
   pickable() { return this.items.filter(p => this.inZone(p) && p.rest && !p.reserved); },

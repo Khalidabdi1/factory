@@ -111,7 +111,7 @@ export const train = { kind:'train', id:'FRT-7', groups:[], pick:[-8, 0, 3], s:0
     for (const sl of this.slots) if (sl.pallet) { sl.pallet.remove(); sl.pallet = null; this.railOut++; sim.stats.railOut = (sim.stats.railOut ?? 0) + 1; }
     for (const q of this.cars) { q.b.group.removeFromParent(); hooks.forget(q.b); this.carsOut++; }
     this.cars = []; this.drawLoads();
-    this.state = 'away'; this.v = 0; this.next = sim.t + rand(70, 110);
+    this.state = 'away'; this.v = 0; this.next = sim.t + rand(45, 75);
     for (const g of this.vehicles) g.visible = false;
     hooks.forget(this);
   },
