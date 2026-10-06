@@ -26,7 +26,11 @@ export function buildRange() {
   for (let x = 0; x <= 440; x += 11) X.push(x);
   for (let y = -84; y <= -4; y += 8) Y.push(y);
   const P = X.map(x => Y.map(y => W(x, y, hillHeight(x, y))));
+  // on the terrace the hills are flat at the slab's own height: those faces and grid lines would fight the slab's top
+  // for the same pixels (the floor seen to flicker as the view moves), so they are left to the slab
+  const flat = (...q) => q.every(v => Math.abs(v.y) < 0.01);
   const tri = (a, b, c) => {
+    if (flat(a, b, c)) return;
     const n = v3(0, 0, 0).crossVectors(b.clone().sub(a), c.clone().sub(a)).normalize(); if (n.y < 0) n.negate();
     const zc = (a.y + b.y + c.y) / 3;
     p.tri(zc > 31 ? 'snow' : n.y > 0.72 ? 'deck' : 'body', a, b, c);
@@ -35,8 +39,8 @@ export function buildRange() {
     const a = P[i][j], b = P[i + 1][j], c = P[i + 1][j + 1], d = P[i][j + 1];
     if ((i + j) % 2) { tri(a, b, c); tri(a, c, d); } else { tri(a, b, d); tri(b, c, d); }
   }
-  for (let i = 0; i < X.length; i++) for (let j = 0; j < Y.length - 1; j++) p.seg('detail', P[i][j], P[i][j + 1]);
-  for (let j = 0; j < Y.length; j++) for (let i = 0; i < X.length - 1; i++) p.seg(j === 3 ? 'line' : 'detail', P[i][j], P[i + 1][j]);
+  for (let i = 0; i < X.length; i++) for (let j = 0; j < Y.length - 1; j++) if (!flat(P[i][j], P[i][j + 1]) || X[i] < TX0 || X[i] > TX1) p.seg('detail', P[i][j], P[i][j + 1]);
+  for (let j = 0; j < Y.length; j++) for (let i = 0; i < X.length - 1; i++) if (!flat(P[i][j], P[i + 1][j]) || X[i + 1] <= TX0 || X[i] >= TX1) p.seg(j === 3 ? 'line' : 'detail', P[i][j], P[i + 1][j]);
   // the cut face at the plate's east edge
   const E = P[X.length - 1];
   for (let j = 0; j < Y.length - 1; j++) { const a = E[j], b = E[j + 1]; p.poly('body', [W(440, Y[j], 0), a, b, W(440, Y[j + 1], 0)]); p.seg('line', a, b); }

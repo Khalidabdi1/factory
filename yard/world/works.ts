@@ -22,7 +22,8 @@ export function buildCarWorks() {
   const p = new Part(), G = TOP(0, 0, 0), [TX0, TX1, TY0] = WORKS.terrace;
   p.box(TX0, TY0 - 0.6, 0, TX1 - TX0, 0.6, 3.2);
   const RW = FRONT(TX0, TY0, 3.2); for (let u = 6; u < TX1 - TX0; u += 6) p.draw(RW, [u, 0, u, 3.2], 'detail', 0.01);
-  p.fill2(G, X0 - 2, Y1, X1 - X0 + 4, 3, 'deck', 0.012).fill2(G, 314, -17, 86, 11.5, 'road', 0.012).fill2(G, EX - 3, Y1 + 3, 6, 2, 'road', 0.012);
+  // the apron along the front, the lot and its turning space east of it (no two fills on top of each other)
+  p.fill2(G, X0 - 2, Y1, X1 - X0 + 4, 3, 'deck', 0.02).fill2(G, 314, -17, 86, 11.5, 'road', 0.02).fill2(G, 400, -12, 13, 9, 'road', 0.02);
   const L = WORKS.lot;
   for (let k = 0; k <= L.n; k++) { const x = L.x0 + L.pitch / 2 - k * L.pitch; p.draw(G, [x, L.front - 0.6, x, L.front + 4.9], 'detail', 0.03); }
   p.text(G, 'FINISHED CARS', 330, -7.4, 1.0, 'paint', 'start', 0.03);
@@ -72,7 +73,7 @@ export function buildCarWorks() {
 
   // ---- inside: what stands still ----
   const f = new Part(), Gz = TOP(0, 0, z), lift = 0.02;
-  f.fill2(TOP(X0, Y0, z), 0, 0, X1 - X0, D, 'deck', 0.012);
+  f.fill2(TOP(X0, Y0, z), 0, 0, X1 - X0, D, 'deck', 0.02);
   for (const [, name, a, b] of WORKS.shops) { f.draw(Gz, [b, Y0 + 0.6, b, Y1 - 0.6], 'detail', lift).text(Gz, name.toUpperCase(), (a + b) / 2, Y1 - 1.6, 1.3, 'paint', 'middle', lift); }
   // the line: two rails and the slats of the conveyor between them, the whole length
   f.box(220, LY - 1.15, z, EX + 2 - 220, 0.15, 0.5, 'k').box(220, LY + 1.0, z, EX + 2 - 220, 0.15, 0.5, 'k');

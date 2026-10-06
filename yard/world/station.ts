@@ -18,15 +18,15 @@ export function buildFireStation() {
 
   // ---- always there: the apron before the bays, the lawn with its flagpole, the crew's parking, the yard behind ----
   const p = new Part(), G = TOP(0, 0, 0);
-  p.fill2(G, X0, Y1, HX - X0, 12, 'deck', 0.012);
+  p.fill2(G, X0, Y1, HX - X0, 12, 'deck', 0.02);
   const hatch = []; for (let x = X0 + 1; x < HX - 1; x += 1.2) hatch.push(x, 114, x + 1.6, 116.4);
   p.draw(G, hatch, 'detail', 0.03).rect2(G, X0 + 0.6, 113.6, HX - X0 - 1.2, 3.2, 'line', 0.03).text(G, 'KEEP CLEAR', (X0 + HX) / 2, 119.6, 0.9, 'paint', 'middle', 0.03);
   for (const [a, b] of DOORS) p.draw(G, [a + 0.3, Y1, a + 0.3, 123.6, b - 0.3, Y1, b - 0.3, 123.6], 'detail', 0.03);
-  p.fill2(G, HX, Y1, X1 - HX, 2.8, 'grass', 0.015);
+  p.fill2(G, HX, Y1, X1 - HX, 2.8, 'grass', 0.02);
   p.seg('line', W(397.4, 113.3, 0), W(397.4, 113.3, 9.2)).cylZ(397.4, 113.3, 0, 0.35, 0.25, 8);
   p.fill2(FRONT(397.45, 113.3, 9.1), 0, 0, 1.5, 0.95, 'kob', 0.02).rect2(FRONT(397.45, 113.3, 9.1), 0, 0, 1.5, 0.95, 'line', 0.025);
   for (const x of [380, 384.3, 388.6, 392.9]) p.draw(G, [x, 116.2, x, 123.2], 'detail', 0.03);
-  p.fill2(G, HX, Y0, TX - HX, CY - Y0, 'road', 0.012);
+  p.fill2(G, HX, Y0, TX - HX, CY - Y0, 'road', 0.02);
   // two of the watch's cars, nose in, drawn into the base rather than as cars of their own
   for (const [x, t] of [[382.15, 'n'], [390.75, 'k']]) {
     p.box(x - 0.95, 117.0, 0.35, 1.9, 4.2, 0.75, t).box(x - 0.85, 118.0, 1.1, 1.7, 2.1, 0.62, t);
@@ -81,7 +81,7 @@ export function buildFireStation() {
 
   // ---- inside ----
   const f = new Part(), Gz = TOP(0, 0, z), lift = 0.02;
-  f.fill2(TOP(X0, Y0, z), 0, 0, HX - X0, Y1 - Y0, 'deck', 0.012).fill2(TOP(HX, CY, z), 0, 0, X1 - HX, Y1 - CY, 'deck', 0.012).fill2(TOP(TX, Y0, z), 0, 0, X1 - TX, TY - Y0, 'deck', 0.012);
+  f.fill2(TOP(X0, Y0, z), 0, 0, HX - X0, Y1 - Y0, 'deck', 0.02).fill2(TOP(HX, CY, z), 0, 0, X1 - HX, Y1 - CY, 'deck', 0.02).fill2(TOP(TX, Y0, z), 0, 0, X1 - TX, TY - Y0, 'deck', 0.02);
   // the bays: outlines and names on the floor
   for (const [x, n] of [[365, 'ENG-1'], [374, 'RSQ-1']]) f.rect2(Gz, x - 3, 99.4, 6, 12.2, 'detail', lift).text(Gz, n, x, 98.9, 0.6, 'paint', 'middle', lift);
   // the rescue tender in bay 2, nose out like the engine
