@@ -229,3 +229,12 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
     whoever is running), circles at 40 m, and by night shines a searchlight (live hairlines). Gunfire is a pool of
     streaks and muzzle flashes (`FX`). The bank and shop open while robbed (`opened()`, read by the view's peek).
   - Debug `yard.robbery(job, plan, end)`.
+- Phase 23: freight by box (`sim/freight.ts`). CTR-01 is a `Truck` of model `boxer`: `PROTO.tractor` with a skeletal trailer
+  (`PROTO.skeletal`) and a `Cbox` from `port.newBox`, five pallet slots in a row inside it (`BOX_SLOTS`; pallets are
+  2.4 m). Its loop (`boxVariant(bay, dock)`, `withHeights` for the ramp) shares the flatbeds' bays and docks, so the
+  forklifts load and unload it as they do a flatbed. In the terminal it is driven by the port as a `Tractor` with
+  `road` set (pair 2: block C, RTG 3): `port.reserve` puts a shadow on the circuit at the gate (holding the tractors
+  behind) once `laneFree()`, `port.admit` sets it going when the truck gets there, and at `ROAD_OUT` it hands back
+  (`fromPort`) and stays a shadow until the truck is clear. `Gantry.wants(T)` makes the gantry give a road truck an
+  import after taking its export. The truck's `boxOn` / `boxOff` fill and empty the box (`IMPORTS`, a fourth SKU);
+  `sim.stats.exported` / `imported` count them.

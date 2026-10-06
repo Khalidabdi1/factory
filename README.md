@@ -93,10 +93,11 @@ The engine runs once per page load. React draws the plate, and the engine drives
       - The crew run for the car as the sirens come, and it races off through the traffic with the police behind it and the helicopter above. It may run into a roadblock, be abandoned while the crew scatter on foot and are chased down, or get clean away.
       - The driver loses his nerve and leaves without them, and the crew try to escape on foot.
     - While it lasts, the bank or the shop stands open so you can see inside. Click the place, a suspect, the getaway car, an officer or POL-AIR for their cards. The police station's card keeps the last few calls.
-11. **Sunset Pier:** a pleasure pier with a Ferris wheel, a carousel and a small coaster. Visitors queue, ride and wander. The rides open 10:00–23:00 and close in the rain.
-12. **Fishing:** Kestrel leaves the town pier in the morning, fishes on the bay and lands her catch, which shows on her card. An angler fishes from the end of the town pier.
-13. **Weather:** showers come through the day, and some mornings there is sea fog. People put up umbrellas and leave the beach, the park and the piers, the boats come in, and the caption says so.
-14. **Car Works:**
+11. **Freight by box:** CTR-01, a container truck, runs a triangle. At a Plant 01 bay the forklifts load five pallets into its forty-foot box. It drives out along Riverside Rd, through Sahel and down Port Av, up the ramp and through the terminal's gate. Inside it joins the tractors' circuit, and the gantry over block C lifts its box into the stack, to go out on a ship, and sets an import box on. Back along the coast, it unloads five pallets of imported goods into Warehouse 01's racks, then takes the empty box back to the plant. Its card shows the box, what is in it and the pallets exported and imported so far; the box has a card of its own.
+12. **Sunset Pier:** a pleasure pier with a Ferris wheel, a carousel and a small coaster. Visitors queue, ride and wander. The rides open 10:00–23:00 and close in the rain.
+13. **Fishing:** Kestrel leaves the town pier in the morning, fishes on the bay and lands her catch, which shows on her card. An angler fishes from the end of the town pier.
+14. **Weather:** showers come through the day, and some mornings there is sea fog. People put up umbrellas and leave the beach, the park and the piers, the boats come in, and the caption says so.
+15. **Car Works:**
     - Every 18 s the line moves on one station. Steel blanks come off the coils and are pressed into panels. Robots weld the underbody, frame the sides, respot the shell and hang the doors.
     - The body is dipped and painted chalk white or slate. In assembly it rides a hanger, the powertrain rises into it, and robots fit the wheels and glass.
     - At the end of the line come the fluids, a lights test, a rolling road and the light tunnel. Then the car drives out to the lot.
@@ -105,36 +106,36 @@ The engine runs once per page load. React draws the plate, and the engine drives
 
     ![Car Works opened up: the body shop's welding robots either side of the line, a car selected at the respot station with the rest of its way dashed, shells riding the overhead buffer, and the freight train passing below](docs/car-works.png)
 
-15. **The freight train (FRT-7):**
+16. **The freight train (FRT-7):**
     - Every few minutes it comes in from the east: a locomotive, four flat wagons and three car carriers.
     - At Car Works it stops alongside the lot, and a ramp is lowered behind it. Up to twelve finished cars back out of their spaces, drive round and up onto the carriers.
     - It runs on into the loop in the Plant 01 yard, where the forklifts load pallets onto the flat wagons. Then it leaves to the west.
-16. **Chimney fires:**
+17. **Chimney fires:**
     - Every so often a chimney catches. Smoke and flames rise from the stack, and whoever is home comes out onto the pavement.
     - A neighbour calls it in. The bell goes at Riverside Fire Station, the bay door rolls up, the watch runs to ENG-1, and it drives out with its lights flashing.
     - At the kerb the officer takes the gate and the driver the pump, while two firefighters run a hose up the garden path and put a jet on the chimney until it is out.
     - They make up the hose, the household goes back in, and ENG-1 drives home and backs into its bay while the traffic waits.
     - The house's card shows the fire and has a Track ENG-1 button. The station's card shows the watch and the last call.
 
-17. **Sahel's streets:** cars come through from the old town along Riverside Rd and down Sahel Blvd, and loop round the city's blocks. People walk between the towers, the flats, the mall, the park, the beach and the marina, and to City Hall in office hours.
-18. **Sahel Metro:**
+18. **Sahel's streets:** cars come through from the old town along Riverside Rd and down Sahel Blvd, and loop round the city's blocks. People walk between the towers, the flats, the mall, the park, the beach and the marina, and to City Hall in office hours.
+19. **Sahel Metro:**
     - Driverless four-car trains run both lines, stop behind platform screen doors, and turn back at the ends over crossovers.
     - People ride up the escalators, through the gates, wait on the island and board, and change lines at Sahel Central. Follow one and the camera goes with them onto the train.
     - Zoom in close over a station, or click it, and it opens: the concourse, the gates, the islands, the escalators and the trains.
-19. **The Metrobus (Line M1):** four articulated buses run the busway down Sahel Blvd between glass stations on the median, waiting for anyone on a crossing.
-20. **Sahel Motors:**
+20. **The Metrobus (Line M1):** four articulated buses run the busway down Sahel Blvd between glass stations on the median, waiting for anyone on a crossing.
+21. **Sahel Motors:**
     - CS-1, a car shuttle, takes finished cars from Car Works' lot (it and FRT-7 take turns there), runs them along its siding, and stands while a ramp rises behind it. The cars back off and drive to the twin towers, where a lift carries each up to a bay. Click a car in a tower for its bay and its price.
     - People come up from the metro, look at the cars on show, take one round the test track, and sit down with a consultant. Some buy: their car comes down its tower and round to the handover bay, and they drive it away over the level crossing, whose barriers come down for FRT-7, and off to the old town.
-21. **The port:**
+22. **The port:**
     - A ship comes in from the west past the old town's pier, and two tugs push her alongside. The cranes lower their booms and take boxes off onto terminal tractors, which run them round to the yard, where the gantries stack them. Then the other way: boxes out of the yard and onto the ship.
     - When she is done the booms go up, the tugs pull her off and she sails on east. Every crane, gantry, tractor, tug and box has a card.
 
     ![Sahel Container Terminal: a feeder alongside under three ship-to-shore cranes, STS 2 selected waiting to set a box on a tractor, the yard's gantries behind, the tugs at their pontoon and the breakwater's lights](docs/port.png)
-22. **Out east:**
+23. **Out east:**
     - Line 1's trains run on from Port over the woods, into Harrow Ridge, out of its cliff onto the arch over Raven Gorge, across High Moor in a cutting, through Long Edge and down a viaduct to Millbrook, where they turn back. They go faster on the open line.
     - Through traffic from the old town takes the Vale Road: up the hairpins, over the suspension bridge, through the tunnel, round the curving viaduct into the valley and on east. Coast Rd runs on along the shore, over a low bridge at the gorge's mouth.
     - FRT-7 comes out of its tunnel under Harrow Ridge.
-23. **Millbrook:**
+24. **Millbrook:**
     - Farm hands come out of the barn at first light to hoe the vegetables, weed the allotments, turn the hay, feed the animals and pick apples, carrying the crates to the apple store. They go in for dinner at midday and at dusk.
     - Villagers walk between their cottages, the green, the market, the store and the Plough, which fills up in the evening. Visitors come off the metro for the market and the inn, and villagers take the train into Sahel.
     - The shepherd and his collie take the flock up onto the slope above the farm in the morning and bring it down at dusk. The stable hand leads the horses to their trough in a line. The cows, pigs and hens keep to their paddock, sty and run, and the hens go in at dusk.

@@ -40,6 +40,7 @@ import { buildMotors } from './sim/motors';
 import { buildPort } from './sim/port';
 import { buildEastSys } from './sim/east';
 import { buildVillageSys } from './sim/village';
+import { buildFreight } from './sim/freight';
 import { initView } from './view';
 
 applyTheme();
@@ -257,6 +258,8 @@ const eastSys = buildEastSys(metroSys);
 const villageSys = buildVillageSys();
 // POL-3, POL-AIR and its pad on the station roof: last, since a police car takes its plate from the town's sequence
 incident.extend(policeStation.groups[0]);
+// CTR-01, the container truck between Plant 01, the terminal and Warehouse 01 (its box is numbered from the town's sequence)
+const freightSys = buildFreight(portSys);
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');

@@ -184,7 +184,7 @@ function dispatch(f) {
     if (van && stock.length && WH.forklifts.filter(o => o.task?.van === van).length < 2) return loadVan();
     const free = RACK.filter(s => !s.pallet && !s.reserved).sort((a, b) => a.level - b.level || Math.abs(a.x - f.x) - Math.abs(b.x - f.x));
     for (const t of sim.trucks.filter(t => t.at?.name === 'dock')) {
-      const i = [3, 4, 5, 0, 1, 2].find(i => ready(t.slots[i].pallet));
+      const i = (t.slots.length === 6 ? [3, 4, 5, 0, 1, 2] : t.slots.map((_, j) => j)).find(i => ready(t.slots[i].pallet));
       if (i !== undefined && free.length) { const p = t.slots[i].pallet; return move(p, LOC.flat(WH, t, i), LOC.rack(free[0]), free[0], { text:`${p.id} → ${free[0].label}`, to:'Corner Market' }); }
     }
     if (van && stock.length) return loadVan();

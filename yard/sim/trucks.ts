@@ -20,6 +20,12 @@ export class Truck {
       this.tractor = PROTO.tractor.clone(); this.trailer = PROTO.trailer.clone(); this.groups = [this.tractor, this.trailer]; this.halfW = 2.4;
       this.slots = FLAT_SLOTS.map(([lx, ly], i) => slotAt({ id:`${this.id}·${i + 1}`, label:`on ${this.id}`, parent:this.trailer, local:[lx, ly, DECK], owner:this, i }));
       this.pick = [-1.5, 0, 3.0];
+    } else if (this.model === 'boxer') {
+      // a road tractor and a skeletal trailer carrying a forty-foot box: five pallets inside it, in a row, loaded
+      // through its side doors
+      this.tractor = PROTO.tractor.clone(); this.trailer = PROTO.skeletal.clone(); this.groups = [this.tractor, this.trailer]; this.halfW = 2.4;
+      this.slots = BOX_SLOTS.map((lx, i) => slotAt({ id:`${this.id}·${i + 1}`, label:`in ${this.id}'s box`, parent:this.trailer, local:[lx, 0, DECK], owner:this, i }));
+      this.pick = [-1.5, 0, 3.6];
     } else if (this.model === 'van') {
       this.body = PROTO.van.clone(); this.groups = [this.body]; this.halfW = 1.4;
       this.doorL = this.body.getObjectByName('doorL'); this.doorR = this.body.getObjectByName('doorR');
@@ -39,7 +45,16 @@ export class Truck {
   freeSlot() { return this.slots.findIndex(s => !s.pallet && !s.reserved); }
   place() {
     const a = this.path.at(this.s);
-    if (this.model === 'flatbed') {
+    if (this.model === 'boxer') {
+      // its fifth wheel 4.6 m back; up the terminal's ramp, nose up the grade
+      const zs = this.path.zs ?? (() => 0), b = this.path.at(this.s - 6), th = Math.atan2(a.y - b.y, a.x - b.x), k = this.path.at(this.s - 4.6), r = this.path.at(this.s - 4.6 - BOX_TRAILER), tt = Math.atan2(k.y - r.y, k.x - r.x);
+      const za = zs(this.s), zk = zs(this.s - 4.6);
+      pose(this.tractor, a.x, a.y, th, za); this.tractor.rotation.z = Math.atan2(za - zs(this.s - 6), 6);
+      pose(this.trailer, k.x, k.y, tt, zk); this.trailer.rotation.z = Math.atan2(zk - zs(this.s - 4.6 - BOX_TRAILER), BOX_TRAILER);
+      this.pose = { x:k.x, y:k.y, h:tt }; this.front = { x:a.x, y:a.y, h:th };
+      const c = Math.cos(tt), s = Math.sin(tt), at = d => [k.x + c * d, k.y + s * d];
+      this.points = [[a.x, a.y], [a.x - Math.cos(th) * 4.6, a.y - Math.sin(th) * 4.6], at(-6.4), at(-BOX_TRAILER)];
+    } else if (this.model === 'flatbed') {
       const b = this.path.at(this.s - 6), th = Math.atan2(a.y - b.y, a.x - b.x);
       pose(this.tractor, a.x, a.y, th);
       const k = this.path.at(this.s - 4.6), r = this.path.at(this.s - 16.3), tt = Math.atan2(k.y - r.y, k.x - r.x);
@@ -60,7 +75,7 @@ export class Truck {
   near(site) {
     const p = this.pose, c = Math.cos(p.h), s = Math.sin(p.h);
     return site.forklifts.some(f => { const dx = f.x - p.x, dy = f.y - p.y, lx = c * dx + s * dy, ly = c * dy - s * dx;
-      return this.model === 'flatbed' ? lx > -16.5 && lx < 2 && Math.abs(ly) < 7 : lx > -VAN_LEN - 7 && lx < 1 && Math.abs(ly) < 3.5; });
+      return this.model !== 'van' ? lx > -16.5 && lx < 2 && Math.abs(ly) < 7 : lx > -VAN_LEN - 7 && lx < 1 && Math.abs(ly) < 3.5; });
   }
   inLane() { return this.front.x > 200 && this.front.x < 312 && Math.abs(this.front.y - 20) < 3; }
   limit() {
@@ -98,7 +113,7 @@ export class Truck {
   }
   // a flatbed's loop depends on its bay and dock; switch loops in place, keeping where it is along the road
   reroute(bay, dock) {
-    const v = flatVariant(bay, dock), name = this.at?.name;
+    const v = (this.variant ?? flatVariant)(bay, dock), name = this.at?.name;
     this.bay = bay; this.dock = dock; this.path = v.path; this.holds = v.holds; this.base = 0;
     this.s = v.path.project(this.front.x, this.front.y);
     if (name) { this.hi = this.holds.findIndex(h => h.name === name); this.at = this.holds[this.hi]; }
@@ -115,6 +130,7 @@ export class Truck {
     if (this.model === 'flatbed') return { kind:'Truck · flatbed', title:this.id, status:this.status(), bar:{ v:n, max:6, label:`cargo ${n}/6 pallets · ${(kg / 1000).toFixed(1)} t` },
       rows:[['Route', 'Plant 01 ⇄ Warehouse 01'], ['Next stop', next], ['Plant bay', this.bay.truck === this ? `Bay ${this.bay.id}` : 'when one is free'],
         ['Warehouse dock', this.dock.truck === this ? `Dock ${this.dock.id}` : 'when one is free'], ['Driver', this.driver], ['Speed', kmh(this.v)], ['Trips', String(this.trips)]] };
+    if (this.model === 'boxer') return this.boxInfo();
     if (this.model === 'bus') return { kind:'Bus · Line 1', title:this.id, status:this.status(), bar:{ v:this.pax, max:40, label:`${this.pax} on board` },
       rows:[['Route', 'Market St · Harbour View · Villas · Beach · Park'], ['Next stop', next], ['Driver', this.driver], ['Speed', kmh(this.v)], ['Stops made', String(this.trips)]] };
     const atShop = this.at?.name === 'shop';
@@ -128,7 +144,9 @@ export class Truck {
   }
   route() { const h = this.upcoming(), q = this.path.at(h.s); return { path:this.path, s:this.s, closed:true, next:[q.x, q.y], stop:h.stop }; }
 }
-const holdOn = (path, x, y, o) => ({ s:path.project(x, y), ...o });
+export const holdOn = (path, x, y, o) => ({ s:path.project(x, y), ...o });
+export const settledAt = settled;
+export const BOX_SLOTS = [-1.45, -3.85, -6.25, -8.65, -11.05], BOX_TRAILER = 12.8;
 // Flatbeds share two bays and two docks: a truck takes a dock when it is loaded and a bay when it gets back,
 // and waits (at the bay, or in the truck park) while none is free. One loop per bay and dock pairing.
 const FLAT = new Map();

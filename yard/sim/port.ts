@@ -45,6 +45,7 @@ class Cbox {
       case 'yard': return `in block ${'ABC'[w.b]} · bay ${w.k + 1}, row ${w.r + 1}, tier ${w.tier + 1}`;
       case 'crane': return `on ${w.c.id}'s spreader`;
       case 'rtg': return `on ${w.c.id}'s spreader`;
+      case 'truck': return `on ${w.t.id} · ${w.t.loaded() ? `${w.t.loaded()} pallets in it` : 'empty'}`;
       case 'tractor': return `on ${w.t.id} · to ${w.t.box === this && w.t.next === 'rtg' ? `block ${'ABC'[w.t.pair]}` : `${PORT_CRANES[w.t.pair].id}`}`;
     } return '—'; }
   info() { return { kind:'Container · 40 ft, 2.6 m high', title:this.id, status:this.status(),
@@ -282,10 +283,12 @@ class Gantry {
   // (exports go out to a tractor only once its crane is loading: a tractor never waits under a crane with one while
   // the crane waits for an empty tractor)
   wantsExport() { const c = this.crane(); return c.mode === 'load' && c.l - c.lPlanned > 0; }
+  // a road truck always leaves with a box: the import it came for
+  wants(T: any) { return !!T?.road || this.wantsExport(); }
   // a bay to stack the next box in (the lowest), or to take the next export from (the tallest)
   aim() {
     const st = this.block.stacks, tot = (k: number) => st[k].reduce((s: number, q: Cbox[]) => s + q.length, 0);
-    const T = TRACTORS.find(t => t.pair === this.i && t.next === 'rtg' && (t.box || this.wantsExport()));
+    const T = TRACTORS.find(t => t.pair === this.i && t.next === 'rtg' && !t.shadow && (t.box || this.wants(t)));
     if (!T) return;
     const ks = [0, 1, 2, 3].filter(k => T.box ? st[k].some(q => q.length < TIERS_Y) : st[k].some(q => q.length));
     if (!ks.length) return;
@@ -300,7 +303,7 @@ class Gantry {
         if (!T) { up(); this.aim(); break; }
         if (!T.ready || Math.abs(this.x - this.tx) > 0.05) break;
         if (T.box) { if (go(lane, PZ + TRAILER.deck + H)) this.step = 'grab'; }
-        else if (this.wantsExport()) { const q = st[this.k], r = q.reduce((b: number, x: Cbox[], i: number) => x.length > q[b].length ? i : b, 0); if (q[r].length) { this.r = r; this.step = 'fetch'; } else T.done(); }
+        else if (this.wants(T)) { const q = st[this.k], r = q.reduce((b: number, x: Cbox[], i: number) => x.length > q[b].length ? i : b, 0); if (q[r].length) { this.r = r; this.step = 'fetch'; } else T.done(); }
         else T.done();
         break;
       case 'grab': if ((this.t += dt) > 0.8) { this.t = 0; const c = T.give(); this.box = c; c.where = { at:'rtg', c:this }; this.spreader.add(c.own()); pose(c.group, 0, 0, 0, -H);
@@ -308,12 +311,12 @@ class Gantry {
       case 'hoist': if (up()) this.step = 'stack'; break;
       case 'stack': if (go(rowY(this.r), PZ + (st[this.k][this.r].length + 1) * H)) this.step = 'set'; break;
       case 'set': if ((this.t += dt) > 0.7) { this.t = 0; const c = this.box; this.box = null; c.to = PORTS[(c.seq * 3) % PORTS.length]; this.block.put(c, this.k, this.r); this.moves++;
-        this.step = this.wantsExport() && T && st[this.k].some(q => q.length) ? 'fetch0' : 'release'; } break;
+        this.step = this.wants(T) && T && st[this.k].some(q => q.length) ? 'fetch0' : 'release'; } break;
       case 'release': if (up()) { T?.done(); this.step = 'wait'; } break;
       case 'fetch0': { const q = st[this.k]; this.r = q.reduce((b: number, x: Cbox[], i: number) => x.length > q[b].length ? i : b, 0); this.step = 'fetch'; break; }
       case 'fetch': if (this.sz < top - 0.05 && Math.abs(this.ty - rowY(this.r)) > 0.05) up(); else if (go(rowY(this.r), PZ + st[this.k][this.r].length * H)) this.step = 'take'; break;
-      case 'take': if ((this.t += dt) > 0.8) { this.t = 0; const c = this.block.take(this.k, this.r); c.where = { at:'rtg', c:this }; c.to = ship.to; this.box = c; this.spreader.add(c.own()); pose(c.group, 0, 0, 0, -H);
-        this.crane().lPlanned++; this.step = 'hoist2'; } break;
+      case 'take': if ((this.t += dt) > 0.8) { this.t = 0; const c = this.block.take(this.k, this.r); c.where = { at:'rtg', c:this }; c.to = T?.road ? 'Warehouse 01' : ship.to; this.box = c; this.spreader.add(c.own()); pose(c.group, 0, 0, 0, -H);
+        if (!T?.road) this.crane().lPlanned++; this.step = 'hoist2'; } break;
       case 'hoist2': if (up()) this.step = 'carry'; break;
       case 'carry': if (go(lane, PZ + TRAILER.deck + H)) this.step = 'hand'; break;
       case 'hand': if ((this.t += dt) > 0.7) { this.t = 0; const c = this.box; this.box = null; T.take(c); this.moves++; this.step = 'release'; } break;
@@ -335,10 +338,20 @@ const [LX0, LX1] = PORT.loop;
 const LOOP = new Path([[LX0, LANE], [LX1, LANE], [LX1, ROAD], [LX0, ROAD]], 7, true), LL = LOOP.length;
 const TOFF = -TRAILER.pin + TRAILER.len / 2;   // from the tractor's front to the trailer's middle
 const sOf = (x: number, y: number) => LOOP.project(x, y);
+// A road truck from town (road) runs the same circuit while it is in the terminal: in at the gate onto the road past
+// the blocks, to block C's gantry (which takes its export off and gives it an import), round the circuit and out by
+// the gate. It is drawn with the truck's own models, a road tractor with its fifth wheel further back. Waiting to come
+// on, and again as it leaves, it is a shadow: not drawn, holding the tractors behind it.
+const ROAD_IN = 850, ROAD_OUT = 893, TOFF_R = 4.6 + TRAILER.len / 2;
 class Tractor {
   [k: string]: any;
-  constructor(i: number) {
-    Object.assign(this, { kind:'tractor', id:`T-0${i + 1}`, i, pair:Math.floor(i / 2), s:sOf(700 + i * 21, LANE) + TOFF, v:0, lat:0, latT:0, box:null, next:'crane', at:null, ready:false, trips:0, pick:[-2, 0, 2.6],
+  constructor(i: number, road?: any) {
+    if (road) {
+      Object.assign(this, { kind:'tractor', id:road.id, i:-1, pair:2, road, toff:TOFF_R, pin:-4.6, s:sOf(ROAD_IN, ROAD), v:0, lat:0, latT:0, box:road.box, next:'rtg', at:null, ready:false, trips:0, shadow:true,
+        cab:road.tractor, trailer:road.trailer, lite:[], groups:[] });
+      return;
+    }
+    Object.assign(this, { kind:'tractor', id:`T-0${i + 1}`, i, pair:Math.floor(i / 2), toff:TOFF, pin:TRAILER.pin, s:sOf(700 + i * 21, LANE) + TOFF, v:0, lat:0, latT:0, box:null, next:'crane', at:null, ready:false, trips:0, pick:[-2, 0, 2.6],
       driver:pickOf(['K. Nair', 'H. Al-Shammari', 'S. Pillai', 'O. Haddad', 'P. Musa', 'F. Rahimi', 'D. Mensah', 'I. Qureshi']) });
     this.cab = buildYardTractor(); this.trailer = buildSkeletal();
     for (const g of [this.cab, this.trailer]) { g.userData.entity = this; scene.add(g); }
@@ -346,28 +359,33 @@ class Tractor {
     for (const g of this.lite) { g.userData.entity = this; g.visible = false; scene.add(g); }
     this.groups = [this.cab, this.trailer, ...this.lite]; this.place();
   }
-  lod(far: boolean) { this.far = far; this.cab.visible = !far; for (const m of this.trailer.children) if (m.name !== 'box') m.visible = !far; this.lite[0].visible = this.lite[1].visible = far; this.place(); }
+  lod(far: boolean) { if (this.road) return; this.far = far; this.cab.visible = !far; for (const m of this.trailer.children) if (m.name !== 'box') m.visible = !far; this.lite[0].visible = this.lite[1].visible = far; this.place(); }
   // where along the circuit it stops next: under its crane, under its gantry, or its parking place
   stopS() {
     const c = PORT_CRANES[this.pair], y = YARD[this.pair];
+    if (this.next === 'exit') return sOf(ROAD_OUT, ROAD);
     if (this.next === 'crane') return sOf(c.tx, LANE) + TOFF;
-    if (this.next === 'rtg') return sOf(y.tx, ROAD) + TOFF;
+    if (this.next === 'rtg') return sOf(y.tx, ROAD) + this.toff;
     return sOf(696 + this.i * 19, LANE) + TOFF;
   }
   // does it have business at the next stop, or does it go round?
   business() {
     const c = PORT_CRANES[this.pair], g = YARD[this.pair];
+    if (this.road) return true;
     if (this.next === 'crane') return this.box ? c.mode === 'load' : c.mode === 'discharge' && c.d > 0;
     if (this.next === 'rtg') return !!this.box || g.wantsExport();
     return true;
   }
-  take(c: Cbox) { this.box = c; c.where = { at:'tractor', t:this }; this.trailer.add(c.own()); pose(c.group, -TRAILER.len / 2 + 0.15, 0, 0, TRAILER.deck); }
-  give() { const c = this.box; this.box = null; return c; }
-  done() { this.at = null; this.ready = false; this.next = this.next === 'crane' ? 'rtg' : 'crane'; this.trips++; }
+  take(c: Cbox) { this.box = c; c.where = { at:'tractor', t:this }; this.trailer.add(c.own()); pose(c.group, -TRAILER.len / 2 + 0.15, 0, 0, TRAILER.deck); this.road?.boxOn(c); }
+  give() { const c = this.box; this.box = null; this.road?.boxOff(c); return c; }
+  done() { this.at = null; this.ready = false; this.next = this.road ? 'exit' : this.next === 'crane' ? 'rtg' : 'crane'; this.trips++; }
   update(dt: number) {
+    // a road truck: a shadow while it comes on (until it reaches its place) and as it goes off (until it is clear)
+    if (this.shadow) { this.v = 0; if (this.next === 'exit' && this.road.front.y < 299) TRACTORS.splice(TRACTORS.indexOf(this), 1); return; }
+    if (this.road && this.next === 'exit' && this.at) { this.shadow = true; this.road.fromPort(); return; }
     const working = ship.state === 'working' && PORT_CRANES[this.pair].mode !== 'done';
-    if (!working && !this.box && this.next !== 'park' && !this.at) this.next = 'park';
-    if (working && this.next === 'park') this.next = 'crane';
+    if (!this.road && !working && !this.box && this.next !== 'park' && !this.at) this.next = 'park';
+    if (!this.road && working && this.next === 'park') this.next = 'crane';
     if (this.at) {   // standing at a stop while it is served (the crane or gantry sends it on)
       this.v = 0; this.ready = true; const c = PORT_CRANES[this.pair];
       if (this.at === 'crane' && !this.business() && c.step !== 'set' && c.step !== 'pick') this.done();
@@ -390,20 +408,24 @@ class Tractor {
     this.v = vT < this.v ? vT : Math.min(vT, this.v + 1.2 * dt);
     this.s = (this.s + this.v * dt) % LL;
     if (stop < 0.15 && this.v < 0.3 && this.next !== 'park') { this.at = this.next; this.ready = false; }
+    if (this.road) this.road.inPort = this.status();
     this.place();
   }
   // the middle of its trailer's deck, across the lane (cranes and gantries set boxes down there)
-  bedY() { const a = LOOP.at(this.s - TOFF); return a.y - Math.cos(a.h) * this.lat; }
+  bedY() { const a = LOOP.at(this.s - this.toff); return a.y - Math.cos(a.h) * this.lat; }
   onStraight() { const a = LOOP.at(this.s); return Math.abs(Math.sin(a.h)) < 0.05 && a.x > LX0 + 12 && a.x < LX1 - 30; }
   pt(s: number) { const a = LOOP.at(s); return { x:a.x + Math.sin(a.h) * this.lat, y:a.y - Math.cos(a.h) * this.lat, h:a.h }; }
   place() {
-    const F = this.pt(this.s), K = this.pt(this.s + TRAILER.pin), R = this.pt(this.s + TRAILER.pin - TRAILER.len);
+    const F = this.pt(this.s), K = this.pt(this.s + this.pin), R = this.pt(this.s + this.pin - TRAILER.len);
     const hk = Math.atan2(K.y - R.y, K.x - R.x);
-    pose(this.cab, F.x, F.y, F.h, PZ); pose(this.trailer, K.x, K.y, hk, PZ); pose(this.lite[0], F.x, F.y, F.h, PZ); pose(this.lite[1], K.x, K.y, hk, PZ);
+    pose(this.cab, F.x, F.y, F.h, PZ); pose(this.trailer, K.x, K.y, hk, PZ);
+    if (this.road) { this.cab.rotation.z = this.trailer.rotation.z = 0; this.road.front = { x:F.x, y:F.y, h:F.h }; this.road.pose = { x:K.x, y:K.y, h:hk }; }
+    else { pose(this.lite[0], F.x, F.y, F.h, PZ); pose(this.lite[1], K.x, K.y, hk, PZ); }
     this.points = [[F.x, F.y], [R.x, R.y]];
   }
   status() {
     const c = PORT_CRANES[this.pair], g = YARD[this.pair];
+    if (this.road) return this.at === 'rtg' ? `under ${g.id} · ${this.box ? 'its box coming off' : 'an import going on'}` : this.next === 'rtg' ? `in the terminal · to ${g.id} at block C` : 'in the terminal · round to the gate';
     if (this.at === 'crane') return this.box ? `under ${c.id} · ${c.box ? 'being unloaded' : 'waiting for the crane'}` : `under ${c.id} · waiting for a box`;
     if (this.at === 'rtg') return this.box ? `under ${g.id} · being unloaded` : `under ${g.id} · being loaded`;
     if (this.next === 'park') return 'parked';
@@ -427,8 +449,14 @@ export const port: any = { kind:'terminal', id:'Sahel Container Terminal', group
       rows:[['Berth 1', ship.state === 'away' ? 'empty' : ship.title()], ['Moves this call', String(ship.moves)], ['Ships worked', String(ship.calls)], ['Quay', `${PORT.x1 - PORT.x0} m · 14 m alongside`], ['Gate', 'Port Av']] };
   },
   readout() { return `sahel container terminal · ${this.status()}`; },
-  entities() { return [this, ship, ...PORT_CRANES, ...YARD, ...TRACTORS, ...TUGS, ...BLOCKS, ...PORT_CRANES.map(c => c.box), ...YARD.map(g => g.box), ...TRACTORS.map(t => t.box), ...BLOCKS.flatMap(b => [...b.kept]), ...ship.kept].filter(Boolean); },
-  vehicles() { return [ship, ...TUGS, ...TRACTORS].filter(v => v !== ship || ship.state !== 'away'); },
+  entities() { return [this, ship, ...PORT_CRANES, ...YARD, ...TRACTORS.filter(t => !t.road), ...TUGS, ...BLOCKS, ...PORT_CRANES.map(c => c.box), ...YARD.map(g => g.box), ...TRACTORS.map(t => t.box), ...BLOCKS.flatMap(b => [...b.kept]), ...ship.kept].filter(Boolean); },
+  vehicles() { return [ship, ...TUGS, ...TRACTORS.filter(t => !t.road)].filter(v => v !== ship || ship.state !== 'away'); },
+  // road trucks: a box of their own; room to come on at the gate (no tractor coming along the road past it); a shadow
+  // place held on the circuit until the truck reaches it, then the circuit is theirs until they are back at the gate
+  newBox(o: any) { return new Cbox(o); },
+  laneFree() { return !TRACTORS.some(t => { const a = t.pt(t.s); return Math.abs(a.y - ROAD) < 4 && a.x > ROAD_IN - 6 && a.x < ROAD_IN + 55; }); },
+  reserve(truck: any) { const h = new Tractor(-1, truck); TRACTORS.push(h); truck.hauler = h; },
+  admit(truck: any) { truck.hauler.shadow = false; },
   // a few pixels a metre out: the ropes and stays are left out, the tractors are a block each
   detail(far: boolean) { for (const c of [...PORT_CRANES, ...YARD]) { c.ropes.visible = !far; if (c.staysG) c.staysG.visible = !far; } for (const t of TRACTORS) t.lod(far); },
   update(dt: number) {

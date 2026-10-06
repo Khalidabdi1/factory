@@ -10,7 +10,7 @@ import { FAR } from './person';
 // ---- simulation ----
 export const STEP = 1 / 60, WARMUP = 80;
 export const sim = { t:0, trucks:[], cars:[], forklifts:[], people:[], pallets:new Set(), peds:[], stats:{} };
-export const resetStats = () => { sim.stats = { produced:0, flatTrips:0, whIn:0, whOut:0, shopIn:0, sold:0, plantOut:0, robberies:0, arrests:0, escapes:0, riders:0 }; };
+export const resetStats = () => { sim.stats = { produced:0, flatTrips:0, whIn:0, whOut:0, shopIn:0, sold:0, plantOut:0, robberies:0, arrests:0, escapes:0, riders:0, exported:0, imported:0 }; };
 resetStats();
 // One day passes in six minutes of simulation; the visible run starts at 10:00. N skips six hours.
 const DAY = 360;
