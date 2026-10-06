@@ -2,8 +2,10 @@
 
 A live isometric town drawn with WebGL in the hairline style of [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill).
 
-Goods go from a factory to a warehouse along the main road of a small seaside town, and on to a shop by the sea:
-- Behind the town are hills; in front of it, the sea.
+Goods go from a factory to a warehouse along the main road of a small seaside town, and on to a shop by the sea. East of
+the town, past a green belt of woods, lies Sahel, a new city of towers, with a metro, a Metrobus, a car showroom and a
+container port:
+- Behind both towns are hills; in front of them, the sea. Woods ring them round.
 - A day passes in six minutes. Windows, street lamps, headlights and the lighthouse come on at dusk.
 - There is no dashboard. Click anything and a card shows its live details; click a vehicle and its route appears.
 
@@ -31,7 +33,7 @@ To build the site, run `npm run build`. It writes plain HTML and JS to `out/`, s
 | `yard/kernel/` | The iso projection, `Part` (boxes, faces, hairlines, text), `Path`, the corridor graph and the seeded random numbers |
 | `yard/theme.ts` | Tokens → materials, and the day/night blend |
 | `yard/models/`, `yard/world/` | Vehicles, people, boats, and the static town |
-| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police, the fire station, the pier, fishing, weather, Car Works and the train |
+| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police, the fire station, the pier, fishing, weather, Car Works and the train; Sahel's traffic and people, the metro, the Metrobus, Sahel Motors and the port |
 | `yard/view.ts` | Camera, selection, card, routes, peeking into buildings, the frame loop, keys |
 | `yard/index.ts` | Builds everything in a fixed order and starts the view |
 
@@ -48,6 +50,13 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Car Works** | A car factory on a terrace cut into the hills behind the warehouse, its lot of finished cars in front. Inside, one line runs through a press shop, a body shop of welding robots, a paint shop, assembly and the end-of-line tests. |
 | **Railway** | One track along the foot of the hills, with a loop through the Plant 01 yard and its loading platform |
 | **Coast** | Coast Rd, the promenade, the beach, the town pier, Sunset Pier with its rides, and a breakwater with a lighthouse. A sailboat, a motorboat and the fishing boat Kestrel are out at sea. |
+| **Woods** | A strip of woods west of the old town, a green belt between the two towns with footpaths through it, and another strip east of Sahel; pines up the hills |
+| **Sahel** | The new city: four avenues (Gate, Najd, Tower and Port Av), North St, Sahel Blvd with a busway down its middle, Souq St and the Corniche. Skyscrapers in the Financial District (Sahel Tower, Sahel Arch, the Globe and more), Al Noor Mosque, Souq Sahel mall, the library, flats and hotels, Wadi Park, and Sahel Marina with its yachts. |
+| **Sahel Metro** | Two lines on viaducts, after Riyadh's: Line 1 from Market St in the old town through Sahel Central to Port, Line 2 from Motor District down to Sahel Central. Sahel Central, after the King Abdullah Financial District station, is a long row of white lobes woven with ribbons and eyes of lattice that glow at night. |
+| **Sahel Motors** | Car Works' showroom on a terrace at the foot of the hills: twin glass car towers, a glass hall with cars on show, a test track, and a level crossing over the main line down to Najd Av |
+| **Port** | Sahel Container Terminal, east of the marina: a quay with three ship-to-shore cranes, a yard of stacked boxes with three gantry cranes, a gate, a control tower, reefer racks, and a breakwater with a light at each end |
+
+![Sahel by day: Sahel Central's woven lattice among the Financial District's towers, Sahel Motors and its car towers at the foot of the hills, the metro's viaducts, and the container terminal on the waterfront](docs/sahel.png)
 
 ## What moves
 
@@ -99,17 +108,33 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - They make up the hose, the household goes back in, and ENG-1 drives home and backs into its bay while the traffic waits.
     - The house's card shows the fire and has a Track ENG-1 button. The station's card shows the watch and the last call.
 
+17. **Sahel's streets:** cars come through from the old town along Riverside Rd and down Sahel Blvd, and loop round the city's blocks. People walk between the towers, the flats, the mall, the park, the beach and the marina, and to the mosque at the times of prayer.
+18. **Sahel Metro:**
+    - Driverless four-car trains run both lines, stop behind platform screen doors, and turn back at the ends over crossovers.
+    - People ride up the escalators, through the gates, wait on the island and board, and change lines at Sahel Central. Follow one and the camera goes with them onto the train.
+    - Zoom in close over a station, or click it, and it opens: the concourse, the gates, the islands, the escalators and the trains.
+19. **The Metrobus (Line M1):** four articulated buses run the busway down Sahel Blvd between glass stations on the median, waiting for anyone on a crossing.
+20. **Sahel Motors:**
+    - CS-1, a car shuttle, takes finished cars from Car Works' lot (it and FRT-7 take turns there), runs them along its siding, and stands while a ramp rises behind it. The cars back off and drive to the twin towers, where a lift carries each up to a bay. Click a car in a tower for its bay and its price.
+    - People come up from the metro, look at the cars on show, take one round the test track, and sit down with a consultant. Some buy: their car comes down its tower and round to the handover bay, and they drive it away over the level crossing, whose barriers come down for FRT-7, and off to the old town.
+21. **The port:**
+    - A ship comes in from the west past the old town's pier, and two tugs push her alongside. The cranes lower their booms and take boxes off onto terminal tractors, which run them round to the yard, where the gantries stack them. Then the other way: boxes out of the yard and onto the ship.
+    - When she is done the booms go up, the tugs pull her off and she sails on east. Every crane, gantry, tractor, tug and box has a card.
+
+    ![Sahel Container Terminal: a feeder alongside under three ship-to-shore cranes, STS 2 selected waiting to set a box on a tractor, the yard's gantries behind, the tugs at their pontoon and the breakwater's lights](docs/port.png)
+
 Each stage only runs as fast as the next one lets it:
 - A full shop keeps the box trucks waiting at the warehouse.
 - Full racks keep the flatbeds at the docks.
 - A full belt holds the production line.
-- A full lot holds the car line until the train comes.
+- A full lot holds the car line until a train comes.
+- Full towers keep CS-1 waiting at the showroom.
 
 ## Controls
 
 | Action | Mouse / touch | Keys |
 | --- | --- | --- |
-| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works, top right | `1`–`6` |
+| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port, top right | `1`–`9`, `P` |
 | Whole map | ⌂ button | `0` |
 | Skip ahead six hours | clock button | `N` |
 | Pan | drag | arrow keys |
@@ -120,13 +145,13 @@ Each stage only runs as fast as the next one lets it:
 | Pause | ❚❚ button | `Space` |
 | Light / dark | ◐ button | `T` |
 
-Some cards have buttons: Look inside on buildings and homes, Track on an order or a fire, Follow ENG-1 at the fire station, and Follow a new car at Car Works.
+Some cards have buttons: Look inside on buildings, stations and homes, Track on an order or a fire, Follow ENG-1 at the fire station, and Follow a new car at Car Works.
 
 When something that moves is selected, the map draws its route as a dashed line and rings its next stop:
 - Trucks and the bus show their whole loop.
 - Cars, forklifts and people show the way ahead.
 
-The warehouse, the shop, the bank, the fire station, Car Works and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in.
+The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, Sahel Motors' showroom and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in. The stations and the showroom also open when you zoom in close over them.
 
 ## How the skill carries over to WebGL
 
@@ -136,7 +161,7 @@ ai-iso-skill draws SVG figures with a small projection kernel. This page keeps t
 - **Same kernel.** `plane(O,U,V)`, `TOP`, `FRONT`, `SIDE` and `box(x,y,z,w,d,h)` keep their meanings. Doors, windows, ribs, road paint, zebras, signs, clock faces and text are drawn flat in a face's own 2D units and placed with that face's matrix.
 - **Hairlines.** Every edge is a `LineSegments2` exactly 1 CSS pixel wide at any zoom, the WebGL equivalent of `vector-effect: non-scaling-stroke`. Faces are flat, unlit and opaque, so the depth buffer hides lines behind them.
 - **Day and night.** Every colour is a CSS custom property, with one set for dark and one for light. Through the evening the materials slide toward a single night palette. Windows and lamps are two extra fills that light up as everything else darkens.
-- **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only.
+- **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, the showroom and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only.
 - **The look.** It uses two greys for lines and one `--live` colour, reserved for what is live: the selection and its route, a busy bay's lamp, a forklift's beacon, the police and fire light bars, the bank alarm, a chimney's flames, a welding robot's sparks and the lighthouse beam. Goods and uniforms use the two-tone fill.
 - **The frame.** The page is a plate with `Fig 1` and the clock (and `night`, `rain` or `fog` when it is), the places, the instruction and a live readout in the four corners. At night the whole page goes dark, even in the light theme, and the ◐ choice is remembered.
 
@@ -156,7 +181,7 @@ three.js and the font are bundled with the site, so it runs without loading anyt
   - `weather(kind, seconds)` brings `'rain'`, `'fog'` or `'clear'`.
   - `fire(id)` starts a chimney fire now, at that house or any house.
   - `train()` brings the next train in now.
-  - The `incident`, `sim`, `shop`, `bank`, `fireSys`, `worksSys` and `trainSys` state are there too.
+  - The `incident`, `sim`, `shop`, `bank`, `fireSys`, `worksSys`, `trainSys`, `metroSys`, `brtSys`, `motorsSys` and `portSys` state are there too.
 - `?seed=<number>` changes the random seed. The simulation runs on a fixed 1/60 s step, so a given seed always plays out the same way.
 
 ## Credits
