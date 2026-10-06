@@ -17,7 +17,8 @@ import { scene } from './shared';
 // docks           | 232 / 276      | 80         | flatbeds unload here, forklifts work from the north
 // shop            | 377.5–409.5    | 231–249    | Corner Market at Coast Rd and Hill Av: forecourt y 249–255.6, a lay-by y 255.6–260 (x 378–413,
 //                 |                |            | entered from Hill Av), seafront bays y 274–276.6 (x 374–409) across the road, a zebra at x 399;
-//                 |                |            | the old site off Riverside Rd (x 358–404) is free
+// fire station    | 360–400        | 94–112     | engine hall x 360–378 (bays at x 365 and 374, doors on Riverside Rd), crew wing x 378–400,
+//                 |                |            | drill tower x 394–400 y 94–99; apron y 112–124 before the bays, crew parking x 380–393
 // avenues         | 60·180·300·420 | 138–274    | Park, Mill, Harbour and Hill Av, 14 wide; southbound lane x − 3.5, northbound x + 3.5
 // Market St       | 53–427         | 198–212    | eastbound lane y 208.5, westbound 201.5
 // Coast Rd        | 0–440          | 260–274    | eastbound lane y 270.5, westbound 263.5; promenade 274–279, beach to 296
@@ -48,6 +49,9 @@ export const SHELF = []; for (const [y, sy] of [[98.4, 100.6], [103.6, 105.8]]) 
 export const STOCK_CAP = 12, BOXES = 4;
 export const SHOP = { in:sx(378, 109.6), out:sx(378, 114.2), counter:sx(387, 111), stockStand:sx(364.8, 100.6), front:[393.5, 254.6], zebra:399 };
 export const ZEBRA_X = 394.5;
+// Riverside Fire Station. ENG-1 stands nose out in bay 1 (front at park); it drives out forward and comes home by
+// stopping in the westbound lane past the bay and backing in along reverse (the path its rear end takes).
+export const STATION = { x0:360, x1:400, y0:94, y1:112, hall:378, bays:[365, 374], park:[365, 110.6], reverse:[[359, 127.5], [365, 127.5], [365, 101]] };
 export const CURB = 0.15, SEA_Z = -0.6;
 export const AV = [60, 180, 300, 420];
 // Orchard Lane: the lane's two arms, its turning circle, the pavement its houses open onto, and the six lots (x0, width)

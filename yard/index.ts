@@ -29,6 +29,7 @@ import { Courier, tickOrders } from './sim/courier';
 import { buildFair } from './sim/fair';
 import { buildFishing } from './sim/fishing';
 import { weather } from './sim/weather';
+import { buildFireService } from './sim/fire';
 import { initView } from './view';
 
 applyTheme();
@@ -221,6 +222,8 @@ new Boat({ id:'Marlin', skipper:'R. Lopes', moor:[190.5, 308.5], proto:PROTO.mot
 const waves = [0, 1].map(() => { const p = new Part();
   for (let i = 0; i < 80; i++) { const x = rand(-10, 450), y = rand(299, 335), l = rand(1.5, 3.6); p.seg('detail', W(x, y, SEA_Z + 0.03), W(x + l, y, SEA_Z + 0.03)); }
   const g = p.build('waves'); scene.add(g); return g; });
+// Riverside Fire Station, ENG-1 and its watch, on the old shop site
+const fireSys = buildFireService();
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
@@ -242,7 +245,7 @@ sim.step = dt => {
   sim.peds = sim.people.filter(p => onRoad(p.x, p.y));
   for (const p of sim.pallets) p.update(dt);
   for (const b of BOATS) b.update(dt);
-  gate.update(dt); whGate.update(dt); incident.update(dt);
+  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt);
   for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
   for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);
@@ -256,4 +259,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, fishingSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, fireSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

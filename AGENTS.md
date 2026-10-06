@@ -42,7 +42,7 @@ Next 16 (App Router, Turbopack), React 19, TypeScript, and `three@0.186.1` from 
 | `yard/theme.ts` | Token → material mapping, the `NIGHT` palette, `applyTheme()`, and `shade(n)`, the day/night blend. |
 | `yard/layout.ts` | World constants and the coordinate table (where everything is), plus `ROADS` / `BLOCKS`, `onRoad`, `zAt`. |
 | `yard/models/`, `yard/world/` | Builders for moving models and for the static town. |
-| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `boats`. |
+| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `fire` (the fire station, ENG-1, its watch, chimney fires), `boats`. |
 
 The React component and the engine share a contract: the engine finds the plate's elements **by id**: `clock`, `stage`, `view`, `card`, `cardRows`, `note`, `readout`, `tagSel`, and the rest. React never re-renders the plate. Per-frame UI updates are imperative.
 
@@ -136,9 +136,14 @@ Done:
   - `buildShop` still draws in the old frame (x 362–394, y 94–112); the group is placed at `SX`, `SY` (and `CURB`). `SHELF` and `SHOP` are in town coordinates, and `shop.routeTo` / `routeOut` convert with `sx()`. A shop entity's `pick` stays in the local frame.
   - Box trucks come down Hill Av into the lay-by, leave along Coast Rd, and cross Riverside Rd from Harbour Av straight into the warehouse gate once the gate is open and both lanes are clear.
   - Customers and PKG-1 park in the seafront bays (y 274–276.6); the pavements step round the lay-by onto the forecourt, and a zebra crosses Coast Rd at x 399.
+- Phase 10: Riverside Fire Station and ENG-1 (`yard/world/station.ts`, `yard/sim/fire.ts`, `STATION` in `layout.ts`), on the old shop site.
+  - The station is a peek building: the engine hall with the rescue tender, the watch room, the mess, the drill tower. Its watch of four are `Firefighter`s who idle at their posts (`CREW`).
+  - `blaze` runs quiet → burning → called → attack → steam → makeup → clear. Chimney positions come from `buildHouse` (`userData.chimney`); a burning house's household is `evacuated` (its `plan()` is empty) and stands on the pavement as `Evacuee`s.
+  - ENG-1 (`FireEngine`, a `Car`) turns out to the apron's edge, takes the shorter way out (`trip` from either lane), pulls in at the kerb (`pullIn(pts, 2.2)`), and comes home to stop past the bay and back in along `STATION.reverse`, its rear leading.
+  - While it backs up, `keepBack` (read by `clearAhead`) holds traffic further off. It reports four points along its rigid body, so traffic sees all of it at an angle.
+  - Debug `yard.fire(id)`. A house card gets its fire rows and Track ENG-1 through `hooks.fireFor`.
 
 Next:
-10. Fire station and ENG-1, with chimney fires, on the old shop site off Riverside Rd (x 358–404, y 92–124).
 10b. Car Works: a car factory on a terrace cut into the foothills, which you can see inside.
     - Inside: a press shop, a body-in-white robot welding line (after the owner's reference photo), a paint booth, assembly and an end-of-line test.
     - Every car on the line can be followed with the camera.

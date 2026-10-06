@@ -23,7 +23,7 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
@@ -101,7 +101,7 @@ function select(ent) {
 }
 hooks.forget = forget;
 function forget(ent) { if (selected === ent) select(null); if (hovered === ent) hovered = null; }
-const STILL = ['factory', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride'];
+const STILL = ['factory', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'station', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride'];
 const followable = ent => !!ent && !STILL.includes(ent.kind);
 function setFollow(on) { follow = on && followable(selected); $('cardFollow').setAttribute('aria-pressed', follow); }
 function refresh() {
@@ -166,7 +166,7 @@ function drawRoute() {
 }
 // A closed building opens up while it, or something inside it, is selected. Homes draw their section (and are told
 // to show who is in) the first time they open.
-const PEEK = [[whG, warehouse], [shopG, shop], [bank.groups[0], bank], ...homes.map(h => [h.groups[0], h])];
+const PEEK = [[whG, warehouse], [shopG, shop], [bank.groups[0], bank], [fireSys.station.groups[0], fireSys.station], ...homes.map(h => [h.groups[0], h])];
 hooks.inBuilding = (x, y) => PEEK.some(([g]) => { const b = g.userData.peek.box; return x > b[0] && x < b[1] && y > b[2] && y < b[3]; });
 hooks.closedAt = (x, y) => { for (const [g] of PEEK) { const pk = g.userData.peek, b = pk.box; if (x > b[0] && x < b[1] && y > b[2] && y < b[3]) return !pk.cut?.visible; } return false; };
 function updatePeek() {
@@ -194,7 +194,7 @@ canvas.addEventListener('pointermove', e => {
   if (e.pointerType === 'mouse' && !e.buttons) { pointer = [e.clientX, e.clientY]; hoverDirty = true; }
 });
 canvas.addEventListener('pointerleave', () => { pointer = null; hovered = null; canvas.classList.remove('over'); });
-const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.cars, courier].sort((a, b) => a.id.localeCompare(b.id));
+const vehicles = () => [...sim.forklifts, ...sim.trucks, ...incident.cars, courier, fireSys.engine].sort((a, b) => a.id.localeCompare(b.id));
 function cycle(d) { const v = vehicles(), i = v.indexOf(selected); if (v.length) select(v[i < 0 ? (d > 0 ? 0 : v.length - 1) : (i + d + v.length) % v.length]); }
 let paused = false;
 function togglePause() { paused = !paused; $('pause').setAttribute('aria-pressed', paused); $('pause').setAttribute('aria-label', paused ? 'Resume' : 'Pause');
@@ -287,7 +287,7 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
@@ -304,6 +304,8 @@ if (DEBUG) {
     order:id => placeOrder(id ? find(id) : homes[Math.floor(Math.random() * homes.length)]), orders, courier, roadnet:{ trip, locate, kerbStop, EDGES },
     // start the bank job now (when the town is quiet)
     robbery:() => { if (incident.phase === 'quiet') incident.next = sim.t; return incident.phase; },
+    // a chimney fire now, at a house by id or any house with a chimney (when none is burning): returns the house
+    fire:id => fireSys.blaze.phase === 'quiet' ? fireSys.blaze.start(id ? find(id) : undefined).id : `busy: ${fireSys.blaze.phase}`, fireSys,
     // weather now: 'rain', 'fog' or 'clear', for some seconds
     weather:(kind = 'rain', secs = 60) => { if (kind === 'clear') { weather.kind = 'clear'; } else weather.set(kind, secs); return weather.kind; }, weatherState:weather,
     screenOf:id => { const e = find(id); scene.updateMatrixWorld(); camera.updateMatrixWorld(); const p = e.groups[0].localToWorld(W(...(e.pick ?? [0, 0, 1]))).project(camera), r = canvas.getBoundingClientRect();

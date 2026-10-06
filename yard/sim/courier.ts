@@ -8,12 +8,7 @@ import { Car } from './cars';
 import { Person } from './person';
 import { homes } from './homes';
 import { kerbStop, locate, trip } from './roadnet';
-import { kerbward, laneClear } from './roads';
-
-// the last few metres of a drive, swung in to the kerb
-const pullIn = pts => { const n = pts.length, P = pts[n - 1], Q = pts[n - 2], h = Math.atan2(P[1] - Q[1], P[0] - Q[0]), c = Math.cos(h), s = Math.sin(h);
-  const k = Math.min(7, Math.hypot(P[0] - Q[0], P[1] - Q[1]) * 0.6);   // swing in over the last straight, never back round a corner
-  return [...pts.slice(0, -1), [P[0] - c * k, P[1] - s * k], kerbward([P[0] - c * k * 0.35, P[1] - s * k * 0.35], h, 1.9), kerbward(P, h, 1.9)]; };   // ending parallel to the kerb
+import { kerbward, laneClear, pullIn } from './roads';
 
 // Online orders from Corner Market. A home orders; a shop assistant picks the boxes, packs the parcel at the counter and
 // carries it over the zebra to the parcel van in the seafront bays; the van drives to the house, the courier walks it to
@@ -44,7 +39,7 @@ hooks.orderFor = house => {
   const o = [...orders.list].reverse().find(q => q.house === house && (q.state !== 'delivered' || sim.t - q.tDone < 30));
   if (!o) return null;
   const going = o.state === 'out' || o.state === 'arriving';
-  return { row:['Order', `${o.id} · ${STAGES[o.state]}${o.state === 'out' ? ` · ETA ${clock(sim.t + courier.eta())}` : ''}`], actions:going || o.state === 'packed' || o.state === 'packing' ? [['Track', () => hooks.track(courier)]] : [] };
+  return { row:['Order', `${o.id} · ${STAGES[o.state]}${o.state === 'out' ? ` · ETA ${clock(sim.t + courier.eta())}` : ''}`], actions:going || o.state === 'packed' || o.state === 'packing' ? [['Track parcel', () => hooks.track(courier)]] : [] };
 };
 
 export let courier = null;

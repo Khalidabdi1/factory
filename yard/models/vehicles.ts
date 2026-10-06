@@ -161,6 +161,36 @@ export function buildParcelVan() {
   g.add(h.build('hazard'));
   return g;
 }
+// ENG-1, the fire engine: a crew cab, a body of roller-shuttered lockers in the two-tone fill under a light band, a
+// ladder on a roof gantry, a hose reel at the back; light bars on the cab and at the back flash on a call
+export const ENGINE_LEN = 9.6;
+export function buildFireEngine() {
+  const p = new Part(), L = ENGINE_LEN, Y = 1.25;
+  p.box(-2.9, -Y, 0.45, 2.9, 2 * Y, 2.55, 'k');                    // the cab
+  p.box(-L, -Y, 0.45, L - 3.0, 2 * Y, 2.35, 'k');                  // the body, a hand's width behind it
+  const ws = SIDE(0, Y, 3.0); p.fill2(ws, 0.15, 0.25, 2.2, 0.9).rect2(ws, 0.15, 0.25, 2.2, 0.9, 'koline');
+  for (const [y, s] of [[Y, 1], [-Y, -1]]) {
+    const C = FRONT(-2.9, y, 3.0), B = FRONT(-L, y, 2.8);
+    // cab: the driver's window and the crew's, a door line, the band
+    p.fill2(C, 1.65, 0.25, 1.05, 0.8, 'glass', 0.03 * s).rect2(C, 1.65, 0.25, 1.05, 0.8, 'koline', 0.035 * s)
+      .fill2(C, 0.25, 0.25, 1.2, 0.8, 'glass', 0.03 * s).rect2(C, 0.25, 0.25, 1.2, 0.8, 'koline', 0.035 * s)
+      .draw(C, [1.55, 0.2, 1.55, 2.4], 'koline', 0.035 * s).fill2(C, 0.1, 1.35, 2.7, 0.3, 'deck', 0.03 * s);
+    // body: four lockers with roller shutters under the band
+    p.fill2(B, 0.2, 1.7, L - 3.4, 0.36, 'deck', 0.03 * s);
+    for (let k = 0; k < 4; k++) { const u = 0.35 + k * 1.55; p.rect2(B, u, 0.15, 1.4, 1.45, 'koline', 0.035 * s);
+      const sl = []; for (let v = 0.35; v < 1.55; v += 0.2) sl.push(u + 0.05, v, u + 1.35, v); p.draw(B, sl, 'koline', 0.035 * s); }
+  }
+  // the roof: a gantry and the ladder on it, out over the cab; a hose reel across the back
+  for (const y of [-0.62, 0.5]) p.box(-L + 0.5, y, 2.8, L - 3.4, 0.12, 0.22, 'k');
+  for (const y of [-0.42, 0.3]) p.box(-L + 0.3, y, 3.02, L - 1.2, 0.12, 0.1);
+  for (let x = -L + 0.6; x < -1.0; x += 0.45) p.seg('line', W(x, -0.36, 3.12), W(x, 0.36, 3.12));
+  p.cylY(-L + 0.7, -1.0, 1.85, 0.5, 2.0, 14, 'k');
+  for (const x of [-1.4, -6.5, -8.0]) { p.cylY(x, 0.95, 0.45, 0.45, 0.32, 12); p.cylY(x, -1.27, 0.45, 0.45, 0.32, 12); }
+  lights(p, 0, [0.85, -0.85], 0.7, 0.22, 0.4);
+  const g = p.build('fireEngine');
+  for (const [n, y] of [['barL', 0.05], ['barR', -1.05]]) g.add(new Part().box(-2.5, y, 3.0, 0.9, 1.0, 0.22).box(-L + 0.05, y + (y > 0 ? 0.75 : 0), 2.8, 0.3, 0.3, 0.25).build(n));
+  return g;
+}
 export function buildPallet(v) {
   const p = new Part();
   p.box(-1.2, -1.2, 0, 2.4, 2.4, 0.35);

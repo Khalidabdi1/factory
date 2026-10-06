@@ -28,6 +28,7 @@ export const OUTFITS = {
   fisher:[civ('n', 'k', 'coat', 'short', 'hat', null, false), civ('k', 'n', 'trousers', 'short', 'cap', 'bag', false)],
   courier:[civ('k', 'n', 'trousers', 'short', 'cap', null, false)],
   teller:[civ('n', 'k', 'trousers', 'short', null, null, false), civ('k', 'n', 'skirt', 'bun', null, null, true)],
+  fire:[civ('k', 'k', 'coat', 'short', 'helmet', null, false), civ('k', 'k', 'coat', 'bun', 'helmet', null, true)],
 };
 OUTFITS.shopper = OUTFITS.walker;
 export const LOOKS = Object.keys(OUTFITS);

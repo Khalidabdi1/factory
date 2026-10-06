@@ -61,7 +61,7 @@ export function buildWorld() {
     [345, 138, 39, 4.6], [378, 255.6, 35, 4.4], [374, 257.4, 4, 2.6], [374, 274, 35, 2.6]]) p.fill2(G, ...r, 'glass', 0.02);
   // road paint: the main road's north kerb (gaps for the gates and the truck park), centre lines, the roundabout's edges
   const kx = RAB.x - Math.sqrt(14.5 ** 2 - 7 ** 2);
-  p.draw(G, [0, 124, 112, 124, 130, 124, 136, 124, 198, 124, 314, 124, 332, 124, kx, 124,
+  p.draw(G, [0, 124, 112, 124, 130, 124, 136, 124, 198, 124, 314, 124, 332, 124, 358, 124, 380, 124, kx, 124,
     136, 124, 140, 118.5, 140, 118.5, 194, 118.5, 194, 118.5, 198, 124], 'line', 0.05);
   const dashes = (x0, y0, x1, y1, skip = () => false) => { const L = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / L, uy = (y1 - y0) / L;
     for (let d = 1; d < L - 3; d += 6) { const x = x0 + ux * d, y = y0 + uy * d; if (!skip(x, y) && !skip(x + ux * 3, y + uy * 3)) p.draw(G, [x, y, x + ux * 3, y + uy * 3], 'line', 0.05); } };
@@ -118,15 +118,17 @@ export function buildWorld() {
   for (let i = 0; i <= 14; i++) { const x = 140 + i * 3.4; p.draw(G, [x, 10, x, 15.5, x, 31.5, x, 37], 'detail', 0.05); }
   p.draw(G, [140, 15.5, 187.6, 15.5, 140, 31.5, 187.6, 31.5], 'detail', 0.05);
   p.text(G, 'STAFF', 140, 24.4, 1.5, 'paint');
-  // paving: the old forecourt off Riverside Rd, which the Orchard Lane footway crosses, and Corner Market's on the kerb
-  for (let x = 358; x <= 398; x += 2) p.draw(G, [x, 112, x, 118.4], 'detail', 0.05);
-  for (let y = 113.6; y < 118.4; y += 1.6) p.draw(G, [358, y, 398, y], 'detail', 0.05);
+  // paving: the Orchard Lane footway past the fire station, and Corner Market's forecourt on the kerb
+  p.draw(G, [393.7, 124, 393.7, 116.4, 393.7, 116.4, 408.2, 116.4, 395.3, 124, 395.3, 118, 395.3, 118, 408.2, 118], 'detail', 0.05);
+  for (let x = 395.3; x < 408; x += 1.6) p.draw(G, [x, 116.4, x, 118], 'detail', 0.05);
+  for (let y = 119.6; y < 124; y += 1.6) p.draw(G, [393.7, y, 395.3, y], 'detail', 0.05);
   const GC = TOP(0, 0, CURB);
   for (let x = 379.5; x <= 411; x += 2) p.draw(GC, [x, 249.2, x, 255.4], 'detail', 0.03);
   for (let y = 250.6; y < 255.4; y += 1.6) p.draw(GC, [377.6, y, 412.8, y], 'detail', 0.03);
   // yard-side trees
   for (const [x, y] of [[136, 46], [146, 46], [190, 46], [192, 10], [134, 8], [121, 22], [124, 8], [8, 70], [8, 30], [184, 108], [140, 108], [160, 110],
-    [201, 30], [201, 80], [220, 8], [342, 12], [350, 32], [344, 52], [350, 72], [342, 92], [359.5, 86], [372, 86], [388, 84], [402, 98], [414, 104], [432, 100], [436, 86]]) tree(p, x, y, rand(0.8, 1.1));
+    [201, 30], [201, 80], [220, 8], [342, 12], [350, 32], [344, 52], [350, 72], [342, 92], [359.5, 86], [372, 86], [388, 84], [402, 98], [414, 104], [432, 100], [436, 86]]) {
+    const s = rand(0.8, 1.1); if (x === 402 && y === 98) rand(0, 3); else tree(p, x, y, s); }   // the drill tower stands where one was
   // the wood behind the shop, less what Orchard Lane cleared (a cleared tree still draws its yaw, keeping the random sequence)
   for (let i = 0; i < 26; i++) { const x = rand(362, 436), y = rand(6, 78), s = rand(0.75, 1.15); if (orchardClear(x, y)) rand(0, 3); else tree(p, x, y, s); }
   for (let x = 8; x < 196; x += rand(9, 14)) tree(p, x, rand(-2.4, 1.6), rand(0.8, 1.05));

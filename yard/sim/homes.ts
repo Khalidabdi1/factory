@@ -59,17 +59,18 @@ export function home(g, o) {
     // who is home and what each is doing, in residents' order
     plan() {
       const hour = hourAt(sim.t), hh = this.household, home = [];
+      if (this.evacuated) return home;   // out on the pavement while the chimney burns
       let left = hh.n - this.out();
       this.residents.forEach((name, i) => { if (left <= 0) return; const r = routine(hh, hour, i); if (r) { home.push({ name, kind:r[0], label:r[1] }); left--; } });
       return home;
     },
     info() {
-      const hh = this.household, now = this.plan(), out = this.out(), doing = [...new Set(now.map(p => p.label))].join(', '), ord = hooks.orderFor?.(this);
-      return { kind:this.villa ? 'Villa' : 'House', title:this.id, status:now.length ? lightsText() : 'nobody home',
-        rows:[['Street', this.street], ['Household', hh.text], ['Who', this.residents.join(', ')],
-          ['At home', now.length ? `${now.length} of ${hh.n} · ${doing}` : hh.nights && !out ? 'at the hospital' : 'nobody'],
+      const hh = this.household, now = this.plan(), out = this.out(), doing = [...new Set(now.map(p => p.label))].join(', '), ord = hooks.orderFor?.(this), fire = hooks.fireFor?.(this);
+      return { kind:this.villa ? 'Villa' : 'House', title:this.id, status:fire?.status ?? (now.length ? lightsText() : 'nobody home'),
+        rows:[...(fire ? fire.rows : []), ['Street', this.street], ['Household', hh.text], ['Who', this.residents.join(', ')],
+          ['At home', this.evacuated ? 'everyone out on the pavement' : now.length ? `${now.length} of ${hh.n} · ${doing}` : hh.nights && !out ? 'at the hospital' : 'nobody'],
           ['Out and about', out ? `${out} from here` : 'nobody'], ...(ord ? [ord.row] : []), ['Built', String(this.built)]],
-        actions:[...(ord?.actions ?? []), ['Look inside', () => hooks.lookInside(this)]] };
+        actions:[...(fire?.actions ?? []), ...(ord?.actions ?? []), ['Look inside', () => hooks.lookInside(this)]] };
     },
     // while the home is open, the people in it are drawn where they are; redrawn when that changes
     whileOpen() {

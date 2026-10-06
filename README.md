@@ -44,7 +44,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Factory** | Plant 01, its conveyor, staging, two loading bays, and a truck park for flatbeds waiting for a free bay |
 | **Warehouse** | Warehouse 01 with racks and a loading lane, two docks, a sliding gate and its guard |
 | **Shop** | Corner Market on the seafront, where Hill Av meets Coast Rd: its delivery lay-by, a zebra crossing, and parking bays across the road on the promenade |
-| **Town** | Four kinds of block:<ul><li>flats, Harbour Bank and Café Mira</li><li>the police station and Town Hall, whose clock tells the simulated time</li><li>houses with gardens</li><li>villas with pools</li></ul>Mill Park lies on the west side. |
+| **Town** | Four kinds of block:<ul><li>flats, Harbour Bank and Café Mira</li><li>the police station and Town Hall, whose clock tells the simulated time</li><li>houses with gardens</li><li>villas with pools</li></ul>Mill Park lies on the west side. Riverside Fire Station stands on Riverside Rd by the roundabout, with ENG-1 in its bay. |
 | **Coast** | Coast Rd, the promenade, the beach, the pier, and a breakwater with a lighthouse, with a sailboat and a motorboat out at sea |
 
 ## What moves
@@ -70,6 +70,12 @@ The engine runs once per page load. React draws the plate, and the engine drives
    - Now and then a man in a dark hood gets off near the park and walks to Harbour Bank. He forces the door, and the alarm goes off.
    - Both police cars leave the yard with their lights flashing. Officers get out and chase him on foot.
    - Usually they make an arrest and walk him to the car. If he reaches the end of the promenade first, he gets away.
+9. **Chimney fires:**
+   - Every so often a chimney catches. Smoke and flames rise from the stack, and whoever is home comes out onto the pavement.
+   - A neighbour calls it in. The bell goes at Riverside Fire Station, the bay door rolls up, the watch runs to ENG-1, and it drives out with its lights flashing.
+   - At the kerb the officer takes the gate and the driver the pump, while two firefighters run a hose up the garden path and put a jet on the chimney until it is out.
+   - They make up the hose, the household goes back in, and ENG-1 drives home and backs into its bay while the traffic waits.
+   - The house's card shows the fire and has a Track ENG-1 button; the station's card shows the watch and the last call.
 
 Each stage only runs as fast as the next one lets it:
 - A full shop keeps the box trucks waiting at the warehouse.
@@ -95,7 +101,7 @@ When something that moves is selected, the map draws its route as a dashed line 
 - Trucks and the bus show their whole loop.
 - Cars, forklifts and people show the way ahead.
 
-The warehouse and the shop are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in.
+The warehouse, the shop, the bank, the fire station and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in.
 
 ## How the skill carries over to WebGL
 
@@ -119,7 +125,8 @@ three.js and the font are bundled with the site, so it runs without loading anyt
   - `select(id)` and `screenOf(id)` pick something and give its position on screen.
   - `look(x, y, zoom)` and `view(i)` move the camera.
   - `all()` lists everything.
-  - The `incident`, `sim`, `shop` and `bank` state are there too.
+  - `fire(id)` starts a chimney fire now, at that house or any house.
+  - The `incident`, `sim`, `shop`, `bank` and `fireSys` state are there too.
 - `?seed=<number>` changes the random seed. The simulation runs on a fixed 1/60 s step, so a given seed always plays out the same way.
 
 ## Credits

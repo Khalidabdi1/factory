@@ -265,6 +265,7 @@ export function buildHouse(o) {
   const shell = s.build('houseShell'); g.add(shell); if (!o.gardens) g.add(p.build('houseBase'));
   if (c) { pose(c, car[0], car[1], Math.PI / 2, z); g.add(c); }
   g.userData.peek = { shell, box:[x, x + w, y, y + d], section:extra => houseSection({ x, y, z, w, d, h, rh, ov, ridgeY, door, ...extra }) };
+  g.userData.chimney = [x + w * 0.72 + 0.35, y + d * 0.3 + 0.35, z + h + rh * 1.2];   // the top of the chimney stack
   return g;
 }
 // a villa: two flat-roofed storeys, glass bands, a pool, palms; like a house, it opens to its ground floor

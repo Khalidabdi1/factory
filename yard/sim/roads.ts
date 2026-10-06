@@ -23,7 +23,9 @@ export function clearAhead(v, look, gap, dt) {
   let best = Infinity, who = null;
   if (!v.ghostT) for (const o of roadVehicles()) if (o !== v && o !== v.ignore && !o.parked) for (const p of o.points) {
     const dx = p[0] - x, dy = p[1] - y, f = dx * c + dy * s;
-    if (f > 0 && f < look && Math.abs(dy * c - dx * s) < v.halfW + 1.2 && f - o.halfW < best) { best = f - o.halfW; who = o; }
+    // keepBack: a vehicle about to back up asks those behind it to stop further off
+    const k = o.halfW + (o.keepBack ?? 0);
+    if (f > 0 && f < look && Math.abs(dy * c - dx * s) < v.halfW + 1.2 && f - k < best) { best = f - k; who = o; }
   }
   for (const p of sim.peds) { const dx = p.x - x, dy = p.y - y, f = dx * c + dy * s;
     if (f > -0.3 && f < look && Math.abs(dy * c - dx * s) < v.halfW + 0.7 && f - 0.6 < best) { best = Math.max(0, f - 0.6); who = p; } }
@@ -38,6 +40,10 @@ export const laneClear = (v, x, y, h, back = 28, ahead = 8) => { const c = Math.
   return !roadVehicles().some(o => o !== v && !o.parked && o.points.some(([px, py]) => { const dx = px - x, dy = py - y, f = dx * c + dy * s; return Math.abs(dy * c - dx * s) < 2.6 && f > -back && f < ahead; })); };
 // the kerb side of a lane: right of the way it runs, by k metres
 export const kerbward = ([x, y], h, k) => [x - Math.sin(h) * k, y + Math.cos(h) * k];
+// the last few metres of a drive, swung in to the kerb (kk: how far right of the lane's middle it ends)
+export const pullIn = (pts, kk = 1.9) => { const n = pts.length, P = pts[n - 1], Q = pts[n - 2], h = Math.atan2(P[1] - Q[1], P[0] - Q[0]), c = Math.cos(h), s = Math.sin(h);
+  const k = Math.min(7, Math.hypot(P[0] - Q[0], P[1] - Q[1]) * 0.6);   // swing in over the last straight, never back round a corner
+  return [...pts.slice(0, -1), [P[0] - c * k, P[1] - s * k], kerbward([P[0] - c * k * 0.35, P[1] - s * k * 0.35], h, kk), kerbward(P, h, kk)]; };   // ending parallel to the kerb
 // a flatbed already turning in at the plant gate is no reason for one at the exit to wait
 export const turningIn = o => o.model === 'flatbed' && o.nextHold().name === 'bay' && o.front.x > 112 && o.front.x < 136 && o.front.y < 129;
 // slow down for bends: the speed allowed now, given the first bend within reach
