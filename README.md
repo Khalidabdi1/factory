@@ -5,7 +5,8 @@ A live isometric town drawn with WebGL in the hairline style of [ai-iso-skill](h
 Goods go from a factory to a warehouse along the main road of a small seaside town, and on to a shop by the sea. East of
 the town, past a green belt of woods, lies Sahel, a new city of towers, with a metro, a Metrobus, a car showroom and a
 container port. Beyond Sahel the land rises into mountains, and the metro runs out through them to Millbrook, a valley
-of farms:
+of farms. An observatory stands on Beacon Hill, and on a spit out over the sea below the valley, Starships are built and
+launched:
 - Behind both towns are hills; in front of them, the sea. Woods ring them round.
 - A day passes in six minutes. Windows, street lamps, headlights and the lighthouse come on at dusk.
 - There is no dashboard. Click anything and a card shows its live details; click a vehicle and its route appears.
@@ -34,7 +35,8 @@ To build the site, run `npm run build`. It writes plain HTML and JS to `out/`, s
 | `yard/kernel/` | The iso projection, `Part` (boxes, faces, hairlines, text), `Path`, the corridor graph and the seeded random numbers |
 | `yard/theme.ts` | Tokens → materials, and the day/night blend |
 | `yard/models/`, `yard/world/` | Vehicles, people, boats, and the static town |
-| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police, the fire station, the pier, fishing, weather, Car Works and the train; Sahel's traffic and people, the metro, the Metrobus, Sahel Motors and the port |
+| `yard/land.ts` | The east country's land: the hills, the gorge and the moor, and the corridors cut through them for the line and the roads |
+| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police and the robbers, the fire station, the pier, fishing, weather, Car Works and the train; Sahel's traffic and people, the metro, the Metrobus, Sahel Motors, the port and the container truck; the east country, Millbrook, the observatory and Starbase |
 | `yard/view.ts` | Camera, selection, card, routes, peeking into buildings, the frame loop, keys |
 | `yard/index.ts` | Builds everything in a fixed order and starts the view |
 
@@ -138,6 +140,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - Line 1's trains run on from Port over the woods, into Harrow Ridge, out of its cliff onto the arch over Raven Gorge, across High Moor in a cutting, through Long Edge and down a viaduct to Millbrook, where they turn back. They go faster on the open line.
     - Through traffic from the old town takes the Vale Road: up the hairpins, over the suspension bridge, through the tunnel, round the curving viaduct into the valley and on east. Coast Rd runs on along the shore, over a low bridge at the gorge's mouth.
     - FRT-7 comes out of its tunnel under Harrow Ridge.
+    ![The east country by day: the Vale Road climbing Harrow Ridge in hairpins and crossing Raven Gorge on its suspension bridge, Line 1 on its arch beside it, Beacon Hill Observatory selected on its levelled summit with Observatory Road winding up to it, Gull Spit Starbase in front and Millbrook to the right](docs/east.png)
 24. **Millbrook:**
     - Farm hands come out of the barn at first light to hoe the vegetables, weed the allotments, turn the hay, feed the animals and pick apples, carrying the crates to the apple store. They go in for dinner at midday and at dusk.
     - Villagers walk between their cottages, the green, the market, the store and the Plough, which fills up in the evening. Visitors come off the metro for the market and the inn, and villagers take the train into Sahel.
@@ -156,12 +159,15 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - The tanks are filled, the count runs down (it holds in the rain), and it flies: up past the tower, leaning out over the sea, with a trail of smoke. The ship lights its engines while still on the booster and goes on to orbit; the booster flips, burns back toward home, falls, lights its engines again for the landing burn, and is caught by the chopsticks. It is set back on the mount, then taken to the Rocket Garden to be readied for another flight. After its fourth it is put on show there, and a new booster is stacked.
     - Select a booster or ship and choose Track (or Follow) to fly with it: the view leaves the plate and keeps it in sight all the way up. The cards show the count, the flight time, height and speed, and what each bay, the factory and the shop are making.
 
+    ![Gull Spit Starbase: Booster 20 selected eight seconds after liftoff, climbing past the launch tower with Ship 41 on top and steam rolling from the flame trench, the Mega Bays, the Rocket Garden and the tank farm behind, Millbrook beyond](docs/starbase.png)
+
 Each stage only runs as fast as the next one lets it:
 - A full shop keeps the box trucks waiting at the warehouse.
 - Full racks keep the flatbeds at the docks.
 - A full belt holds the production line.
 - A full lot holds the car line until a train comes.
 - Full towers keep CS-1 waiting at the showroom.
+- A Mega Bay waits on the Starfactory for its next piece and on the Engine Shop for its engines, and the pad waits for both a booster and a ship.
 
 ## Controls
 
@@ -195,7 +201,7 @@ ai-iso-skill draws SVG figures with a small projection kernel. This page keeps t
 - **Hairlines.** Every edge is a `LineSegments2` exactly 1 CSS pixel wide at any zoom, the WebGL equivalent of `vector-effect: non-scaling-stroke`. Faces are flat, unlit and opaque, so the depth buffer hides lines behind them.
 - **Day and night.** Every colour is a CSS custom property, with one set for dark and one for light. Through the evening the materials slide toward a single night palette. Windows and lamps are two extra fills that light up as everything else darkens.
 - **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, the showroom, the main dome on Beacon Hill, Starbase's four buildings and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only.
-- **The look.** It uses two greys for lines and one `--live` colour, reserved for what is live: the selection and its route, a busy bay's lamp, a forklift's beacon, the police and fire light bars, the bank alarm, gunfire and the helicopter's searchlight, a chimney's flames, a welding robot's sparks and the lighthouse beam. Goods and uniforms use the two-tone fill.
+- **The look.** It uses two greys for lines and one `--live` colour, reserved for what is live: the selection and its route, a busy bay's lamp, a forklift's beacon, the police and fire light bars, the bank alarm, gunfire and the helicopter's searchlight, a chimney's flames, a welding robot's sparks, a rocket's exhaust and the lighthouse beam. Goods and uniforms use the two-tone fill.
 - **The frame.** The page is a plate with `Fig 1` and the clock (and `night`, `rain` or `fog` when it is), the places, the instruction and a live readout in the four corners. At night the whole page goes dark, even in the light theme, and the ◐ choice is remembered.
 
 three.js and the font are bundled with the site, so it runs without loading anything from elsewhere.

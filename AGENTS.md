@@ -278,3 +278,5 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
     time is never negative, and `renderer.info` is reset once a frame so `drawCalls()` counts both passes.
   - `hooks.skyTarget()` gives the observatory the stack in its last count, then the ship, then the booster coming home;
     the domes open for it by day. Debug `yard.launch()`. View 13 and key `S`; the home view is about 1.7k draw calls.
+- Phase 27: the README covers phases 20–26; `docs/east.png` and `docs/starbase.png` are captured from the static build like the
+  other figures (served from `out/`, `?debug=1`, the weather held clear through `yard.weatherState`).
