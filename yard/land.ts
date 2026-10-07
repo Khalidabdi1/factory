@@ -14,6 +14,10 @@ import { ease } from './kernel/math';
 // world/east*.ts draw it, layout's zAt reads it, and the metro, the traffic and the train follow its lines.
 export const EAST = { x0:1000, x1:1900, y0:-84, y1:244, step:[5, 4] as [number, number],
   gorge:{ half:10, rim:[29, 25] }, saddle:{ y:96, depth:11 }, qamar:[1440, 45] as [number, number] };
+// the observatory's pad on Beacon Hill: its centre, its flat radius, the apron round it, its height
+export const OBS = { c:[1440, 45] as [number, number], r:34, apron:22, z:54 };
+// the radio telescope, out on the moor west of the hill
+export const DISH = { x:1362, y:40 };
 const ss = (a: number, b: number, v: number) => { const t = (v - a) / (b - a); return t <= 0 ? 0 : t >= 1 ? 1 : ease(t); };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -46,6 +50,8 @@ export function natural(x: number, y: number) {
   const eh = 34 * ss(1840, 1900, x) * (1 - ss(110, 170, y));
   let east = Math.max(r1, plat, r2, eh);
   if (east > 1) east += (1.3 * Math.sin(x * 0.11 + y * 0.07) + 1.0 * Math.sin(x * 0.05 - y * 0.13)) * Math.min(1, (east - 1) / 6);
+  // Beacon Hill's summit, levelled for the observatory, easing back into the hillside round it
+  const dp = Math.hypot(x - OBS.c[0], y - OBS.c[1]); if (dp < OBS.r + OBS.apron) east = lerp(OBS.z, east, ss(OBS.r, OBS.r + OBS.apron, dp));
   // Raven Gorge cuts through all of it, down to its floor
   const c = gorgeC(y), g = x < c ? 1 - ss(c - EAST.gorge.rim[0], c - EAST.gorge.half, x) : ss(c + EAST.gorge.half, c + EAST.gorge.rim[1], x);
   return Math.max(0, Math.max(band, east) * g);
@@ -132,6 +138,21 @@ export const COAST_BRIDGE = { x:[1252, 1286], ramp:16, z:1.6 };
 export const coastZ = (x: number) => { const [a, b] = COAST_BRIDGE.x, r = COAST_BRIDGE.ramp; return x < a - r || x > b + r ? 0 : x < a ? COAST_BRIDGE.z * ease((x - a + r) / r) : x > b ? COAST_BRIDGE.z * ease((b + r - x) / r) : COAST_BRIDGE.z; };
 
 // ---- the freight line, out of Harrow Ridge ----
+// ---- Observatory Road ----
+// Off the Vale Road on the moor and just under once round Beacon Hill, closing in on the summit as it climbs at a
+// steady 1 in 9, onto the south edge of the summit's pad. It keeps to the land closely, so it is cut in and built up
+// only a little.
+export const OBS_ROAD_PTS: [number, number][] = (() => {
+  const pts: [number, number][] = [[1492, 79]], a0 = Math.atan2(25, 44), turn = 5.35;
+  for (let k = 0; k <= 14; k++) { const f = k / 14, a = a0 - turn * f, r = 50.6 - 19.6 * f; pts.push([OBS.c[0] + r * Math.cos(a), OBS.c[1] + r * Math.sin(a)]); }
+  return pts;
+})();
+export const OBS_ROAD = (() => {
+  const path = new Path(OBS_ROAD_PTS, 10), L = path.length;
+  const zAt = (s: number) => lerp(27.6, OBS.z, ss(4, L, s) * 0.15 + Math.max(0, Math.min(1, (s - 6) / (L - 6))) * 0.85);
+  return { path, zAt, corridor:new Corridor('Observatory Road', path, zAt, { tunnel:99, above:99, flat:3.6, bed:0.05, from:6 }) };
+})();
+
 export const RAIL_EAST = { y:-1.5, from:1186 };
 export const RAIL_CUT = new Corridor('freight line', new Path([[1000, RAIL_EAST.y], [RAIL_EAST.from, RAIL_EAST.y]], 1), () => 0, { tunnel:8, above:99, flat:6, bed:0 });
 export const RAIL_PORTAL = 1000 + RAIL_CUT.runs().find(r => r[0] === 'tunnel')![1];
@@ -146,7 +167,7 @@ export const GRID = { nx:NX, ny:NY, sx:SX, sy:SY, h:new Float32Array(NX * NY) };
   for (let j = 0; j < NY; j++) { const y = EAST.y0 + j * SY, k = Math.floor((y - EAST.y0) / 8), y0 = EAST.y0 + k * 8;
     if (y < -4) H[j * NX] = lerp(natural(EAST.x0, y0), natural(EAST.x0, Math.min(-4, y0 + 8)), (y - y0) / 8); }
   // cut each corridor through it: the road, then the line, then the freight line
-  for (const C of [ROAD_EAST, LINE_EAST, RAIL_CUT]) {
+  for (const C of [ROAD_EAST, LINE_EAST, RAIL_CUT, OBS_ROAD.corridor]) {
     const cell = 12, hash = new Map<string, Sample[]>();
     for (const q of C.samples) { const k = `${Math.floor(q.x / cell)}|${Math.floor(q.y / cell)}`; (hash.get(k) ?? hash.set(k, []).get(k)!).push(q); }
     const reach = C.flat + 20;

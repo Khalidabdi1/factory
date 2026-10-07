@@ -245,3 +245,14 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
   each time the line moves, from `line.seq`), the tugger and its carts on the AGV loop, and the andon lamps. Robots
   added after the first twelve keep `ROBOTS`' order; the shift's later workers come after the first five. The open
   hall is about 1k draw calls (15 workers at a dozen each).
+- Phase 25: Beacon Hill Observatory (`world/observatory.ts`, `sim/observatory.ts`; `OBS`, `DISH`, `OBS_ROAD` in `land.ts`).
+  `natural()` levels the summit to `OBS.z` within `OBS.r` and eases back over `OBS.apron`; the land there is never drawn
+  as snow, and trees keep off it and the dish's ground (`kept`). Observatory Road is a tightening spiral (`OBS_ROAD_PTS`)
+  carved as a fourth `Corridor`. A dome (`buildDome`) is `az` (turned to `-az`) > `shell` with its slit at +x, `shutter`
+  (`rotation.z` slides it over the top) and `alt` (the tube's altitude); `aim()` turns them toward a list of targets
+  (bearings from north, `toAz`), parks them slit south and upright when shut, and follows `hooks.skyTarget()` (a point
+  with a name) whenever it returns one: every instrument, the dish included. The main dome is a peek building (its
+  drum is the shell; `peeked` also hides the dome itself); its peek box carries `z`, which `lookInside` frames by,
+  and `VIEWS` entries may carry heights as a fifth and sixth field. The summit's buildings are one part, resolved to a
+  card each by `resolve`. Visitors' cars (`role:'visitor'`) come out of the Vale Road's tunnel under Long Edge, since a
+  drive from town would take hours.

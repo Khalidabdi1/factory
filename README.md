@@ -57,6 +57,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Sahel Motors** | Car Works' showroom on a terrace at the foot of the hills: twin glass car towers, a glass hall with cars on show, a test track, and a level crossing over the main line down to Najd Av |
 | **Port** | Sahel Container Terminal, east of the marina: a quay with three ship-to-shore cranes, a yard of stacked boxes with three gantry cranes, a gate, a control tower, reefer racks, and a breakwater with a light at each end |
 | **East** | The country beyond Sahel. Harrow Ridge, which the Vale Road climbs in hairpins; Raven Gorge, with the Raven Beck and alders and willows on its floor, crossed by Line 1 on a concrete arch and by the road on a suspension bridge; the plateau of High Moor with Beacon Hill standing on it; Long Edge; and Millbrook Vale, the valley at the end of the line. Snow on the high peaks behind. |
+| **Sky** | Beacon Hill Observatory, on the levelled top of Beacon Hill above High Moor. Observatory Road winds up round the hill from the Vale Road. On top: the Beacon Telescope in its big dome, a public dome and a survey camera's dome, a solar tower, the visitor centre with its planetarium, the astronomers' residence, a weather mast and an all-sky camera. The Moor Dish, a radio telescope, stands on the moor below. |
 | **Village** | Millbrook, an English farming village round Line 1's terminus. Cottages with front gardens behind picket fences, a green with an old oak, a pump and a farmers' market, the Plough Inn and Millbrook Stores. Across the road, the farm: wheat, a hay meadow with its bales and a windpump, allotments, the long field, the millpond and its watermill, a red barn with two silos, pens for the sheep, cows, pigs, hens and horses, and an apple orchard with its store. |
 
 ![Sahel by day: Sahel Central's woven lattice among the Financial District's towers, Sahel Motors and its car towers at the foot of the hills, the metro's viaducts, and the container terminal on the waterfront](docs/sahel.png)
@@ -141,6 +142,11 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - Villagers walk between their cottages, the green, the market, the store and the Plough, which fills up in the evening. Visitors come off the metro for the market and the inn, and villagers take the train into Sahel.
     - The shepherd and his collie take the flock up onto the slope above the farm in the morning and bring it down at dusk. The stable hand leads the horses to their trough in a line. The cows, pigs and hens keep to their paddock, sty and run, and the hens go in at dusk.
     - The tractor ploughs the long field a lane at a time, leaving furrows behind it, and is back by the barn by late afternoon. The mill wheel turns all day, and the windpump turns faster in the rain.
+25. **Beacon Hill Observatory:**
+    - After dark, if the sky is clear, the domes open: each shutter slides up over the top, the dome turns to face its target and the telescope tips up to it. The Beacon Telescope works through a list of galaxies and nebulae, the survey camera takes a new field every so often, and the public dome shows the planets. At dawn, or when cloud or rain comes in, they close.
+    - The Moor Dish turns from one radio source to the next day and night.
+    - Two astronomers walk over from the residence at dusk and sit at the main dome's desk until dawn. Select the Beacon Telescope and Look inside to see them, the telescope on its pier and the stair.
+    - Visitors drive up Observatory Road by day for the visitor centre and the planetarium, and on clear evenings to look through the public dome's telescope. The cards show the sky, what each telescope is looking at, and the next planetarium show.
 
 Each stage only runs as fast as the next one lets it:
 - A full shop keeps the box trucks waiting at the warehouse.
@@ -153,7 +159,7 @@ Each stage only runs as fast as the next one lets it:
 
 | Action | Mouse / touch | Keys |
 | --- | --- | --- |
-| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East · Village, top right | `1`–`9`, `P`, `E`, `V` |
+| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East · Village · Sky, top right | `1`–`9`, `P`, `E`, `V`, `O` |
 | Whole map | ⌂ button | `0` |
 | Skip ahead six hours | clock button | `N` |
 | Pan | drag | arrow keys |
@@ -164,13 +170,13 @@ Each stage only runs as fast as the next one lets it:
 | Pause | ❚❚ button | `Space` |
 | Light / dark | ◐ button | `T` |
 
-Some cards have buttons: Look inside on buildings, stations and homes, Track on an order or a fire, Follow ENG-1 at the fire station, and Follow a new car at Car Works.
+Some cards have buttons: Look inside on buildings, stations, homes and the Beacon Telescope's dome, Track on an order or a fire, Follow ENG-1 at the fire station, and Follow a new car at Car Works.
 
 When something that moves is selected, the map draws its route as a dashed line and rings its next stop:
 - Trucks and the bus show their whole loop.
 - Cars, forklifts and people show the way ahead.
 
-The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, Sahel Motors' showroom and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in. The stations and the showroom also open when you zoom in close over them.
+The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, Sahel Motors' showroom, the observatory's main dome and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in. The stations and the showroom also open when you zoom in close over them.
 
 ## How the skill carries over to WebGL
 
@@ -180,7 +186,7 @@ ai-iso-skill draws SVG figures with a small projection kernel. This page keeps t
 - **Same kernel.** `plane(O,U,V)`, `TOP`, `FRONT`, `SIDE` and `box(x,y,z,w,d,h)` keep their meanings. Doors, windows, ribs, road paint, zebras, signs, clock faces and text are drawn flat in a face's own 2D units and placed with that face's matrix.
 - **Hairlines.** Every edge is a `LineSegments2` exactly 1 CSS pixel wide at any zoom, the WebGL equivalent of `vector-effect: non-scaling-stroke`. Faces are flat, unlit and opaque, so the depth buffer hides lines behind them.
 - **Day and night.** Every colour is a CSS custom property, with one set for dark and one for light. Through the evening the materials slide toward a single night palette. Windows and lamps are two extra fills that light up as everything else darkens.
-- **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, the showroom and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only.
+- **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, the showroom, the main dome on Beacon Hill and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only.
 - **The look.** It uses two greys for lines and one `--live` colour, reserved for what is live: the selection and its route, a busy bay's lamp, a forklift's beacon, the police and fire light bars, the bank alarm, gunfire and the helicopter's searchlight, a chimney's flames, a welding robot's sparks and the lighthouse beam. Goods and uniforms use the two-tone fill.
 - **The frame.** The page is a plate with `Fig 1` and the clock (and `night`, `rain` or `fog` when it is), the places, the instruction and a live readout in the four corners. At night the whole page goes dark, even in the light theme, and the ◐ choice is remembered.
 

@@ -18,7 +18,7 @@ export const ROAD = { path:new Path([[WORLD.x0 - 8, 134.5], [404, 134.5], [RAB.x
 const onCoast = (x, y) => coastZ(x);
 export const COAST = { e:withHeights(new Path([[WORLD.x0 - 8, 270.5], [WORLD.x1 + 8, 270.5]]), onCoast), w:withHeights(new Path([[WORLD.x1 + 8, 263.5], [WORLD.x0 - 8, 263.5]]), onCoast), nextE:2, nextW:5 };
 const plate = () => `${String.fromCharCode(65 + Math.floor(rng() * 26))}${String.fromCharCode(65 + Math.floor(rng() * 26))} ${Math.floor(rand(100, 999))}`;
-const ROLE = { through:'passing through', local:'town traffic', coast:'on the coast road', customer:'shopping' };
+const ROLE = { through:'passing through', local:'town traffic', coast:'on the coast road', customer:'shopping', visitor:'visiting the observatory' };
 export class Car {
   constructor(o) {
     Object.assign(this, { kind:'car', seq:nextRoadSeq(), s:0, v:null, stops:[], si:0, yields:[], role:'through', t0:sim.t, parked:false, stopT:0 }, o);

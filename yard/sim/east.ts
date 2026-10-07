@@ -16,7 +16,7 @@ const PLACES: Record<string, Place> = {
   gorge:{ id:'Raven Gorge', kind:'Gorge', rows:[['Depth', 'about 30 m below the rims'], ['Stream', 'runs all year, down to the sea'], ['Crossings', 'the Line 1 arch, the Vale Road suspension bridge, the coast road at its mouth'],
     ['Floor', 'gravel, alders and willows, boulders']], status:() => weather.raining() ? 'the stream rising' : 'the stream low' },
   moor:{ id:'High Moor', kind:'Plateau', rows:[['Height', 'about 260 m above the sea'], ['Ground', 'heath: gorse, hawthorn, stones'], ['Across it', 'Line 1 in a cutting, the Vale Road']], status:() => night() > 0.5 ? 'dark and clear' : 'wind over the heather' },
-  beacon:{ id:'Beacon Hill', kind:'Hill', rows:[['Height', '560 m'], ['On top', 'nothing yet'], ['Sky', 'the darkest for miles']], status:() => night() > 0.5 ? 'stars out' : 'clear' },
+  beacon:{ id:'Beacon Hill', kind:'Hill', rows:[['Height', '560 m'], ['On top', 'Beacon Hill Observatory'], ['Sky', 'the darkest for miles']], status:() => night() > 0.5 ? 'stars out' : 'clear' },
   ridge2:{ id:'Long Edge', kind:'Ridge', rows:[['Highest point', '420 m'], ['Through it', 'Line 1 and the Vale Road, in tunnels'], ['East face', 'falls into Millbrook Vale']], status:() => 'quiet' },
   vale:{ id:'Millbrook Vale', kind:'Valley', rows:[['Floor', 'farmland, opening south to the sea'], ['Village', 'Millbrook'], ['Line 1', 'the end of the line'], ['Road', 'the Vale Road, on to the east']], status:() => night() > 0.5 ? 'a few lights' : 'farmed' },
   north:{ id:'the High Range', kind:'Mountains', rows:[['Highest point', '2,210 m'], ['Snow', 'on the tops all year']], status:() => 'snow on the tops' },

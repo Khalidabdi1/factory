@@ -3,7 +3,7 @@ import { FRONT, TOP, W } from '../kernel/iso';
 import { Part, v3 } from '../kernel/part';
 import { rand } from '../kernel/math';
 import { METRO, SEA_Z } from '../layout';
-import { COAST_BRIDGE, EAST, GRID, L1X, LINE_EAST, MILLBROOK, RAIL_EAST, RAIL_PORTAL, ROAD_EAST, ROAD_HW, ROAD_PATH, coastZ, gorgeC, gridH, l1Rise, landZ, natural, roadZ } from '../land';
+import { COAST_BRIDGE, DISH, EAST, GRID, L1X, LINE_EAST, MILLBROOK, OBS, OBS_ROAD, RAIL_EAST, RAIL_PORTAL, ROAD_EAST, ROAD_HW, ROAD_PATH, coastZ, gorgeC, gridH, l1Rise, landZ, natural, roadZ } from '../land';
 import { Frame, buffer, deckRun, levels } from './metro';
 import { beam } from '../models/works';
 import { crown, pine, tree, yaw } from './ground';
@@ -22,7 +22,9 @@ function terrain(p: Part) {
   const tri = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) => {
     if (flat(a, b, c)) return;
     const n = v3(0, 0, 0).crossVectors(b.clone().sub(a), c.clone().sub(a)).normalize(); if (n.y < 0) n.negate();
-    p.tri((a.y + b.y + c.y) / 3 > 52 ? 'snow' : n.y > 0.72 ? 'deck' : 'body', a, b, c);
+    // (Beacon Hill's top was levelled for the observatory: no snow lies on its pad and apron)
+    const summit = Math.hypot((a.x + b.x + c.x) / 3 - OBS.c[0], (a.z + b.z + c.z) / 3 - OBS.c[1]) < OBS.r + OBS.apron;
+    p.tri((a.y + b.y + c.y) / 3 > 52 && !summit ? 'snow' : n.y > 0.72 ? 'deck' : 'body', a, b, c);
   };
   // each cell split along its (i, j)–(i + 1, j + 1) diagonal, as landZ reads it
   for (let i = 0; i < nx - 1; i++) for (let j = 0; j < ny - 1; j++) { const a = P[i][j], b = P[i + 1][j], c = P[i + 1][j + 1], d = P[i][j + 1]; tri(a, b, c); tri(a, c, d); }
@@ -58,10 +60,12 @@ function gorgeFloor(p: Part) {
 
 // ---- what the trees keep off: the corridors as cut, the coast road, the beach, the gorge's floor ----
 const KEEP: { x: number, y: number, r: number }[] = [];
-for (const C of [LINE_EAST, ROAD_EAST]) for (const q of C.samples) if (q.mode !== 'tunnel' && q.s % 3 === 0) KEEP.push({ x:q.x, y:q.y, r:C.flat + (q.mode === 'cut' ? 6 : 3) });
+for (const C of [LINE_EAST, ROAD_EAST, OBS_ROAD.corridor]) for (const q of C.samples) if (q.mode !== 'tunnel' && q.s % 3 === 0) KEEP.push({ x:q.x, y:q.y, r:C.flat + (q.mode === 'cut' ? 6 : 3) });
 const KH = new Map<string, typeof KEEP>(); for (const k of KEEP) { const key = `${Math.floor(k.x / 20)}|${Math.floor(k.y / 20)}`; (KH.get(key) ?? KH.set(key, []).get(key)!).push(k); }
 export const kept = (x: number, y: number) => {
   if (y > 254 || (x < 1070 && y > 110 && y < 152) || (Math.abs(y - RAIL_EAST.y) < 6 && x < RAIL_PORTAL + 4)) return true;
+  // the observatory's summit and the radio dish's ground
+  if (Math.hypot(x - OBS.c[0], y - OBS.c[1]) < OBS.r + 6 || Math.hypot(x - DISH.x, y - DISH.y) < 17) return true;
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const k of KH.get(`${Math.floor(x / 20) + a}|${Math.floor(y / 20) + b}`) ?? []) if (Math.hypot(k.x - x, k.y - y) < k.r) return true;
   return false;
 };
