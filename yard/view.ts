@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { $, DEBUG, REDUCED, canvas, hooks, noop, scene, stage } from './shared';
+import { $, DEBUG, REDUCED, canvas, hooks, noop, scene, sky, stage } from './shared';
 import { W } from './kernel/iso';
 import { LINE, applyTheme, shade } from './theme';
 import { pose, setTextFar, v3 } from './kernel/part';
@@ -23,12 +23,13 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
-const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 4000);
+// (stood well back, so that a rocket three kilometres up is still in front of it)
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 9000);
 const ISO = v3(1, 1, 1).normalize(), CENTER = W((WORLD.x0 + WORLD.x1) / 2, (WORLD.y0 + WORLD.y1) / 2, 0);
-camera.position.copy(CENTER).addScaledVector(ISO, 1500); camera.lookAt(CENTER);
+camera.position.copy(CENTER).addScaledVector(ISO, 5000); camera.lookAt(CENTER);
 const controls = new OrbitControls(camera, canvas);
 Object.assign(controls, { enableRotate:false, screenSpacePanning:true, zoomToCursor:true, enableDamping:!REDUCED, dampingFactor:0.12 });
 controls.mouseButtons = { LEFT:THREE.MOUSE.PAN, MIDDLE:THREE.MOUSE.DOLLY, RIGHT:THREE.MOUSE.PAN };
@@ -38,7 +39,7 @@ controls.listenToKeyEvents(window);
 // the places the caption links jump to: [x0, x1, y0, y1]
 const WB = [WORLD.x0, WORLD.x1, WORLD.y0, WORLD.y1];
 const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [352, 440, 212, 298], [53, 300, 138, 262], [0, 440, 255, 336], [206, 410, -58, 2], [520, 960, 0, 270], [566, 760, 120, 284], [448, 676, -56, 6], [640, 966, 276, 420],
-  [1040, 1640, -40, 250], [1612, 1850, -20, 236], [1348, 1500, 0, 90, 30, 66]];
+  [1040, 1640, -40, 250], [1612, 1850, -20, 236], [1348, 1500, 0, 90, 30, 66], [1300, 1880, 286, 406, 0, 60]];
 // fitZoom frames the whole plate; baseZoom frames the two towns (the plate as it was before the east country), and the
 // closest zoom and the debug look() go by it
 let fitZoom = 1, baseZoom = 1, HOME = CENTER.clone(), goal = null, follow = false, sized = false;
@@ -86,12 +87,13 @@ function skipTime() { shift.goal += 6; }
 // ---- selection, tags, card ----
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), tmp = new THREE.Vector3(), box = new THREE.Box3();
 const shown = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+const inSky = o => { for (; o; o = o.parent) if (o === sky) return true; return false; };
 function hit(cx, cy) {
   const r = canvas.getBoundingClientRect();
   ndc.set((cx - r.left) / r.width * 2 - 1, -(cy - r.top) / r.height * 2 + 1);
   ray.setFromCamera(ndc, camera);
-  for (const h of ray.intersectObjects(scene.children, true)) {
-    if (!h.object.isMesh || !shown(h.object) || h.point.x < WORLD.x0 || h.point.x > WORLD.x1 || h.point.z < WORLD.y0 || h.point.z > WORLD.y1) continue;
+  for (const h of ray.intersectObjects([...scene.children, ...sky.children], true).sort((a, b) => a.distance - b.distance)) {
+    if (!h.object.isMesh || !shown(h.object) || (h.point.x < WORLD.x0 || h.point.x > WORLD.x1 || h.point.z < WORLD.y0 || h.point.z > WORLD.y1) && !inSky(h.object)) continue;
     let o = h.object; while (o && !o.userData.entity) o = o.parent;
     // the nearest visible surface decides; a part drawn for many things (Sahel's buildings) says which one was hit
     return o ? o.userData.entity.resolve?.(h.point) ?? o.userData.entity : null;
@@ -111,7 +113,7 @@ function select(ent) {
 }
 hooks.forget = forget;
 function forget(ent) { if (selected === ent) select(null); if (hovered === ent) hovered = null; }
-const STILL = ['factory', 'works', 'lot', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'station', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride', 'brtstop', 'line', 'showroom', 'cartower', 'crossing', 'terminal', 'block', 'observatory'];
+const STILL = ['factory', 'works', 'lot', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'station', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride', 'brtstop', 'line', 'showroom', 'cartower', 'crossing', 'terminal', 'block', 'observatory', 'starbase', 'engine'];
 const followable = ent => !!ent && !STILL.includes(ent.kind);
 function setFollow(on) { follow = on && followable(selected); $('cardFollow').setAttribute('aria-pressed', follow); }
 function refresh() {
@@ -181,7 +183,8 @@ function drawRoute() {
 // A closed building opens up while it, or something inside it, is selected. Homes draw their section (and are told
 // to show who is in) the first time they open.
 const PEEK = [[whG, warehouse], [shopG, shop], [bank.groups[0], bank], [fireSys.station.groups[0], fireSys.station], [worksSys.works.groups[0], worksSys.works], ...homes.map(h => [h.groups[0], h]),
-  ...Object.values(metroSys.stations).map(s => [s.groups[0], s]), [motorsSys.groups[0], motorsSys], [obsSys.main.g, obsSys.main]];
+  ...Object.values(metroSys.stations).map(s => [s.groups[0], s]), [motorsSys.groups[0], motorsSys], [obsSys.main.g, obsSys.main],
+  ...['factory', 'shop', 'bay1', 'bay2'].map(k => [sbSys.groups[k], sbSys.ents[k]])];
 hooks.inBuilding = (x, y) => PEEK.some(([g]) => { const b = g.userData.peek.box; return x > b[0] && x < b[1] && y > b[2] && y < b[3]; });
 // a shut building hides who is in it; a station only those up on its floors, not those in the street beneath it
 hooks.closedAt = (x, y, p) => { for (const [g] of PEEK) { const pk = g.userData.peek, b = pk.box;
@@ -254,7 +257,7 @@ window.addEventListener('keydown', e => {
   if (e.key.startsWith('Arrow')) { goal = null; setFollow(false); return; }
   const act = { Escape:() => select(null), f:() => setFollow(!follow), F:() => setFollow(!follow), ']':() => cycle(1), '[':() => cycle(-1), ' ':togglePause,
     '+':() => zoomBy(1.4), '=':() => zoomBy(1.4), '-':() => zoomBy(1 / 1.4), '_':() => zoomBy(1 / 1.4), '0':resetView, Home:resetView, t:toggleTheme, T:toggleTheme,
-    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5), 7:() => goView(6), 8:() => goView(7), 9:() => goView(8), p:() => goView(9), P:() => goView(9), e:() => goView(10), E:() => goView(10), v:() => goView(11), V:() => goView(11), o:() => goView(12), O:() => goView(12) }[e.key];
+    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5), 7:() => goView(6), 8:() => goView(7), 9:() => goView(8), p:() => goView(9), P:() => goView(9), e:() => goView(10), E:() => goView(10), v:() => goView(11), V:() => goView(11), o:() => goView(12), O:() => goView(12), s:() => goView(13), S:() => goView(13) }[e.key];
   if (act) { act(); e.preventDefault(); }
 });
 
@@ -267,14 +270,16 @@ function frameLoop(now) {
   try { tick(now); } catch (err) { const k = String(err?.stack ?? err); if (!reported.has(k)) { reported.add(k); console.error('Factory Yard frame error', err); } }
 }
 function tick(now) {
-  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  // (never backwards: a frame's own timestamp can trail a tick run by hand just before it)
+  const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = Math.max(last, now);
   if (!paused) { acc += dt; while (acc >= STEP) { sim.step(STEP); acc -= STEP; } }
   if (shift.h < shift.goal) shift.h = Math.min(shift.goal, shift.h + dt * (REDUCED ? 60 : 5));
   // rain and fog dim the town a little (windows half-light), and are drawn round the view
   shade(Math.max(night(), 0.32 * weather.rain() + 0.15 * weather.fog())); markNight(night());
   rain.update(dt, controls.target, stage.clientWidth / camera.zoom, weather.rain()); fog.update(dt, sim.t, weather.fog()); phaseText();
   const k = REDUCED ? 1 : 1 - Math.exp(-dt * 6);
-  if (follow && selected) { const b = bounds(selected); moveTarget(controls.target.clone().lerp(v3((b.min.x + b.max.x) / 2, 0, (b.min.z + b.max.z) / 2), k)); }
+  // (followed where it is seen: its middle, slid down the view ray to the ground, so a rocket high up stays in view)
+  if (follow && selected) { const b = bounds(selected), c = b.getCenter(v3(0, 0, 0)); moveTarget(controls.target.clone().lerp(c.addScaledVector(ISO, -c.y / ISO.y), k)); }
   if (goal) {
     if (goal.target) moveTarget(controls.target.clone().lerp(goal.target, k));
     camera.zoom += (goal.zoom - camera.zoom) * k; camera.updateProjectionMatrix();
@@ -283,12 +288,14 @@ function tick(now) {
   controls.update(dt);
   // slide the target along the view ray onto the ground (an invisible move), then keep it over the world
   const t = controls.target; moveTarget(t.clone().addScaledVector(ISO, -t.y / ISO.y));
-  moveTarget(v3(clamp(t.x, WORLD.x0, WORLD.x1), 0, clamp(t.z, WORLD.y0, WORLD.y1)));
+  // (following a rocket up into the sky the view may leave the plate; once back over it, it eases home)
+  const home = v3(clamp(t.x, WORLD.x0, WORLD.x1), 0, clamp(t.z, WORLD.y0, WORLD.y1));
+  if (!(follow && selected?.aloft?.())) moveTarget(home.distanceTo(t) > 1 ? t.clone().lerp(home, k) : home);
   camera.updateMatrixWorld();
   // people's detail by how big they are on screen (zoom is screen px per metre): a lite figure under about 4 px a
   // metre, none at all under about 1.5
   const tiny = camera.zoom < 4.2, far = camera.zoom < 1.5;
-  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); setTextFar(far); motorsSys.detail(!tiny); portSys.detail(far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place(); for (const b of brtSys.buses) b.place(); for (const f of sim.forklifts) f.place(); villageSys.detail();
+  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); setTextFar(far); motorsSys.detail(!tiny); portSys.detail(far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place(); for (const b of brtSys.buses) b.place(); for (const f of sim.forklifts) f.place(); villageSys.detail(); sbSys.detail(far);
     // a pallet a few pixels across is its load and nothing else: one draw call instead of four
     for (const pl of sim.pallets) for (const m of pl.group.children) if (m.userData.fill !== 'kob') m.visible = !far; }
   updatePeek();
@@ -306,7 +313,9 @@ function tick(now) {
   const sp = routeNext?.stop && screenAt(routeNext.p), sa = sp && anchorOf(selected);
   if (sp && sp[0] > 0 && sp[0] < stage.clientWidth && sp[1] > 30 && sp[1] < stage.clientHeight && Math.hypot(sp[0] - sa[0], sp[1] - sa[1]) > 70) placeAt($('tagStop'), sp, `next · ${routeNext.stop}`);
   else $('tagStop').hidden = true;
-  if (!lost) renderer.render(scene, camera);
+  if (!lost) { renderer.info.autoReset = false; renderer.info.reset(); renderer.render(scene, camera);
+    // the sky over it, in the same depth, with nothing cut off at the plate's edges
+    if (sky.children.length) { const cp = renderer.clippingPlanes; renderer.clippingPlanes = []; renderer.autoClear = false; renderer.render(sky, camera); renderer.autoClear = true; renderer.clippingPlanes = cp; } }
 }
 refresh(); markNight(night());
 requestAnimationFrame(frameLoop);
@@ -314,7 +323,7 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [...obsSys.entities(), ...villageSys.entities(), ...eastSys.places, eastSys.road, ...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [...sbSys.entities(), ...obsSys.entities(), ...villageSys.entities(), ...eastSys.places, eastSys.road, ...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...(incident.heli ? [incident.heli] : []), ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
@@ -333,7 +342,9 @@ if (DEBUG) {
     // and for a getaway, end 'roadblock' | 'bail' | 'escape'; any left out are drawn as usual
     robbery:(job, plan, end) => { if (incident.phase === 'quiet') { incident.force = { job, plan, end }; incident.next = sim.t; } return incident.phase; },
     // a chimney fire now, at a house by id or any house with a chimney (when none is burning): returns the house
-    worksSys, trainSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys,
+    worksSys, trainSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys,
+    // a launch now, if a stack stands on the mount
+    launch:() => sbSys.launchNow(),
     // the next train now (when none is in): returns its state
     train:() => { if (trainSys.state === 'away') trainSys.next = sim.t; return trainSys.state; },
     fire:id => fireSys.blaze.phase === 'quiet' ? fireSys.blaze.start(id ? find(id) : undefined).id : `busy: ${fireSys.blaze.phase}`, fireSys,

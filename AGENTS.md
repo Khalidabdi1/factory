@@ -256,3 +256,25 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
   and `VIEWS` entries may carry heights as a fifth and sixth field. The summit's buildings are one part, resolved to a
   card each by `resolve`. Visitors' cars (`role:'visitor'`) come out of the Vale Road's tunnel under Long Edge, since a
   drive from town would take hours.
+- Phase 26: Gull Spit Starbase (`world/starbase.ts` with `SB`, `models/starship.ts`, `sim/starbase.ts`), on a spit made out over the
+  sea (x 1296–1892, y 286–406). Researched from Starbase in Texas and Starship V3 (a 72 m booster with 33 Raptor 3s, a
+  52 m ship with 6, 9 m across, rings of 1.8 m, a 146 m tower with chopsticks, Pad 2's cuboid mount and flame trench).
+  - Production: `BOOSTER_PIECES` / `SHIP_PIECES` (barrels of four rings) are made one at a time by the Starfactory for
+    whichever bay asked first (`want`, at most two ahead), carried by the barrel cart along `SB.apron`, and set on the
+    stack by the bay's crane (`craneTake`; it comes down to meet the cart). Raptors are built on the shop's stands piece by
+    piece (`RAPTOR.pieces`; `buildRaptor` keeps them separate, `raptorSolid` is one part for the cradles, the trolley and
+    the lifts), taken six at a time by the trolley up `SB.alley`, and fitted from the lift under the stand, in the order
+    of `BOOSTER_ENGINES` / `SHIP_ENGINES`. A finished stack becomes the whole vehicle's one part (`P.booster` / `P.ship`).
+  - Movers crab between points and take turns on the road (`road` reservations by x range). The SPMT's jobs (`job()`):
+    a flown booster off the mount to the garden (or on show after four flights), the next booster (a new one from Mega Bay
+    1 first, else a readied one), the next ship. `transfer(r, 'up' | 'down')` queues the chopsticks' moves (`arms.steps`:
+    swing `th` about the hinge, open `op`, carriage height `zc`); a held vehicle hangs by its `pins`.
+  - The flight is scripted, not simulated: `ascent(t)` to staging at `TS`, then the ship on a constant acceleration and
+    the booster on Hermite segments through `K` to the catch height, its attitude from keyed up-vectors (`att`). Plumes are
+    live. In flight both are moved into `sky` (shared.ts), a scene the view draws after the main one with the plate's
+    clipping planes off, so a rocket past the plate's edge is still drawn; hit-testing looks in it too. The camera stands
+    5000 back (far 9000) so a rocket kilometres up is in front of it; following centres the selection's middle slid down
+    the view ray, and while a followed thing is `aloft()` the view may leave the plate, easing back after. The frame
+    time is never negative, and `renderer.info` is reset once a frame so `drawCalls()` counts both passes.
+  - `hooks.skyTarget()` gives the observatory the stack in its last count, then the ship, then the booster coming home;
+    the domes open for it by day. Debug `yard.launch()`. View 13 and key `S`; the home view is about 1.7k draw calls.

@@ -163,7 +163,9 @@ export function buildObservatorySys() {
   };
   const update = (dt: number) => {
     const dark = night() > 0.6, ok = clear(), h = hourAt(sim.t);
-    main.open = dark && ok; pub.open = dark && ok && h >= 19.5 && h < 23; cam.open = dark && ok;
+    // (a launch from Gull Spit opens them by day as well, to follow it up)
+    const launch = !!hooks.skyTarget?.();
+    main.open = ok && (dark || launch); pub.open = ok && (dark && h >= 19.5 && h < 23 || launch); cam.open = ok && (dark || launch);
     if (!cam.open && !dark) cam.shots = 0;
     for (const d of [main, pub, cam]) {
       aim(d, dt, d.open, d === cam ? 20 : d === pub ? 60 : 45, d === main ? 2 : 4, 3);

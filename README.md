@@ -58,6 +58,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Port** | Sahel Container Terminal, east of the marina: a quay with three ship-to-shore cranes, a yard of stacked boxes with three gantry cranes, a gate, a control tower, reefer racks, and a breakwater with a light at each end |
 | **East** | The country beyond Sahel. Harrow Ridge, which the Vale Road climbs in hairpins; Raven Gorge, with the Raven Beck and alders and willows on its floor, crossed by Line 1 on a concrete arch and by the road on a suspension bridge; the plateau of High Moor with Beacon Hill standing on it; Long Edge; and Millbrook Vale, the valley at the end of the line. Snow on the high peaks behind. |
 | **Sky** | Beacon Hill Observatory, on the levelled top of Beacon Hill above High Moor. Observatory Road winds up round the hill from the Vale Road. On top: the Beacon Telescope in its big dome, a public dome and a survey camera's dome, a solar tower, the visitor centre with its planetarium, the astronomers' residence, a weather mast and an all-sky camera. The Moor Dish, a radio telescope, stands on the moor below. |
+| **Starbase** | Gull Spit Starbase, a Starship factory and launch site on land made out over the sea below Millbrook. At its west end the Starfactory, the Engine Shop, and the two Mega Bays (the second glass-walled) where boosters and ships are stacked; along the road the Rocket Garden, then the tank farm, and at the tip the launch tower with its chopsticks, the launch mount over its flame trench, and the deluge tanks. |
 | **Village** | Millbrook, an English farming village round Line 1's terminus. Cottages with front gardens behind picket fences, a green with an old oak, a pump and a farmers' market, the Plough Inn and Millbrook Stores. Across the road, the farm: wheat, a hay meadow with its bales and a windpump, allotments, the long field, the millpond and its watermill, a red barn with two silos, pens for the sheep, cows, pigs, hens and horses, and an apple orchard with its store. |
 
 ![Sahel by day: Sahel Central's woven lattice among the Financial District's towers, Sahel Motors and its car towers at the foot of the hills, the metro's viaducts, and the container terminal on the waterfront](docs/sahel.png)
@@ -147,6 +148,13 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - The Moor Dish turns from one radio source to the next day and night.
     - Two astronomers walk over from the residence at dusk and sit at the main dome's desk until dawn. Select the Beacon Telescope and Look inside to see them, the telescope on its pier and the stair.
     - Visitors drive up Observatory Road by day for the visitor centre and the planetarium, and on clear evenings to look through the public dome's telescope. The cards show the sky, what each telescope is looking at, and the next planetarium show.
+    - When a Starship launches from Gull Spit, the domes open (by day too) and every telescope and the dish follow it up.
+26. **Gull Spit Starbase:**
+    - In the Starfactory, steel from the coil is rolled into rings and each seam welded, four rings are welded into a barrel on a turntable, and a ship's barrels have their black heat-shield tiles laid by a robot. One piece at a time, for whichever Mega Bay asked first; the barrel cart carries it over and the bay's crane sets it on the stack.
+    - In the Engine Shop, Raptor engines are built up piece by piece on three stands: the nozzle bell, the combustion chamber, the main injector and gimbal, the two turbopumps with their preburners, the manifolds and actuators. Finished engines wait on cradles until the engine trolley takes six at a time to a bay, where a lift raises them one by one into the aft section: 33 for a booster, 6 for a ship.
+    - A finished booster or ship is lifted onto the SPMT, a many-wheeled transporter, and driven to the pad. The tower's chopsticks take it by its pins: the booster onto the launch mount, then the ship on top of it, and the quick-disconnect arm swings in.
+    - The tanks are filled, the count runs down (it holds in the rain), and it flies: up past the tower, leaning out over the sea, with a trail of smoke. The ship lights its engines while still on the booster and goes on to orbit; the booster flips, burns back toward home, falls, lights its engines again for the landing burn, and is caught by the chopsticks. It is set back on the mount, then taken to the Rocket Garden to be readied for another flight. After its fourth it is put on show there, and a new booster is stacked.
+    - Select a booster or ship and choose Track (or Follow) to fly with it: the view leaves the plate and keeps it in sight all the way up. The cards show the count, the flight time, height and speed, and what each bay, the factory and the shop are making.
 
 Each stage only runs as fast as the next one lets it:
 - A full shop keeps the box trucks waiting at the warehouse.
@@ -159,7 +167,7 @@ Each stage only runs as fast as the next one lets it:
 
 | Action | Mouse / touch | Keys |
 | --- | --- | --- |
-| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East · Village · Sky, top right | `1`–`9`, `P`, `E`, `V`, `O` |
+| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East · Village · Sky · Starbase, top right | `1`–`9`, `P`, `E`, `V`, `O`, `S` |
 | Whole map | ⌂ button | `0` |
 | Skip ahead six hours | clock button | `N` |
 | Pan | drag | arrow keys |
@@ -170,13 +178,13 @@ Each stage only runs as fast as the next one lets it:
 | Pause | ❚❚ button | `Space` |
 | Light / dark | ◐ button | `T` |
 
-Some cards have buttons: Look inside on buildings, stations, homes and the Beacon Telescope's dome, Track on an order or a fire, Follow ENG-1 at the fire station, and Follow a new car at Car Works.
+Some cards have buttons: Look inside on buildings, stations, homes, the Beacon Telescope's dome and Starbase's factory, shop and bays, Track on a rocket, Track on an order or a fire, Follow ENG-1 at the fire station, and Follow a new car at Car Works.
 
 When something that moves is selected, the map draws its route as a dashed line and rings its next stop:
 - Trucks and the bus show their whole loop.
 - Cars, forklifts and people show the way ahead.
 
-The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, Sahel Motors' showroom, the observatory's main dome and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in. The stations and the showroom also open when you zoom in close over them.
+The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, Sahel Motors' showroom, the observatory's main dome, Starbase's Starfactory, Engine Shop and Mega Bays, and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in. The stations and the showroom also open when you zoom in close over them.
 
 ## How the skill carries over to WebGL
 
@@ -186,7 +194,7 @@ ai-iso-skill draws SVG figures with a small projection kernel. This page keeps t
 - **Same kernel.** `plane(O,U,V)`, `TOP`, `FRONT`, `SIDE` and `box(x,y,z,w,d,h)` keep their meanings. Doors, windows, ribs, road paint, zebras, signs, clock faces and text are drawn flat in a face's own 2D units and placed with that face's matrix.
 - **Hairlines.** Every edge is a `LineSegments2` exactly 1 CSS pixel wide at any zoom, the WebGL equivalent of `vector-effect: non-scaling-stroke`. Faces are flat, unlit and opaque, so the depth buffer hides lines behind them.
 - **Day and night.** Every colour is a CSS custom property, with one set for dark and one for light. Through the evening the materials slide toward a single night palette. Windows and lamps are two extra fills that light up as everything else darkens.
-- **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, the showroom, the main dome on Beacon Hill and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only.
+- **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, the showroom, the main dome on Beacon Hill, Starbase's four buildings and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only.
 - **The look.** It uses two greys for lines and one `--live` colour, reserved for what is live: the selection and its route, a busy bay's lamp, a forklift's beacon, the police and fire light bars, the bank alarm, gunfire and the helicopter's searchlight, a chimney's flames, a welding robot's sparks and the lighthouse beam. Goods and uniforms use the two-tone fill.
 - **The frame.** The page is a plate with `Fig 1` and the clock (and `night`, `rain` or `fog` when it is), the places, the instruction and a live readout in the four corners. At night the whole page goes dark, even in the light theme, and the ◐ choice is remembered.
 
@@ -206,7 +214,8 @@ three.js and the font are bundled with the site, so it runs without loading anyt
   - `weather(kind, seconds)` brings `'rain'`, `'fog'` or `'clear'`.
   - `fire(id)` starts a chimney fire now, at that house or any house.
   - `train()` brings the next train in now.
-  - The `incident`, `sim`, `shop`, `bank`, `fireSys`, `worksSys`, `trainSys`, `metroSys`, `brtSys`, `motorsSys` and `portSys` state are there too.
+  - `launch()` starts the count now, if a stack stands on the mount at Gull Spit.
+  - The `incident`, `sim`, `shop`, `bank`, `fireSys`, `worksSys`, `trainSys`, `metroSys`, `brtSys`, `motorsSys`, `portSys`, `obsSys` and `sbSys` state are there too.
 - `?seed=<number>` changes the random seed. The simulation runs on a fixed 1/60 s step, so a given seed always plays out the same way.
 
 ## Credits

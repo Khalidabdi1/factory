@@ -42,6 +42,7 @@ import { buildEastSys } from './sim/east';
 import { buildVillageSys } from './sim/village';
 import { buildFreight } from './sim/freight';
 import { buildObservatorySys } from './sim/observatory';
+import { buildStarbaseSys } from './sim/starbase';
 import { initView } from './view';
 
 applyTheme();
@@ -263,6 +264,8 @@ incident.extend(policeStation.groups[0]);
 const freightSys = buildFreight(portSys);
 // Beacon Hill Observatory: its domes, the radio dish, the visitor centre, the astronomers and the visitors' cars
 const obsSys = buildObservatorySys();
+// Gull Spit Starbase: the Starfactory, the Engine Shop, the Mega Bays, the transporters, the tower and the launches
+const sbSys = buildStarbaseSys();
 applyTheme();
 
 const lightG = factoryG.getObjectByName('light'), fans = factoryG.children.filter(o => o.name === 'fan');
@@ -284,7 +287,7 @@ sim.step = dt => {
   sim.peds = sim.people.filter(p => onRoad(p.x, p.y));
   for (const p of sim.pallets) p.update(dt);
   for (const b of BOATS) b.update(dt);
-  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt); sahelSys.update(dt); metroSys.update(dt); motorsSys.update(dt); portSys.update(dt); eastSys.update(dt); villageSys.update(dt); obsSys.update(dt);
+  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt); sahelSys.update(dt); metroSys.update(dt); motorsSys.update(dt); portSys.update(dt); eastSys.update(dt); villageSys.update(dt); obsSys.update(dt); sbSys.update(dt);
   for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
   for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);
@@ -298,4 +301,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
