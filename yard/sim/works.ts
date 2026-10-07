@@ -170,8 +170,17 @@ function animate() {
     r.turret.rotation.y = -q[0]; r.shoulder.rotation.z = q[1]; r.elbow.rotation.z = q[2]; r.wrist.rotation.z = q[3];
     r.spark.visible = on && k > 0.7 && (r.kind === 'weld' ? (t * 6 + ph) % 1 < 0.35 : r.kind === 'paint'); if (r.spark.visible) glow(r.spark, true);
   }
-  // the press: two strokes while there are blanks under it
-  A.ram.position.y = 5.0 - (dwell && line.bodies[1] ? 3.6 * Math.pow(Math.sin(Math.PI * 2 * w), 2) : 0);
+  // the tandem presses: two strokes each while there are panels in the line, one after the other down it
+  A.rams.forEach((r, i) => { const ph = w * 2 - i * 0.16; r.position.y = 4.6 - (dwell && line.bodies[1] && ph > 0 && ph < 2 ? 3.3 * Math.pow(Math.sin(Math.PI * ph), 2) : 0); });
+  // the overhead crane wanders the press shop with a die on its hook
+  A.crane.position.x = 233 + 10 * Math.sin(t * 0.06); A.trolley.position.z = -38 + 6 * Math.sin(t * 0.1 + 1);
+  const hz = 3.0 + 2.2 * (0.5 + 0.5 * Math.sin(t * 0.17)); A.hook.position.y = hz; A.cable.position.y = hz + 0.5; A.cable.scale.y = 9.0 - hz - 0.5;
+  // the cells' turntables turn half round each time the line moves
+  const turn = Math.PI * (line.seq + (line.phase === 'move' ? ease(Math.min(1, line.t / MOVE)) - 1 : 0));
+  A.tables.forEach((g, i) => { g.rotation.y = -(turn + i * 0.6); });
+  // the tugger train, its carts on its track behind it
+  const ts = t * 1.4 + A.loop.length / 4; [A.tug, ...A.carts].forEach((g, i) => { const a = A.loop.at(ts - i * 2.3); pose(g, a.x, a.y, a.h); });
+  glow(A.andon, dwell && Math.floor(t * 1.2) % 3 !== 0);
   // the powertrain rises into the body over the first half of its stop
   pose(A.pt, ST[12][0], LY, 0, 0.1 + (line.phase === 'dwell' && line.bodies[12] ? 1.15 * ease(Math.min(1, w * 2)) : 0));
   A.buffer.children.forEach((m, i) => { const x = 250 + ((i * 8 + t * 1.3) % 40); m.visible = x > 251.5 && x < 288.5; pose(m, x + HALF, WORKS.y0 + 5.2, 0, 6.45); });
@@ -186,7 +195,9 @@ export function buildWorks() {
   for (const s of ['painted', 'wheels', 'complete']) for (const t of ['n', 'k']) PROTO.body[`${s}_${t}`] = buildBody(s, t);
   const inside = g.userData.peek.inside, buffer = inside.getObjectByName('buffer');
   for (let i = 0; i < 5; i++) buffer.add(PROTO.body.shell.clone());
-  A = { ram:inside.getObjectByName('ram'), pt:inside.getObjectByName('powertrain'), buffer, lamps:inside.getObjectByName('testLamps'),
+  A = { rams:[0, 1, 2].map(i => inside.getObjectByName(`ram${i}`)), crane:inside.getObjectByName('crane'), trolley:inside.getObjectByName('craneTrolley'),
+    hook:inside.getObjectByName('craneHook'), cable:inside.getObjectByName('craneCable'), tables:[0, 1, 2].map(i => inside.getObjectByName(`turntable${i}`)),
+    tug:inside.getObjectByName('tug'), carts:[0, 1, 2].map(i => inside.getObjectByName(`cart${i}`)), andon:inside.getObjectByName('andon'), pt:inside.getObjectByName('powertrain'), buffer, lamps:inside.getObjectByName('testLamps'),
     agvs:[0, 1].map(i => inside.getObjectByName(`agv${i}`)), loop:new Path([[324, LY + 7.4], [366, LY + 7.4], [366, LY - 7.2], [324, LY - 7.2], [324, LY + 7.4]], 2, true) };
   lot.entity = { kind:'lot', id:'Car Works lot', groups:[], pick:[354, -12, 1.5],
     info() { return { kind:'Car park · finished cars', title:this.id, status:`${lot.cars.length} of ${LOT.n} spaces taken`, bar:{ v:lot.cars.length, max:LOT.n, label:'waiting for the train' },
@@ -200,7 +211,13 @@ export function buildWorks() {
   }
   for (let i = 0; i < 8; i++) { const b = new Body(990 + i, sim.t - 300); b.setModel('complete'); lot.park(b, i); }
   const crew = [['R. Kowal', 226, LY + 3.6, -Math.PI / 2, 1, 'running the press'], ['E. Dube', 327, LY + 2.8, -Math.PI / 2, 11, 'fitting the trim'],
-    ['M. Ortega', 363, LY + 2.6, -Math.PI / 2, 15, 'fitting the seats'], ['T. Haas', 370.4, LY - 2.6, Math.PI / 2, 16, 'filling and starting'], ['N. Sato', 395.2, LY + 2.9, -Math.PI * 0.8, 19, 'checking the paint']];
+    ['M. Ortega', 363, LY + 2.6, -Math.PI / 2, 15, 'fitting the seats'], ['T. Haas', 370.4, LY - 2.6, Math.PI / 2, 16, 'filling and starting'], ['N. Sato', 395.2, LY + 2.9, -Math.PI * 0.8, 19, 'checking the paint'],
+    // (more of the shift, added later: after the first five, so the first five keep their places)
+    ['J. Whitlow', 327.8, LY - 2.6, Math.PI / 2, 11, 'fitting the wiring loom'], ['P. Lindqvist', 338.6, LY + 3.0, -Math.PI * 0.75, 12, 'running the marriage lift'],
+    ['A. Novak', 345.6, LY - 2.7, Math.PI / 2, 13, 'torquing the wheel nuts'], ['S. Iyer', 354.4, LY + 2.7, -Math.PI / 2, 14, 'checking the glass'],
+    ['B. Moreno', 362.4, LY - 2.5, Math.PI / 2, 15, 'bolting the seats in'], ['K. Brandt', 266.0, WORKS.y0 + 6.2, 0, 5, 'loading the cell'],
+    ['L. Osei', 331.4, WORKS.y0 + 5.8, -Math.PI / 2, 12, 'dressing an engine'], ['F. Ruiz', 384.2, LY - 2.6, Math.PI / 2, 18, 'on the rolling road'],
+    ['C. Adler', 382.6, WORKS.y1 - 3.6, Math.PI, 19, 'auditing a car'], ['D. Park', 231.6, LY + 5.7, -Math.PI / 2, 2, 'checking a panel']];
   for (const [id, x, y, h, st, job] of crew) new Worker(id, x, y, h, st, job);
   line.draw(false);
   return { works, line, lot, update(dt) { line.update(dt); lot.update(); line.draw(!!g.userData.peek.cut?.visible); } };

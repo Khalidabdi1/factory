@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { FRONT, SIDE, TOP, W } from '../kernel/iso';
 import { Part, pose } from '../kernel/part';
 import { WORKS } from '../layout';
-import { buildAgv, buildRobot } from '../models/works';
+import { beam, buildAgv, buildRobot, carInto } from '../models/works';
 import { lampPost, ring } from './ground';
 
 // Car Works: one long hall on its terrace in the foothills, under a sawtooth roof like Plant 01's, CAR WORKS on its
@@ -14,6 +14,9 @@ import { lampPost, ring } from './ground';
 // hanger, the marriage of body and powertrain, wheels and glass by robot, seats by hand) and the end of the line
 // (fluids, the lights test, the rolling road, the light tunnel). Moving parts are named for the simulation.
 export const ROBOTS = [];   // { g, x, y, h, station, kind } in the order they are built
+const PRESSES = [227.0, 231.2, 235.4], CELLS = [256, 270, 284];
+// a round member along x: ducts and pipes
+const cylX = (p, x0, y, z, r, len, n = 10, tone) => { const q = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; q.push([x0, y + r * Math.cos(a), z + r * Math.sin(a)]); } return p.extrude(q, [len, 0, 0], tone, { seams:false }); };
 export function buildCarWorks() {
   const { x0:X0, x1:X1, y0:Y0, y1:Y1, h:H, ly:LY, exit:[EX] } = WORKS, D = Y1 - Y0, z = 0;
   const g = new THREE.Group(); g.name = 'carWorks';
@@ -83,8 +86,16 @@ export function buildCarWorks() {
   // press shop: three coils, the uncoiler and the blanking press, the tandem press frame over the line, die carts
   for (let i = 0; i < 3; i++) { f.cylY(219.5 + i * 2.6, Y0 + 1.5, 1.0, 1.0, 1.4, 16, 'g'); f.cylY(219.5 + i * 2.6, Y0 + 1.4, 1.0, 0.35, 1.6, 10, 'k'); }
   f.box(218.6, LY - 2.4, z, 3.2, 4.8, 1.2, 'k').cylY(220.2, LY - 1.3, 2.2, 1.0, 2.6, 14, 'g');
-  for (const x of [229, 236.4]) { f.box(x, LY - 3.4, z, 1.4, 1.4, 7.6, 'k').box(x, LY + 2.0, z, 1.4, 1.4, 7.6, 'k'); }
-  f.box(228.6, LY - 3.6, 7.6, 9.6, 7.2, 1.8, 'k').box(229, LY - 2.0, z, 8.8, 4.0, 0.45);
+  // the tandem line: three presses in a row over the line, each a crown on four uprights with its flywheel housing on
+  // top and a bolster on the floor; crossbar transfer rails run through them at waist height
+  for (const a of PRESSES) {
+    for (const x of [a, a + 2.8]) for (const y of [LY - 2.6, LY + 2.0]) f.box(x, y, z, 0.6, 0.6, 6.0, 'k');
+    f.box(a - 0.2, LY - 2.9, 6.0, 3.8, 5.5, 1.6, 'k').box(a + 0.4, LY - 2.2, 7.6, 2.6, 2.4, 0.9, 'n').cylY(a + 1.7, LY + 0.3, 8.0, 0.55, 0.5, 12, 'k');
+    f.box(a, LY - 1.6, z, 3.4, 3.2, 0.45, 'k');
+    f.draw(TOP(a, LY + 2.65, 0), [0, 0, 3.4, 0, 0, 0.9, 3.4, 0.9], 'line', 0.02);
+    for (let u = 0.2; u < 3.4; u += 0.5) f.draw(TOP(a, LY + 2.65, 0), [u, 0, u + 0.4, 0.9], 'line', 0.02);   // the hatched danger zone at its feet
+  }
+  for (const y of [LY - 2.3, LY + 1.75]) f.box(PRESSES[0] - 0.6, y, 2.0, PRESSES[2] - PRESSES[0] + 4.6, 0.12, 0.12, 'k');
   for (let i = 0; i < 3; i++) f.box(239.6 + i * 2.4, Y0 + 1.0, z, 2.0, 3.2, 0.5, 'n').box(239.8 + i * 2.4, Y0 + 1.3, 0.5, 1.6, 2.6, 0.9, 'k');
   // body shop: a fixture under each station, fences either side with gaps for the robots' cells, the catwalk
   for (let k = 3; k <= 7; k++) { const sx = WORKS.stations[k][0]; for (const dx of [-1.7, 1.5]) f.box(sx + dx, LY - 1.4, z, 0.25, 2.8, 0.95, 'k'); f.box(sx - 1.7, LY - 0.12, 0.95, 3.45, 0.24, 0.12, 'k');
@@ -131,11 +142,81 @@ export function buildCarWorks() {
   for (const y of [LY - 2.4, LY + 2.4]) f.box(376, y - 0.15, z, 0.3, 0.3, 3.2).box(380, y - 0.15, z, 0.3, 0.3, 3.2); f.box(376, LY - 2.4, 3.2, 4.3, 4.8, 0.2, 'k');
   f.box(383, LY - 1.4, z, 4.2, 2.8, 0.1, 'k').box(384, LY + 2.6, z, 1.6, 0.9, 1.1).box(384.1, LY + 2.7, 1.1, 1.4, 0.06, 0.6, 'w');
   for (const dx of [-0.9, 0, 0.9]) { const q = []; for (let a = 0; a <= Math.PI; a += Math.PI / 8) q.push([392 + dx, LY + 2.3 * Math.cos(a), 0.2 + 3.0 * Math.sin(a)]); for (let i = 1; i < q.length; i++) f.seg('line', W(...q[i - 1]), W(...q[i])); }
+  // ---- the works round the line ----
+  // the hall's steel: columns down the north wall, high-bay lamps in two rows (lit after dark), the main air duct on
+  // its hangers, a cable tray down the south side
+  for (let x = X0 + 10; x < X1 - 2; x += 10) f.box(x - 0.25, Y0 + 0.5, z, 0.5, 0.5, H, 'n');
+  for (let x = X0 + 6; x < X1 - 2; x += 8) for (const y of [LY - 7.5, LY + 6]) { f.seg('detail', W(x, y, H), W(x, y, 8.75)); f.cylZ(x, y, 8.4, 0.4, 0.35, 8, 'l'); }
+  cylX(f, X0 + 1, Y0 + 3.2, 8.0, 0.55, X1 - X0 - 2, 12, 'n');
+  for (let x = X0 + 4; x < X1 - 2; x += 6) f.seg('detail', W(x, Y0 + 3.2, 8.55), W(x, Y0 + 3.2, H));
+  f.box(X0 + 2, LY + 4.7, 7.2, X1 - X0 - 4, 0.6, 0.1, 'k');
+  for (let x = X0 + 5; x < X1 - 2; x += 7) f.seg('detail', W(x, LY + 5.0, 7.3), W(x, LY + 5.0, H));
+  // press shop: the overhead crane's runway along both walls, dies stored under it, coils on saddles by the south
+  // wall, racks of stamped panels after the line, a check table under a lamp
+  for (const y of [Y0 + 0.9, Y1 - 1.4]) f.box(X0 + 0.5, y, 8.6, 30.5, 0.4, 0.5, 'k');
+  for (let i = 0; i < 4; i++) { const x = 226.4 + i * 3.1; f.box(x, Y0 + 2.4, z, 2.6, 2.0, 1.0, 'k').box(x, Y0 + 2.4, 1.0, 2.6, 2.0, 0.7, 'n'); f.draw(FRONT(x, Y0 + 4.4, 1.7), [0.3, 0.35, 2.3, 0.35], 'line', 0.02); }
+  for (let i = 0; i < 3; i++) { const x = 218.6 + i * 2.6; f.box(x - 0.9, Y1 - 4.9, z, 1.8, 1.6, 0.35, 'k'); f.cylY(x, Y1 - 4.95, 1.25, 1.0, 1.5, 16, 'g'); f.cylY(x, Y1 - 5.05, 1.25, 0.35, 1.7, 10, 'k'); }
+  for (let r = 0; r < 3; r++) { const x = 238.4 + r * 2.9;
+    for (const dx of [0, 2.4]) for (const y of [LY + 3.2, LY + 6.6]) f.box(x + dx, y, z, 0.12, 0.12, 2.0, 'k');
+    for (const y of [LY + 3.2, LY + 6.6]) f.box(x, y, 2.0, 2.52, 0.12, 0.12, 'k');
+    for (let k = 0; k < 5; k++) f.box(x + 0.25, LY + 3.6 + k * 0.6, 0.15, 2.0, 0.05, 1.5, 'g'); }
+  f.box(229.5, LY + 3.4, z, 4.0, 1.6, 0.9, 'n').box(230, LY + 3.7, 0.9, 3.0, 1.0, 0.04, 'g').seg('line', W(231.5, LY + 4.2, 0.95), W(231.5, LY + 4.2, 2.6)).box(231, LY + 3.7, 2.6, 1.0, 1.0, 0.25, 'l');
+  // body shop: the framing gate round station 5, fume hoods over the welding, the robots' controllers in a row
+  // behind the south fence, a lamp arch to check the shell before paint
+  { const fx0 = 256.4, fx1 = 263.6;
+    for (const x of [fx0, fx1]) for (const y of [LY - 4.9, LY + 4.3]) f.box(x - 0.3, y, z, 0.6, 0.6, 5.4, 'k');
+    for (const y of [LY - 4.9, LY + 4.3]) f.box(fx0 - 0.3, y, 5.4, fx1 - fx0 + 0.6, 0.6, 0.6, 'k');
+    for (const x of [fx0, fx1]) f.box(x - 0.3, LY - 4.9, 5.4, 0.6, 9.8, 0.6, 'k');
+    for (const y of [LY - 1.55, LY + 1.15]) { f.box(fx0 + 0.6, y, 0.5, fx1 - fx0 - 1.2, 0.4, 0.25, 'n').box(fx0 + 0.6, y, 2.35, fx1 - fx0 - 1.2, 0.4, 0.25, 'n');
+      for (let x = fx0 + 0.8; x < fx1 - 0.4; x += 1.6) f.box(x, y, 0.75, 0.3, 0.4, 1.6, 'n'); } }
+  for (let k = 3; k <= 7; k++) { const sx = WORKS.stations[k][0]; f.box(sx - 1.4, LY - 1.6, 6.9, 2.8, 3.2, 0.5, 'n'); f.seg('detail', W(sx, LY, 7.4), W(sx, LY, H)); }
+  for (let k = 3; k <= 6; k++) { const sx = WORKS.stations[k][0] + 1.2; f.box(sx - 0.5, LY + 6.6, z, 1.0, 0.8, 1.9, 'k').fill2(FRONT(sx - 0.5, LY + 7.4, 1.9), 0.2, 0.3, 0.6, 0.45, 'window', 0.02); }
+  for (const dx of [-0.8, 0.8]) { const q = []; for (let a = 0; a <= Math.PI; a += Math.PI / 8) q.push([290.4 + dx, LY + 2.4 * Math.cos(a), 0.2 + 3.1 * Math.sin(a)]); for (let i = 1; i < q.length; i++) f.seg('line', W(...q[i - 1]), W(...q[i])); }
+  for (let i = 1; i < 8; i++) { const a = i / 8 * Math.PI; f.box(290.3, LY + 2.35 * Math.cos(a) - 0.1, 0.15 + 3.05 * Math.sin(a), 0.2, 0.2, 0.2, 'l'); }
+  // the sub-assembly cells north of the line: a fence, a two-sided turntable (built with what moves) and a robot each
+  for (const cx of CELLS) { fence(cx - 3.4, cx + 3.4, Y0 + 2.6); for (const x of [cx - 3.4, cx + 3.4]) for (let y = Y0 + 2.6; y < LY - 6.2; y += 2) f.seg('line', W(x, y, z), W(x, y, 2.2));
+    for (const x of [cx - 3.4, cx + 3.4]) for (const h of [1.1, 2.2]) f.seg('line', W(x, Y0 + 2.6, h), W(x, LY - 6.2, h));
+    f.box(cx + 2.3, Y0 + 3.0, z, 0.9, 0.7, 1.7, 'k'); }
+  // paint shop: the booth's air plenum and its ducts up to the roof; a bunded drum store and the paint kitchen's
+  // mixing tanks by the south wall
+  f.box(302.35, LY - 2.8, 5.0, 9.3, 5.6, 1.3, 'n');
+  for (const x of [304.2, 309.8]) f.cylZ(x, LY, 6.3, 0.5, H - 6.3, 10, 'n');
+  f.box(293, LY + 6.1, z, 7.4, 4.2, 0.2, 'k');
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) f.cylZ(294.2 + i * 1.6, LY + 7.2 + j * 1.6, 0.2, 0.55, 0.95, 10, (i + j) % 2 ? 'k' : 'n');
+  for (let i = 0; i < 4; i++) { const x = 303.6 + i * 2.2; f.box(x - 0.7, LY + 6.4, z, 1.4, 1.4, 0.3, 'k').cylZ(x, LY + 7.1, 0.3, 0.6, 1.7, 12, 'n').box(x - 0.25, LY + 6.85, 2.0, 0.5, 0.5, 0.45, 'k'); }
+  f.seg('line', W(302.6, LY + 7.1, 2.6), W(311.4, LY + 7.1, 2.6)); for (let i = 0; i < 4; i++) f.seg('line', W(303.6 + i * 2.2, LY + 7.1, 2.45), W(303.6 + i * 2.2, LY + 7.1, 2.6));
+  f.text(TOP(0, 0, 0), 'PAINT KITCHEN', 307, LY + 9.9, 0.7, 'paint', 'middle', 0.02);
+  // assembly: tool balancers on rails over both sides, the engine dress area with its jib crane, a seat-lift arm,
+  // the parts supermarket's shelving along the south wall, the andon board over the line
+  for (const y of [LY - 2.3, LY + 2.1]) { f.box(323, y, 4.2, 43, 0.2, 0.2, 'k'); for (let k = 11; k <= 15; k++) for (const dx of [-1.2, 1.2]) { const x = WORKS.stations[k][0] + dx; f.seg('detail', W(x, y + 0.1, 4.2), W(x, y + 0.1, 2.3)).box(x - 0.08, y, 2.0, 0.16, 0.2, 0.3, 'k'); } }
+  for (let i = 0; i < 4; i++) { const x = 327 + i * 4.2, y = Y0 + 4.6; f.box(x - 0.6, y - 0.45, z, 1.2, 0.9, 0.6, 'k').box(x - 0.5, y - 0.4, 0.6, 1.0, 0.8, 0.75, 'n').cylY(x - 0.15, y - 0.55, 1.25, 0.18, 1.1, 8, 'k').box(x + 0.5, y - 0.3, 0.7, 0.6, 0.6, 0.5, 'k'); }
+  f.cylZ(324.6, Y0 + 2.0, z, 0.2, 4.2, 8, 'k'); beam(f, [324.6, Y0 + 2.0, 4.0], [336, Y0 + 2.0, 4.0], 0.25, 'k', 0.3); f.seg('line', W(331, Y0 + 2.0, 3.85), W(331, Y0 + 2.0, 2.4)).box(330.7, Y0 + 1.7, 2.1, 0.6, 0.6, 0.3, 'k');
+  f.text(TOP(0, 0, 0), 'ENGINE DRESS', 333, Y0 + 7.2, 0.7, 'paint', 'middle', 0.02);
+  f.cylZ(360.4, LY + 3.9, z, 0.18, 3.4, 8, 'k'); beam(f, [360.4, LY + 3.9, 3.3], [363.4, LY + 0.6, 3.3], 0.18, 'k', 0.22); f.seg('line', W(363.4, LY + 0.6, 3.2), W(363.4, LY + 0.6, 2.2)).box(363.0, LY + 0.2, 1.9, 0.8, 0.8, 0.3, 'k');
+  for (let x = 324; x < 366; x += 4.2) { f.box(x, Y1 - 1.6, z, 3.8, 1.0, 0.1, 'n'); for (const zz of [0.8, 1.5, 2.2]) f.box(x, Y1 - 1.6, zz, 3.8, 1.0, 0.06, 'n');
+    for (const dx of [0, 3.7]) f.box(x + dx, Y1 - 1.6, z, 0.1, 1.0, 2.3, 'k'); for (let b = 0; b < 4; b++) [0.1, 0.86, 1.56].forEach((zz, j) => f.box(x + 0.2 + b * 0.9, Y1 - 1.45, zz, 0.7, 0.7, 0.45, (b + j + Math.round(x)) % 4 ? 'n' : 'k')); }
+  f.text(TOP(0, 0, 0), 'SUPERMARKET', 345, Y1 - 2.6, 0.7, 'paint', 'middle', 0.02);
+  f.box(343, LY - 0.1, 6.0, 10, 0.2, 1.4, 'n'); f.seg('detail', W(344, LY, 7.4), W(344, LY, H)).seg('detail', W(352, LY, 7.4), W(352, LY, H));
+  f.text(FRONT(343, LY + 0.11, 7.4), 'LINE 1 · ANDON', 5, 0.42, 0.34, 'ink', 'middle', 0.01);
+  for (let i = 0; i < 5; i++) f.fill2(FRONT(343, LY + 0.11, 7.4), 0.7 + i * 1.8, 0.65, 1.2, 0.5, 'lamp', 0.01).text(FRONT(343, LY + 0.11, 7.4), String(11 + i), 1.3 + i * 1.8, 1.32, 0.25, 'ink', 'middle', 0.012);
+  // end of line: the water test booth with a car in it and its spray arches, the quality audit bay under lamps, a
+  // safety board
+  { const bx = 371, by = Y0 + 1.4;
+    for (const x of [bx, bx + 13]) for (const y of [by, by + 7.6]) f.box(x - 0.15, y - 0.15, z, 0.3, 0.3, 3.6, 'k');
+    f.box(bx, by - 0.15, z, 13, 0.3, 1.2, 'n').box(bx - 0.15, by, 3.6, 13.3, 0.3, 0.2, 'k').box(bx - 0.15, by + 7.45, 3.6, 13.3, 0.3, 0.2, 'k');
+    for (let x = bx + 2; x < bx + 12; x += 2.5) { const q = []; for (let a = 0; a <= Math.PI; a += Math.PI / 6) q.push([x, by + 3.8 + 3.2 * Math.cos(a), 0.3 + 2.8 * Math.sin(a)]); for (let i = 1; i < q.length; i++) f.seg('detail', W(...q[i - 1]), W(...q[i])); }
+    carInto(f, bx + 6.5, by + 1.6, 'n'); f.text(TOP(0, 0, 0), 'WATER TEST', bx + 6.5, by + 9.6, 0.7, 'paint', 'middle', 0.02); }
+  f.box(377, Y1 - 6.6, z, 7, 5.6, 0.15, 'n'); carInto(f, 380.5, Y1 - 6.1, 'k');
+  for (const x of [377.4, 383.6]) for (const y of [Y1 - 6.2, Y1 - 1.4]) f.seg('line', W(x, y, 0.15), W(x, y, 2.6)).box(x - 0.2, y - 0.2, 2.6, 0.4, 0.4, 0.2, 'l');
+  f.box(386, Y1 - 3.2, z, 1.6, 0.8, 1.0, 'n').box(386.2, Y1 - 3.1, 1.0, 1.2, 0.05, 0.7, 'w');
+  f.text(TOP(0, 0, 0), 'QUALITY AUDIT', 380.5, Y1 - 7.4, 0.7, 'paint', 'middle', 0.02);
+  f.box(369, LY - 4.1, 6.0, 12, 0.2, 1.3, 'n').text(FRONT(369, LY - 3.89, 7.3), 'SAFETY FIRST · 412 DAYS', 6, 0.5, 0.42, 'ink', 'middle', 0.01);
+  for (const x of [370, 380]) f.seg('detail', W(x, LY - 4.0, 7.3), W(x, LY - 4.0, H));
   const inside = f.build('worksInside'); inside.visible = false; g.add(inside);
 
   // ---- inside: what moves (all of it hidden with the inside) ----
-  const ram = new Part().box(229.2, LY - 1.9, 0, 8.4, 3.8, 1.4, 'k').box(229.2, LY - 1.9, 1.4, 8.4, 0.3, 4.6).box(229.2, LY + 1.6, 1.4, 8.4, 0.3, 4.6).build('ram');
-  ram.position.y = 5.0; inside.add(ram);
+  PRESSES.forEach((a, i) => { const ram = new Part().box(a + 0.15, LY - 1.7, 0, 3.1, 3.4, 1.0, 'k').box(a + 0.15, LY - 1.7, 1.0, 3.1, 0.25, 0.8).box(a + 0.15, LY + 1.45, 1.0, 3.1, 0.25, 0.8).build(`ram${i}`);
+    ram.position.y = 4.6; inside.add(ram); });
   // the buffer: shells riding high across the body shop, between the lift towers
   const buffer = new THREE.Group(); buffer.name = 'buffer'; inside.add(buffer);
   // the marriage: the powertrain on its lift, under the station
@@ -154,6 +235,25 @@ export function buildCarWorks() {
   for (let k = 3; k <= 6; k++) { const sx = WORKS.stations[k][0]; robot(sx - 1.2, LY - 3.4, k, 'weld'); robot(sx + 1.2, LY + 3.4, k, 'weld'); }
   robot(307, LY - 2.2, 9, 'paint'); robot(307, LY + 2.2, 9, 'paint');
   robot(345, LY + 3.0, 13, 'wheel'); robot(354, LY - 3.0, 14, 'glass');
+  // the sub-assembly cells' robots, and two sealing robots at the last body-shop station
+  CELLS.forEach((cx, i) => robot(cx + 0.2, Y0 + 3.6, 4 + i, 'weld'));
+  robot(287, LY - 3.2, 7, 'paint'); robot(287, LY + 3.2, 7, 'paint');
+  // the press shop's overhead crane: a bridge along its runways, a trolley across it, a die on the hook
+  const crane = new Part().box(-0.7, Y0 + 0.9, 8.1, 0.35, Y1 - Y0 - 2.3, 0.9, 'k').box(0.35, Y0 + 0.9, 8.1, 0.35, Y1 - Y0 - 2.3, 0.9, 'k')
+    .box(-1.0, Y0 + 0.7, 8.6, 2.0, 0.8, 0.6, 'k').box(-1.0, Y1 - 1.6, 8.6, 2.0, 0.8, 0.6, 'k').build('crane');
+  const trolley = new Part().box(-0.9, -0.8, 9.0, 1.8, 1.6, 0.6, 'k').build('craneTrolley');
+  const hook = new Part().box(-0.3, -0.3, 0, 0.6, 0.6, 0.5, 'k').box(-1.3, -1.0, -1.25, 2.6, 2.0, 1.0, 'k').box(-1.3, -1.0, -0.25, 2.6, 2.0, 0.2, 'n').build('craneHook');
+  const cable = new Part().seg('line', W(-0.2, 0, 0), W(-0.2, 0, 1)).seg('line', W(0.2, 0, 0), W(0.2, 0, 1)).build('craneCable');
+  trolley.add(hook, cable); crane.add(trolley); inside.add(crane);
+  // the cells' turntables: a divider down the middle, a side frame clamped on either half
+  CELLS.forEach((cx, i) => { const t = new Part().cylZ(0, 0, 0, 1.7, 0.45, 16, 'k').box(-1.6, -0.08, 0.45, 3.2, 0.16, 1.6, 'n');
+    for (const s of [-1, 1]) { t.box(-1.3, s * 0.75 - 0.04, 0.6, 2.6, 0.08, 1.0, 'g'); t.box(-1.4, s * 0.75 - 0.1, 0.45, 0.2, 0.2, 0.5, 'k').box(1.2, s * 0.75 - 0.1, 0.45, 0.2, 0.2, 0.5, 'k'); }
+    const tt = t.build(`turntable${i}`); pose(tt, cx, Y0 + 6.4, 0, 0); inside.add(tt); });
+  // the tugger train: a tug and three carts of parts round the assembly floor
+  const tug = new Part().box(-1.4, -0.55, 0.15, 1.4, 1.1, 0.5, 'k').box(-1.2, -0.4, 0.65, 0.6, 0.8, 0.5, 'n').box(-0.45, -0.1, 0.65, 0.1, 0.2, 0.6, 'k').build('tug'); inside.add(tug);
+  for (let i = 0; i < 3; i++) { const c = new Part().box(-1.9, -0.55, 0.2, 1.8, 1.1, 0.1, 'n').box(-1.8, -0.45, 0.3, 1.6, 0.9, 0.6, i % 2 ? 'k' : 'n').box(-0.1, -0.05, 0.25, 0.3, 0.1, 0.05, 'k').build(`cart${i}`); inside.add(c); }
+  // the andon board's lamps, one a station, lit live while its station works
+  const andon = new Part(); for (let i = 0; i < 5; i++) andon.fill2(FRONT(343, LY + 0.13, 7.4), 0.7 + i * 1.8, 0.65, 1.2, 0.5, 'lamp', 0.012); const ag = andon.build('andon'); inside.add(ag);
   g.userData.peek = { shell, cut, inside, box:[X0, X1, Y0, Y1] };
   return g;
 }

@@ -238,3 +238,10 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
   (`fromPort`) and stays a shadow until the truck is clear. `Gantry.wants(T)` makes the gantry give a road truck an
   import after taking its export. The truck's `boxOn` / `boxOff` fill and empty the box (`IMPORTS`, a fourth SKU);
   `sim.stats.exported` / `imported` count them.
+- Phase 24: Car Works' inside in detail (`world/works.ts`, animated in `sim/works.ts`'s `animate`). Static detail goes into
+  the one `worksInside` part (columns, high-bay lamps in `l`, the air duct (`cylX`), cable tray, press shop, body shop,
+  paint, assembly, end of line); what moves has its own group: the three press rams (`ram0`–`ram2`, struck in turn),
+  the overhead crane (`crane` > `craneTrolley` > `craneHook`, `craneCable` scaled), the cells' turntables (half a turn
+  each time the line moves, from `line.seq`), the tugger and its carts on the AGV loop, and the andon lamps. Robots
+  added after the first twelve keep `ROBOTS`' order; the shift's later workers come after the first five. The open
+  hall is about 1k draw calls (15 workers at a dozen each).
