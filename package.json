@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "A live isometric seaside town drawn with WebGL in the hairline style of ai-iso-skill.",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

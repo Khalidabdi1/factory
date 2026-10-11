@@ -228,3 +228,7 @@ three.js and the font are bundled with the site, so it runs without loading anyt
 
 - Isometric kernel and visual language adapted from [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill) (MIT, © Tolga Cohce).
 - Rendering by [three.js](https://threejs.org) (MIT).
+
+## License
+
+[MIT](LICENSE) © 2026 Khalid Abdi. The isometric kernel is adapted from ai-iso-skill, also MIT, and its notice is kept in the same file.
