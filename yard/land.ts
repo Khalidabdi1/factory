@@ -18,6 +18,9 @@ export const EAST = { x0:1000, x1:1900, y0:-84, y1:244, step:[5, 4] as [number, 
 export const OBS = { c:[1440, 45] as [number, number], r:34, apron:22, z:54 };
 // the radio telescope, out on the moor west of the hill
 export const DISH = { x:1362, y:40 };
+// Knoll Mill, the windmill on the knoll above Millbrook's hay meadow: the middle of its tower, the flat round it, the
+// apron easing back into the slope, its floor's height
+export const MILL = { c:[1696, -14] as [number, number], r:7.5, apron:7, z:6.2 };
 const ss = (a: number, b: number, v: number) => { const t = (v - a) / (b - a); return t <= 0 ? 0 : t >= 1 ? 1 : ease(t); };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -52,9 +55,11 @@ export function natural(x: number, y: number) {
   if (east > 1) east += (1.3 * Math.sin(x * 0.11 + y * 0.07) + 1.0 * Math.sin(x * 0.05 - y * 0.13)) * Math.min(1, (east - 1) / 6);
   // Beacon Hill's summit, levelled for the observatory, easing back into the hillside round it
   const dp = Math.hypot(x - OBS.c[0], y - OBS.c[1]); if (dp < OBS.r + OBS.apron) east = lerp(OBS.z, east, ss(OBS.r, OBS.r + OBS.apron, dp));
+  // the windmill's knoll, levelled for its tower and the cart standing by its door
+  const dm = Math.hypot(x - MILL.c[0], y - MILL.c[1]); let land = Math.max(band, east); if (dm < MILL.r + MILL.apron) land = lerp(MILL.z, land, ss(MILL.r, MILL.r + MILL.apron, dm));
   // Raven Gorge cuts through all of it, down to its floor
   const c = gorgeC(y), g = x < c ? 1 - ss(c - EAST.gorge.rim[0], c - EAST.gorge.half, x) : ss(c + EAST.gorge.half, c + EAST.gorge.rim[1], x);
-  return Math.max(0, Math.max(band, east) * g);
+  return Math.max(0, land * g);
 }
 
 // ---- lines through the land: a filleted plan, a height along it, and what the land does about it ----

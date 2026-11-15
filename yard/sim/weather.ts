@@ -21,6 +21,13 @@ export const weather = { kind:'clear', look:'clear', amount:0, next:90, until:0,
   raining() { return this.look === 'rain' && this.amount > 0.3; },
   rain() { return this.look === 'rain' ? this.amount : 0; },
   fog() { return this.look === 'fog' ? this.amount : 0; },
+  // The wind, worked out from the time alone (it spends no random numbers): mostly a breeze off the sea from the
+  // south-south-east, veering and backing through the day, freshening in a shower and dropping away in fog. dir is the
+  // way it blows from, as a heading in the plan (atan2 of y, x); speed in m/s.
+  wind() {
+    const t = sim.t, sp = 6.2 + 2.6 * Math.sin(t * 0.0131) + 1.7 * Math.sin(t * 0.0337 + 1.3) + 0.8 * Math.sin(t * 0.21) * Math.sin(t * 0.047);
+    return { dir:1.22 + 0.5 * Math.sin(t * 0.0071 + 0.4) + 0.2 * Math.sin(t * 0.0229), speed:Math.max(0.6, sp + 5.5 * this.rain() - 5 * this.fog()) };
+  },
   word() { return this.amount < 0.2 ? '' : this.look === 'rain' ? (this.amount > 0.7 ? 'rain' : 'showers') : this.look === 'fog' ? 'fog' : ''; },
 };
 hooks.raining = () => weather.raining();

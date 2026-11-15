@@ -394,8 +394,8 @@ export function buildVillageSys() {
         else if (vil < vilCap) { const house = pickHouse(); new Villager(house.at, 'village', { id:nameFor(house), home:house }); } }
       for (const p of holders) p.hidden = h < 8 || h >= 18;
       for (const s of SEATS) if (s.by && !sim.people.includes(s.by)) s.by = null;
-      // the mill wheel turns all day and night; the windpump's fan with the wind (faster in rain)
-      wheel.rotation.z -= dt * 0.9; fan.rotation.x += dt * (hooks.raining() ? 4.5 : 2.6);
+      // the mill wheel turns all day and night; the windpump's fan with the wind
+      wheel.rotation.z -= dt * 0.9; fan.rotation.x += dt * (0.6 + 0.36 * hooks.weather.wind().speed);
       wheel.visible = fan.visible = !FAR;
       flock.record(); horses.record();
       for (const H of herds) for (const a of H.animals) a.update(dt, H.animals);

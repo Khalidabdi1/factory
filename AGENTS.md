@@ -280,3 +280,20 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
     the domes open for it by day. Debug `yard.launch()`. View 13 and key `S`; the home view is about 1.7k draw calls.
 - Phase 27: the README covers phases 20–26; `docs/east.png` and `docs/starbase.png` are captured from the static build like the
   other figures (served from `out/`, `?debug=1`, the weather held clear through `yard.weatherState`).
+
+## Knoll Mill and the circuit (November 2026)
+
+The owner asked for a windmill and an F1 race track. In order: 28 the windmill; 29 the plate widened east and the
+circuit built; 30 the race weekend run on it; 31 docs and figures. Nothing is pushed until the owner has seen it.
+
+- Phase 28: Knoll Mill (`world/windmill.ts`, `sim/windmill.ts`; `MILL` in `land.ts`, which levels its knoll in
+  `natural()` the way the observatory's summit is levelled), an English tower mill on the hillside above Millbrook's hay
+  meadow. Everything is drawn in the mill's own frame (origin on the tower's axis at its floor); `FLOORS` are the five
+  floors' heights, `bl(b, l)` places things in the section's frame (b back from the cut, away from the viewer; l along
+  it). Opened, the tower is a vertical section: its near half taken away along the north-east–south-west line, every
+  floor's far half with its machinery, the cap's shell hidden so the brake wheel shows. What turns: the cap (yawed to
+  `weather.wind().dir`, a wind worked out from `sim.t` alone so it spends no random numbers), the fantail, the sails
+  (braked to rest in a cross, shutters (`cloth`) open when stopped), and, only while open, the upright with its wallower
+  and spur wheel, the stone nuts, the governor and the sack on the hoist. The miller (`look:'miller'`) walks his floors
+  with a height of his own (`lz`), climbing the ladders slowly; `peek.hides` hides only those inside the walls. The
+  windpump's fan now follows the same wind.

@@ -3,7 +3,7 @@ import { FRONT, TOP, W } from '../kernel/iso';
 import { Part, v3 } from '../kernel/part';
 import { rand } from '../kernel/math';
 import { METRO, SEA_Z } from '../layout';
-import { COAST_BRIDGE, DISH, EAST, GRID, L1X, LINE_EAST, MILLBROOK, OBS, OBS_ROAD, RAIL_EAST, RAIL_PORTAL, ROAD_EAST, ROAD_HW, ROAD_PATH, coastZ, gorgeC, gridH, l1Rise, landZ, natural, roadZ } from '../land';
+import { COAST_BRIDGE, DISH, MILL, EAST, GRID, L1X, LINE_EAST, MILLBROOK, OBS, OBS_ROAD, RAIL_EAST, RAIL_PORTAL, ROAD_EAST, ROAD_HW, ROAD_PATH, coastZ, gorgeC, gridH, l1Rise, landZ, natural, roadZ } from '../land';
 import { Frame, buffer, deckRun, levels } from './metro';
 import { beam } from '../models/works';
 import { crown, pine, tree, yaw } from './ground';
@@ -66,6 +66,8 @@ export const kept = (x: number, y: number) => {
   if (y > 254 || (x < 1070 && y > 110 && y < 152) || (Math.abs(y - RAIL_EAST.y) < 6 && x < RAIL_PORTAL + 4)) return true;
   // the observatory's summit and the radio dish's ground
   if (Math.hypot(x - OBS.c[0], y - OBS.c[1]) < OBS.r + 6 || Math.hypot(x - DISH.x, y - DISH.y) < 17) return true;
+  // the windmill's knoll (its sails sweep low), and the cart track up to it from the fields
+  if (Math.hypot(x - MILL.c[0], y - MILL.c[1]) < 19 || (x > 1664 && x < 1672 && y > -10 && y < 0)) return true;
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const k of KH.get(`${Math.floor(x / 20) + a}|${Math.floor(y / 20) + b}`) ?? []) if (Math.hypot(k.x - x, k.y - y) < k.r) return true;
   return false;
 };

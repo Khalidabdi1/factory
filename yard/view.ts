@@ -9,7 +9,7 @@ import { LINE, applyTheme, shade } from './theme';
 import { pose, setTextFar, v3 } from './kernel/part';
 import { clamp } from './kernel/math';
 import { Path } from './kernel/path';
-import { RACK, SHELF, WORLD } from './layout';
+import { RACK, SHELF, WORLD, zAt } from './layout';
 import { ring } from './world/ground';
 import { PROTO, STEP, clock, conveyor, hourAt, night, shift, sim } from './sim/core';
 import { SPOTS } from './sim/cars';
@@ -23,7 +23,7 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 // (stood well back, so that a rocket three kilometres up is still in front of it)
@@ -113,7 +113,7 @@ function select(ent) {
 }
 hooks.forget = forget;
 function forget(ent) { if (selected === ent) select(null); if (hovered === ent) hovered = null; }
-const STILL = ['factory', 'works', 'lot', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'station', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride', 'brtstop', 'line', 'showroom', 'cartower', 'crossing', 'terminal', 'block', 'observatory', 'starbase', 'engine'];
+const STILL = ['factory', 'works', 'lot', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'station', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride', 'brtstop', 'line', 'showroom', 'cartower', 'crossing', 'terminal', 'block', 'observatory', 'starbase', 'engine', 'windmill'];
 const followable = ent => !!ent && !STILL.includes(ent.kind);
 function setFollow(on) { follow = on && followable(selected); $('cardFollow').setAttribute('aria-pressed', follow); }
 function refresh() {
@@ -184,7 +184,7 @@ function drawRoute() {
 // to show who is in) the first time they open.
 const PEEK = [[whG, warehouse], [shopG, shop], [bank.groups[0], bank], [fireSys.station.groups[0], fireSys.station], [worksSys.works.groups[0], worksSys.works], ...homes.map(h => [h.groups[0], h]),
   ...Object.values(metroSys.stations).map(s => [s.groups[0], s]), [motorsSys.groups[0], motorsSys], [obsSys.main.g, obsSys.main],
-  ...['factory', 'shop', 'bay1', 'bay2'].map(k => [sbSys.groups[k], sbSys.ents[k]])];
+  ...['factory', 'shop', 'bay1', 'bay2'].map(k => [sbSys.groups[k], sbSys.ents[k]]), [millSys.mill.groups[0], millSys.mill]];
 hooks.inBuilding = (x, y) => PEEK.some(([g]) => { const b = g.userData.peek.box; return x > b[0] && x < b[1] && y > b[2] && y < b[3]; });
 // a shut building hides who is in it; a station only those up on its floors, not those in the street beneath it
 hooks.closedAt = (x, y, p) => { for (const [g] of PEEK) { const pk = g.userData.peek, b = pk.box;
@@ -295,7 +295,7 @@ function tick(now) {
   // people's detail by how big they are on screen (zoom is screen px per metre): a lite figure under about 4 px a
   // metre, none at all under about 1.5
   const tiny = camera.zoom < 4.2, far = camera.zoom < 1.5;
-  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); setTextFar(far); motorsSys.detail(!tiny); portSys.detail(far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place(); for (const b of brtSys.buses) b.place(); for (const f of sim.forklifts) f.place(); villageSys.detail(); sbSys.detail(far);
+  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); setTextFar(far); motorsSys.detail(!tiny); portSys.detail(far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place(); for (const b of brtSys.buses) b.place(); for (const f of sim.forklifts) f.place(); villageSys.detail(); sbSys.detail(far); millSys.detail();
     // a pallet a few pixels across is its load and nothing else: one draw call instead of four
     for (const pl of sim.pallets) for (const m of pl.group.children) if (m.userData.fill !== 'kob') m.visible = !far; }
   updatePeek();
@@ -323,11 +323,11 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [...sbSys.entities(), ...obsSys.entities(), ...villageSys.entities(), ...eastSys.places, eastSys.road, ...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [...millSys.entities(), ...sbSys.entities(), ...obsSys.entities(), ...villageSys.entities(), ...eastSys.places, eastSys.road, ...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...(incident.heli ? [incident.heli] : []), ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
-    sim, conveyor, shop, whGate, incident, bank, RACK, SHELF, SPOTS, BUS_STOPS, camera, controls, renderer, scene, hourAt, night, PROTO, pose, hooks, PORTALS, nextPortal,
+    sim, zAt, conveyor, shop, whGate, incident, bank, RACK, SHELF, SPOTS, BUS_STOPS, camera, controls, renderer, scene, hourAt, night, PROTO, pose, hooks, PORTALS, nextPortal,
     all:() => all().map(e => ({ id:e.id, kind:e.kind, status:e.info().status })),
     step:s => { for (let t = 0; t < s; t += STEP) sim.step(STEP); },
     skip:hours => { shift.goal += hours; shift.h = shift.goal; },
@@ -342,7 +342,7 @@ if (DEBUG) {
     // and for a getaway, end 'roadblock' | 'bail' | 'escape'; any left out are drawn as usual
     robbery:(job, plan, end) => { if (incident.phase === 'quiet') { incident.force = { job, plan, end }; incident.next = sim.t; } return incident.phase; },
     // a chimney fire now, at a house by id or any house with a chimney (when none is burning): returns the house
-    worksSys, trainSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys,
+    worksSys, trainSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys,
     // a launch now, if a stack stands on the mount
     launch:() => sbSys.launchNow(),
     // the next train now (when none is in): returns its state

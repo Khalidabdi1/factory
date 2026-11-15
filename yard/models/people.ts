@@ -39,6 +39,8 @@ export const OUTFITS = {
   // Millbrook: farmers in work clothes and a cap or a hat, a waxed coat, dresses and a shopping bag
   village:[civ('n', 'k', 'trousers', 'short', 'cap', null, false), civ('k', 'n', 'skirt', 'long', null, 'bag', true), civ('n', 'k', 'trousers', 'short', 'hat', null, false),
     civ('k', 'k', 'coat', 'short', 'hat', null, false), civ('n', 'n', 'skirt', 'bun', null, null, true), civ('k', 'n', 'trousers', 'none', 'cap', null, false)],
+  // the miller at Knoll Mill: white with flour from his cap to his boots
+  miller:[civ('n', 'n', 'trousers', 'short', 'cap', null, false)],
 };
 OUTFITS.shopper = OUTFITS.walker;
 export const LOOKS = Object.keys(OUTFITS);
