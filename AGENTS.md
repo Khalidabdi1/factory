@@ -42,7 +42,7 @@ Next 16 (App Router, Turbopack), React 19, TypeScript, and `three@0.186.1` from 
 | `yard/theme.ts` | Token → material mapping, the `NIGHT` palette, `applyTheme()`, and `shade(n)`, the day/night blend. |
 | `yard/layout.ts` | World constants and the coordinate table (where everything is), plus `ROADS` / `BLOCKS`, `onRoad`, `zAt`. |
 | `yard/models/`, `yard/world/` | Builders for moving models and for the static town. |
-| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `fire` (the fire station, ENG-1, its watch, chimney fires), `works` (Car Works' line and lot), `train` (FRT-7), `boats`; for Sahel: `sahel` (its traffic, pavements, `Citizen`s, building cards), `metro`, `brt` (the Metrobus), `motors` (Sahel Motors and CS-1), `port` (the container terminal); `windmill` (Knoll Mill and its miller), `f1` (Gull Bay Circuit's weekend). |
+| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `fire` (the fire station, ENG-1, its watch, chimney fires), `works` (Car Works' line and lot), `train` (FRT-7), `boats`; for Sahel: `sahel` (its traffic, pavements, `Citizen`s, building cards), `metro`, `brt` (the Metrobus), `motors` (Sahel Motors and CS-1), `port` (the container terminal); `windmill` (Knoll Mill and its miller), `f1` (Gull Bay Circuit's weekend), `joust` (the Millbrook tourney). |
 
 The React component and the engine share a contract: the engine finds the plate's elements **by id**: `clock`, `stage`, `view`, `card`, `cardRows`, `note`, `readout`, `tagSel`, and the rest. React never re-renders the plate. Per-frame UI updates are imperative.
 
@@ -315,3 +315,12 @@ circuit built; 30 the race weekend run on it; 31 docs and figures. Nothing is pu
   coming down its middle. `race.phase` runs grid → formation → lights → race → finish → podium → closed on race day and
   practice → quali → closed the day after (`race.next`); the race is four laps, so it runs from about noon into the night.
   Spins (`spinAt`) and a rare stop for good are drawn at the line. Debug `yard.race(session)`.
+- Phase 32 (asked for after: a jousting arena with knights like a page from a sixteenth-century tournament book, then a
+  push of everything): the tiltyard (`world/joust.ts`, `JOUST`) on the common east of the Plough, where the woods'
+  loops skip their trees (still drawing their random numbers). Knights are `models/joust.ts`: `buildDestrier(livery)`
+  (caparison patterned `bendy`/`barry`/`paly`/`plain`, leg groups that gallop), `buildKnight` (the rider, his own group
+  so he can be unhorsed: `scene.attach` and back with `remount`), `buildLance` (`whole`, `stub`, `splinters`), and a one
+  part lite model for FAR. `sim/joust.ts` runs the day: bouts of two courses (a third if level), each course ready →
+  charge → strike (outcomes drawn with `rng()`) → turn round the tilt's end; a knight keeps the tilt on his left. The
+  herald and two squires are `Person`s (looks `herald`, `squire`); villagers come to watch through the `joust` spots,
+  weighted by `hooks.joustOn()`. Debug `yard.joust()`.

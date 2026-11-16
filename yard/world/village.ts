@@ -62,6 +62,8 @@ export const LANES: number[][][] = (() => {
   // over the road to the farm, and south over it to the lower village
   chain([1790, 150], [1764, 150], [1742, 150]); chain([1812, 160], [1812, 186], [1812, 206]);
   chain([1742, 206], [1786, 206], [1812, 206], [1842, 206]);
+  // through the tiltyard's gate and along inside its palisade to the south rail of the lists, to watch the jousting
+  chain([1842, 206], [1847.2, 206], [1847.2, 235.4], [1930, 235.4]);
   // the farm tracks: round the fields and through the orchard
   chain([1742, 104], [1762, 104]); chain([1742, 82], [1742, 104], [1742, 128], [1742, 150], [1742, 206], [1742, 232]);
   chain([1621, -2], [1621, 36], [1621, 82], [1621, 128], [1621, 151], [1621, 172], [1621, 232]);

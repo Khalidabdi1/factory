@@ -67,6 +67,7 @@ export const kept = (x: number, y: number) => {
   // the observatory's summit and the radio dish's ground
   if (Math.hypot(x - OBS.c[0], y - OBS.c[1]) < OBS.r + 6 || Math.hypot(x - DISH.x, y - DISH.y) < 17) return true;
   // the windmill's knoll (its sails sweep low), and the cart track up to it from the fields
+  if (x > 1842 && x < 1944 && y > 184 && y < 256) return true;   // the tiltyard's common
   if (Math.hypot(x - MILL.c[0], y - MILL.c[1]) < 19 || (x > 1664 && x < 1672 && y > -10 && y < 0)) return true;
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const k of KH.get(`${Math.floor(x / 20) + a}|${Math.floor(y / 20) + b}`) ?? []) if (Math.hypot(k.x - x, k.y - y) < k.r) return true;
   return false;

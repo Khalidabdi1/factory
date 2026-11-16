@@ -222,7 +222,8 @@ export function buildCircuit() {
   // woods between Millbrook and the circuit, and along the foot of the hills round it
   for (let gx = 1858; gx < 1934; gx += 6.2) for (let gy = 2; gy < 252; gy += 6.2) {
     const x = gx + rand(-2.2, 2.2), y = gy + rand(-2.2, 2.2), s = rand(0.78, 1.15), k = rand(0, 1);
-    if (Math.abs(y - 176) < 9 || k < 0.12 || x < 1866 && y > 96 && y < 146) continue;
+    // (and none on the tiltyard's common, east of the Plough)
+    if (Math.abs(y - 176) < 9 || k < 0.12 || x < 1866 && y > 96 && y < 146 || x > 1842 && x < 1944 && y > 184 && y < 256) continue;
     if (k < 0.6) tree(p, x, y, s, landZ(x, y)); else pine(p, x, y, s, landZ(x, y));
   }
   for (let x = 1940; x < 2400; x += rand(6, 11)) { const y = rand(-3, 6), s = rand(0.75, 1.05); if (x > 1980 && x < 2146 && y > -1) continue; pine(p, x, y, s, landZ(x, y)); }

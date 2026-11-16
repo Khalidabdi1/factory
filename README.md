@@ -36,7 +36,7 @@ To build the site, run `npm run build`. It writes plain HTML and JS to `out/`, s
 | `yard/theme.ts` | Tokens → materials, and the day/night blend |
 | `yard/models/`, `yard/world/` | Vehicles, people, boats, and the static town |
 | `yard/land.ts` | The east country's land: the hills, the gorge and the moor, and the corridors cut through them for the line and the roads |
-| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police and the robbers, the fire station, the pier, fishing, weather, Car Works and the train; Sahel's traffic and people, the metro, the Metrobus, Sahel Motors, the port and the container truck; the east country, Millbrook, the observatory, Starbase, Knoll Mill and the Grand Prix |
+| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police and the robbers, the fire station, the pier, fishing, weather, Car Works and the train; Sahel's traffic and people, the metro, the Metrobus, Sahel Motors, the port and the container truck; the east country, Millbrook, the observatory, Starbase, Knoll Mill, the Grand Prix and the tourney |
 | `yard/view.ts` | Camera, selection, card, routes, peeking into buildings, the frame loop, keys |
 | `yard/index.ts` | Builds everything in a fixed order and starts the view |
 
@@ -64,6 +64,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Village** | Millbrook, an English farming village round Line 1's terminus. Cottages with front gardens behind picket fences, a green with an old oak, a pump and a farmers' market, the Plough Inn and Millbrook Stores. Across the road, the farm: wheat, a hay meadow with its bales and a windpump, allotments, the long field, the millpond and its watermill, a red barn with two silos, pens for the sheep, cows, pigs, hens and horses, and an apple orchard with its store. |
 | **Knoll Mill** | A tower mill of 1814 on a knoll above Millbrook's hay meadow: a limewashed brick tower, a reefing stage at the stone floor, a tarred boat-shaped cap with a fantail, and four patent sails. A cart of wheat stands by the door. |
 | **Circuit** | Gull Bay Circuit, a Grand Prix track on the plain east of Millbrook, between the mountains and the Vale Road: 1.5 km and fifteen turns, from Paddock Bend and the Knoll Hairpin through the Esses to the Harbour Hairpin and the Last Corner. Run-offs of asphalt and gravel with tyre walls, kerbs at every apex, a pit lane and a pit building of ten garages with Race Control's tower and the podium, the main grandstand on the road, the Hillside and Infield stands, a footbridge, the start gantry, floodlight masts, marshal posts, the paddock, a medical centre with its helicopter pad, and a car park across the road. The plate was widened east to make room. |
+| **Tiltyard** | On the common east of the Plough: a palisaded ground with the lists in it, a sand field with the tilt down its middle hung with striped cloth, the royal stand under a striped canopy with the lord's and lady's chairs, the herald's score board (the cheque), four striped pavilions, racks of lances at both ends, a quintain and banners. |
 
 ![Sahel by day: Sahel Central's woven lattice among the Financial District's towers, Sahel Motors and its car towers at the foot of the hills, the metro's viaducts, and the container terminal on the waterfront](docs/sahel.png)
 
@@ -179,6 +180,14 @@ The engine runs once per page load. React draws the plate, and the engine drives
 
     ![Gull Bay Circuit on race day: the cars in the Esses, the pit building and its paddock, the grandstands full, the car park across the Vale Road](docs/circuit.png)
 
+29. **The Millbrook tourney:** every day from eight, four knights joust at the tilt: two bouts, then a final between the winners.
+    - Each knight rides a grey destrier in a caparison of his colours that hangs nearly to its hooves (bendy, barry, paly, or plain with a border), with a plume on its steel chanfron and another on its rump. He wears full plate, a frog-mouthed tilting helm with a great crest of feathers and a targe, and carries a lance striped like a barber's pole with a three-pronged coronel.
+    - For a course they wait at opposite ends with the tilt on their left until the herald calls it, then charge, lowering their lances as they close, and meet at a gallop. A true lance breaks on the targe in a burst of splinters (a point); a poor one glances off or misses; now and then one strikes so hard the other is carried out of the saddle and the bout is over, his horse caught and led back to him.
+    - They wheel round the end of the tilt, take a fresh lance from the squire, and come again: two courses, and a third if they are level. The winner salutes the lord and lady in the royal stand. Villagers walk over from Millbrook to watch along the rail.
+    - The tiltyard's card follows the bouts, the score and the herald's calls; a knight's card gives his arms, his horse, his lances broken and how often he has been unhorsed.
+
+    ![Two knights at the tilt, lances couched as they close at a gallop, the herald before the royal stand behind them](docs/joust.png)
+
 
 Each stage only runs as fast as the next one lets it:
 - A full shop keeps the box trucks waiting at the warehouse.
@@ -240,8 +249,9 @@ three.js and the font are bundled with the site, so it runs without loading anyt
   - `fire(id)` starts a chimney fire now, at that house or any house.
   - `train()` brings the next train in now.
   - `launch()` starts the count now, if a stack stands on the mount at Gull Spit.
+  - `joust()` starts the day's jousting at Millbrook now.
   - `race(session)` starts a session at Gull Bay now: `'practice'`, `'quali'` or `'grid'` (the formation lap, the start and the race follow from the grid).
-  - The `incident`, `sim`, `shop`, `bank`, `fireSys`, `worksSys`, `trainSys`, `metroSys`, `brtSys`, `motorsSys`, `portSys`, `obsSys`, `sbSys`, `millSys` and `f1Sys` state are there too.
+  - The `incident`, `sim`, `shop`, `bank`, `fireSys`, `worksSys`, `trainSys`, `metroSys`, `brtSys`, `motorsSys`, `portSys`, `obsSys`, `sbSys`, `millSys`, `f1Sys` and `joustSys` state are there too.
 - `?seed=<number>` changes the random seed. The simulation runs on a fixed 1/60 s step, so a given seed always plays out the same way.
 
 ## Credits

@@ -53,6 +53,7 @@ spot('pens', 'the pig sty', [1655, 151.2], 0.6, { h:Math.PI / 2 }); spot('pens',
 spot('pens', 'the horses\' paddock', [1641, 171.4], 0.4, { h:Math.PI / 2 });
 spot('apples', 'the apple store', [1742.2, 221], 0.6, { h:Math.PI });
 spot('pond', 'the millpond', [1623.4, 44], 0.5, { h:0 });
+for (let x = 1860; x <= 1926; x += 5.5) spot('joust', 'the tiltyard', [x, 235.4], 0.7, { h:-Math.PI / 2 });
 const BARN_DOOR: P2 = [1635, 147.6];
 spot('barn', 'the barn', BARN_DOOR, 1);
 const SEATS = [[1803, 141], [1829, 141], [1820, 158.5]].flatMap(([x, y]) => [-0.5, 0.5].map(k => ({ at:[x + k, y + (y > 150 ? 0.4 : -0.4)], h:y > 150 ? -Math.PI / 2 : Math.PI / 2, z:0.45, by:null as any })));
@@ -70,9 +71,10 @@ type Role = 'farm' | 'village' | 'visitor';
 function nextSpot(from: Spot | null, role: Role, at: P2, avoid?: string) {
   const h = hourAt(sim.t), work = h >= 5.5 && h < 11.5 || h >= 13.5 && h < 18.5, late = h >= 13.5 && h < 18.5, eve = h >= 18 && h < 23, dinner = h >= 11.5 && h < 13.5, dark = h >= 23 || h < 5.5;
   const pubOpen = h >= 11 && h < 23, storeOpen = h >= 7 && h < 19, market = h >= 8 && h < 18;
-  const Wt: Record<string, number> = role === 'visitor' ? { green:3, market:market ? 4 : 0, pub:pubOpen ? 3 : 0, store:storeOpen ? 1 : 0, station:2.4 }
+  const joust = hooks.joustOn?.() ? 1 : 0;
+  const Wt: Record<string, number> = role === 'visitor' ? { joust:joust * 3.5, green:3, market:market ? 4 : 0, pub:pubOpen ? 3 : 0, store:storeOpen ? 1 : 0, station:2.4 }
     : role === 'farm' ? { barn:work ? 0.15 : 8, field:work ? 3 : 0, orchard:work ? 3.5 : 0, pens:work ? 1.4 : 0.3, apples:late ? 0.8 : 0.2, pond:work ? 0.3 : 0 }
-    : { home:dark ? 6 : dinner ? 3 : eve ? 1.2 : 0.5, green:eve ? 2.5 : 1, market:market ? 1.5 : 0, pub:pubOpen ? (eve ? 3 : 0.6) : 0, store:storeOpen ? 1 : 0, station:dark ? 0.1 : 0.8 };
+    : { joust:joust * 2.5, home:dark ? 6 : dinner ? 3 : eve ? 1.2 : 0.5, green:eve ? 2.5 : 1, market:market ? 1.5 : 0, pub:pubOpen ? (eve ? 3 : 0.6) : 0, store:storeOpen ? 1 : 0, station:dark ? 0.1 : 0.8 };
   const pool = SPOTS.filter(s => s !== from && s.kind !== avoid && (Wt[s.kind] ?? 0) > 0 && !(s.seat && s.seat.by));
   const wt = (s: Spot) => s.w * Wt[s.kind] / (1 + dist(at, s.p) / 45);
   let r = rng() * pool.reduce((t, s) => t + wt(s), 0);
@@ -124,6 +126,7 @@ export class Villager extends Person {
         this.wait(rand(8, 14), 'sorting apples').then((p: Villager) => p.next('apples')); return;
       case 'pens': this.face(t.h ?? 0).wait(rand(6, 10), CHORE[t.name]).then((p: Villager) => { COUNTS.fed++; p.next('pens'); }); return;
       case 'pond': this.face(t.h ?? 0).wait(6, 'feeding the ducks').then((p: Villager) => p.next('pond')); return;
+      case 'joust': this.face(t.h ?? 0).wait(rand(25, 45), 'watching the jousting').then((p: Villager) => p.next('joust')); return;
       case 'market': this.face(t.h ?? 0).wait(rand(5, 10), `buying ${rng() < 0.5 ? 'apples' : 'vegetables'}`).then((p: Villager) => p.next('market')); return;
       case 'green':
         if (t.seat && !t.seat.by) { t.seat.by = this; this.face(t.seat.h).then((p: Villager) => p.sitOn(t.seat)).wait(rand(14, 30), 'sitting on the green').then((p: Villager) => { p.standUp(); p.next('green'); }); return; }
