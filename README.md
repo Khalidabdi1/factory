@@ -36,7 +36,7 @@ To build the site, run `npm run build`. It writes plain HTML and JS to `out/`, s
 | `yard/theme.ts` | Tokens → materials, and the day/night blend |
 | `yard/models/`, `yard/world/` | Vehicles, people, boats, and the static town |
 | `yard/land.ts` | The east country's land: the hills, the gorge and the moor, and the corridors cut through them for the line and the roads |
-| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police and the robbers, the fire station, the pier, fishing, weather, Car Works and the train; Sahel's traffic and people, the metro, the Metrobus, Sahel Motors, the port and the container truck; the east country, Millbrook, the observatory and Starbase |
+| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police and the robbers, the fire station, the pier, fishing, weather, Car Works and the train; Sahel's traffic and people, the metro, the Metrobus, Sahel Motors, the port and the container truck; the east country, Millbrook, the observatory, Starbase, Knoll Mill and the Grand Prix |
 | `yard/view.ts` | Camera, selection, card, routes, peeking into buildings, the frame loop, keys |
 | `yard/index.ts` | Builds everything in a fixed order and starts the view |
 
@@ -62,6 +62,8 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Sky** | Beacon Hill Observatory, on the levelled top of Beacon Hill above High Moor. Observatory Road winds up round the hill from the Vale Road. On top: the Beacon Telescope in its big dome, a public dome and a survey camera's dome, a solar tower, the visitor centre with its planetarium, the astronomers' residence, a weather mast and an all-sky camera. The Moor Dish, a radio telescope, stands on the moor below. |
 | **Starbase** | Gull Spit Starbase, a Starship factory and launch site on land made out over the sea below Millbrook. At its west end the Starfactory, the Engine Shop, and the two Mega Bays (the second glass-walled) where boosters and ships are stacked; along the road the Rocket Garden, then the tank farm, and at the tip the launch tower with its chopsticks, the launch mount over its flame trench, and the deluge tanks. |
 | **Village** | Millbrook, an English farming village round Line 1's terminus. Cottages with front gardens behind picket fences, a green with an old oak, a pump and a farmers' market, the Plough Inn and Millbrook Stores. Across the road, the farm: wheat, a hay meadow with its bales and a windpump, allotments, the long field, the millpond and its watermill, a red barn with two silos, pens for the sheep, cows, pigs, hens and horses, and an apple orchard with its store. |
+| **Knoll Mill** | A tower mill of 1814 on a knoll above Millbrook's hay meadow: a limewashed brick tower, a reefing stage at the stone floor, a tarred boat-shaped cap with a fantail, and four patent sails. A cart of wheat stands by the door. |
+| **Circuit** | Gull Bay Circuit, a Grand Prix track on the plain east of Millbrook, between the mountains and the Vale Road: 1.5 km and fifteen turns, from Paddock Bend and the Knoll Hairpin through the Esses to the Harbour Hairpin and the Last Corner. Run-offs of asphalt and gravel with tyre walls, kerbs at every apex, a pit lane and a pit building of ten garages with Race Control's tower and the podium, the main grandstand on the road, the Hillside and Infield stands, a footbridge, the start gantry, floodlight masts, marshal posts, the paddock, a medical centre with its helicopter pad, and a car park across the road. The plate was widened east to make room. |
 
 ![Sahel by day: Sahel Central's woven lattice among the Financial District's towers, Sahel Motors and its car towers at the foot of the hills, the metro's viaducts, and the container terminal on the waterfront](docs/sahel.png)
 
@@ -160,6 +162,23 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - Select a booster or ship and choose Track (or Follow) to fly with it: the view leaves the plate and keeps it in sight all the way up. The cards show the count, the flight time, height and speed, and what each bay, the factory and the shop are making.
 
     ![Gull Spit Starbase: Booster 20 selected eight seconds after liftoff, climbing past the launch tower with Ship 41 on top and steam rolling from the flame trench, the Mega Bays, the Rocket Garden and the tank farm behind, Millbrook beyond](docs/starbase.png)
+27. **Knoll Mill:**
+    - The miller walks up the track from the fields before dawn, goes out onto the stage to set the sails' shutters, and lets the brake off. The fantail keeps winding the cap round to face the wind, which veers and backs through the day, freshens in a shower and drops in fog.
+    - The sack hoist lifts the wheat off the cart up through the trapdoors to the bin floor, he tips it into the bins, it runs down through the hoppers to the stones, and the flour comes down the spouts into sacks on the meal floor. He ties them off and carries them down to the stack by the door.
+    - At dusk, in a gale or in a calm he puts the brake on; the sails come to rest in a cross and he opens their shutters. The card gives the wind's force and quarter, which way the cap faces, the sails' speed and the day's sacks.
+    - Look inside opens the tower as a section down the middle: five floors with the scales, the meal spouts and the governor, the stones in their tuns, the grain bins and the hoist, and the brake wheel and wallower in the cap, all turning while the sails do.
+
+    ![Knoll Mill opened up: the tower cut down the middle with its floors, the stones in their tuns and the upright shaft, the brake wheel in the cap, the sails turning and the miller on a ladder](docs/windmill.png)
+
+28. **The Gull Bay Grand Prix:** a weekend is two days, and the plate opens on race day.
+    - At first light the ten cars of five teams leave their garages, run round to the grid and line up two by two. They go round on the formation lap, weaving to warm their tyres, and stop on their slots; the five pairs of red lights on the gantry come on one by one and go out.
+    - Four laps. A faster car closes up in the slipstream on a straight, pulls out and passes; in the corners it waits. Each car comes into the pits once for tyres, and the crew is round it at its box for a couple of seconds. Now and then a car spins at a corner and the marshal there shows the yellow flag; once in a while one stops for good.
+    - The race runs on into the night under the floodlights. The first three go up onto the podium on the pit building's balcony, and the cars are pushed back into their garages.
+    - The next day is practice in the morning and qualifying in the afternoon: an out lap, one flying lap and an in lap each, and the order of their times is the next race's grid.
+    - The circuit's card shows the session, the order with the gaps (or the times) and the fastest lap, and can follow the leader. A car's card shows its team, position, gap, laps, lap times, tyres and the corner it is at. Look inside opens the pit building.
+
+    ![Gull Bay Circuit on race day: the cars in the Esses, the pit building and its paddock, the grandstands full, the car park across the Vale Road](docs/circuit.png)
+
 
 Each stage only runs as fast as the next one lets it:
 - A full shop keeps the box trucks waiting at the warehouse.
@@ -173,7 +192,7 @@ Each stage only runs as fast as the next one lets it:
 
 | Action | Mouse / touch | Keys |
 | --- | --- | --- |
-| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East · Village · Sky · Starbase, top right | `1`–`9`, `P`, `E`, `V`, `O`, `S` |
+| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East · Village · Sky · Starbase · Circuit, top right | `1`–`9`, `P`, `E`, `V`, `O`, `S`, `R` |
 | Whole map | ⌂ button | `0` |
 | Skip ahead six hours | clock button | `N` |
 | Pan | drag | arrow keys |
@@ -184,13 +203,13 @@ Each stage only runs as fast as the next one lets it:
 | Pause | ❚❚ button | `Space` |
 | Light / dark | ◐ button | `T` |
 
-Some cards have buttons: Look inside on buildings, stations, homes, the Beacon Telescope's dome and Starbase's factory, shop and bays, Track on a rocket, Track on an order or a fire, Follow ENG-1 at the fire station, and Follow a new car at Car Works.
+Some cards have buttons: Look inside on buildings, stations, homes, the Beacon Telescope's dome, Starbase's factory, shop and bays, Knoll Mill and the pit building at Gull Bay, Follow the leader at the circuit, Track on a rocket, Track on an order or a fire, Follow ENG-1 at the fire station, and Follow a new car at Car Works.
 
 When something that moves is selected, the map draws its route as a dashed line and rings its next stop:
 - Trucks and the bus show their whole loop.
 - Cars, forklifts and people show the way ahead.
 
-The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, Sahel Motors' showroom, the observatory's main dome, Starbase's Starfactory, Engine Shop and Mega Bays, and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in. The stations and the showroom also open when you zoom in close over them.
+The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, Sahel Motors' showroom, the observatory's main dome, Starbase's Starfactory, Engine Shop and Mega Bays, Knoll Mill, the pit building at Gull Bay, and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in. The stations and the showroom also open when you zoom in close over them.
 
 ## How the skill carries over to WebGL
 
@@ -200,7 +219,7 @@ ai-iso-skill draws SVG figures with a small projection kernel. This page keeps t
 - **Same kernel.** `plane(O,U,V)`, `TOP`, `FRONT`, `SIDE` and `box(x,y,z,w,d,h)` keep their meanings. Doors, windows, ribs, road paint, zebras, signs, clock faces and text are drawn flat in a face's own 2D units and placed with that face's matrix.
 - **Hairlines.** Every edge is a `LineSegments2` exactly 1 CSS pixel wide at any zoom, the WebGL equivalent of `vector-effect: non-scaling-stroke`. Faces are flat, unlit and opaque, so the depth buffer hides lines behind them.
 - **Day and night.** Every colour is a CSS custom property, with one set for dark and one for light. Through the evening the materials slide toward a single night palette. Windows and lamps are two extra fills that light up as everything else darkens.
-- **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, the showroom, the main dome on Beacon Hill, Starbase's four buildings and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only.
+- **Section drawings.** The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, the showroom, the main dome on Beacon Hill, Starbase's four buildings, the pit building at Gull Bay and every home have a shell and a cut. The cut follows technical drawings: walls cut low and hatched on the cut, and the roof as an outline only. Knoll Mill, being a tower, is cut the other way: down the middle, its near half taken away, so all five floors show at once.
 - **The look.** It uses two greys for lines and one `--live` colour, reserved for what is live: the selection and its route, a busy bay's lamp, a forklift's beacon, the police and fire light bars, the bank alarm, gunfire and the helicopter's searchlight, a chimney's flames, a welding robot's sparks, a rocket's exhaust and the lighthouse beam. Goods and uniforms use the two-tone fill.
 - **The frame.** The page is a plate with `Fig 1` and the clock (and `night`, `rain` or `fog` when it is), the places, the instruction and a live readout in the four corners. At night the whole page goes dark, even in the light theme, and the ◐ choice is remembered.
 
@@ -221,7 +240,8 @@ three.js and the font are bundled with the site, so it runs without loading anyt
   - `fire(id)` starts a chimney fire now, at that house or any house.
   - `train()` brings the next train in now.
   - `launch()` starts the count now, if a stack stands on the mount at Gull Spit.
-  - The `incident`, `sim`, `shop`, `bank`, `fireSys`, `worksSys`, `trainSys`, `metroSys`, `brtSys`, `motorsSys`, `portSys`, `obsSys` and `sbSys` state are there too.
+  - `race(session)` starts a session at Gull Bay now: `'practice'`, `'quali'` or `'grid'` (the formation lap, the start and the race follow from the grid).
+  - The `incident`, `sim`, `shop`, `bank`, `fireSys`, `worksSys`, `trainSys`, `metroSys`, `brtSys`, `motorsSys`, `portSys`, `obsSys`, `sbSys`, `millSys` and `f1Sys` state are there too.
 - `?seed=<number>` changes the random seed. The simulation runs on a fixed 1/60 s step, so a given seed always plays out the same way.
 
 ## Credits

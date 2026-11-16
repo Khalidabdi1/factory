@@ -42,14 +42,14 @@ Next 16 (App Router, Turbopack), React 19, TypeScript, and `three@0.186.1` from 
 | `yard/theme.ts` | Token → material mapping, the `NIGHT` palette, `applyTheme()`, and `shade(n)`, the day/night blend. |
 | `yard/layout.ts` | World constants and the coordinate table (where everything is), plus `ROADS` / `BLOCKS`, `onRoad`, `zAt`. |
 | `yard/models/`, `yard/world/` | Builders for moving models and for the static town. |
-| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `fire` (the fire station, ENG-1, its watch, chimney fires), `works` (Car Works' line and lot), `train` (FRT-7), `boats`; for Sahel: `sahel` (its traffic, pavements, `Citizen`s, building cards), `metro`, `brt` (the Metrobus), `motors` (Sahel Motors and CS-1), `port` (the container terminal). |
+| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `fire` (the fire station, ENG-1, its watch, chimney fires), `works` (Car Works' line and lot), `train` (FRT-7), `boats`; for Sahel: `sahel` (its traffic, pavements, `Citizen`s, building cards), `metro`, `brt` (the Metrobus), `motors` (Sahel Motors and CS-1), `port` (the container terminal); `windmill` (Knoll Mill and its miller), `f1` (Gull Bay Circuit's weekend). |
 
 The React component and the engine share a contract: the engine finds the plate's elements **by id**: `clock`, `stage`, `view`, `card`, `cardRows`, `note`, `readout`, `tagSel`, and the rest. React never re-renders the plate. Per-frame UI updates are imperative.
 
 ## Coordinates and drawing
 
 - **Coordinates.** Scene code uses the skill's frame: +x east (down-right on screen), +y south toward the sea (down-left), +z up. `W(x, y, z)` maps that to three.js's y-up world. The orthographic camera looks down (-1,-1,-1), so only south faces (`FRONT`) and east faces (`SIDE`) are seen. Put doors, signs and windows that matter on those faces.
-- **Sizes.** 1 unit = 1 m. The world is `WORLD`: x −60–1000 and y −84–420. The old town is x 0–440; the green belt of woods x 440–520; Sahel (`CITY`) x 520–960; woods again to the east edge. The hills are at y < −4, the main road (Riverside Rd, Sahel Blvd in Sahel) at y 124–138, Market St (Souq St) at y 198–212, Coast Rd (the Corniche) at y 260–274, the beach at y 279–296 and the sea from y 296. Sahel Motors stands on a terrace north of the railway (`MOTORS`), the port on land made out over the sea (`PORT`, y 279–340). The full table is at the top of `yard/layout.ts`.
+- **Sizes.** 1 unit = 1 m. The world is `WORLD`: x −60–2420 and y −84–420 (the east country past x 1000, `EAST` in `land.ts`). The old town is x 0–440; the green belt of woods x 440–520; Sahel (`CITY`) x 520–960; woods again to the east edge. The hills are at y < −4, the main road (Riverside Rd, Sahel Blvd in Sahel) at y 124–138, Market St (Souq St) at y 198–212, Coast Rd (the Corniche) at y 260–274, the beach at y 279–296 and the sea from y 296. Sahel Motors stands on a terrace north of the railway (`MOTORS`), the port on land made out over the sea (`PORT`, y 279–340). The full table is at the top of `yard/layout.ts`.
 - **The `Part` builder.** It collects faces and lines into a few draw calls. Shapes: `box(x,y,z,w,d,h,tone)`, `extrude`, `cylZ`, `cylY`, `geo`. Flat detail: `draw(M, segs)`, `rect2`, `fill2` and `text`, drawn in a face's local 2D units through `TOP`, `FRONT`, `SIDE` or `plane()`. Finish with `build(name)`.
 - **Tones.** `n` is the normal body/deck. `k` is two-tone, for goods and uniforms. `l` (lamps) and `w` (windows) light up at night by themselves. `g` is glass, `gs` grass, `s` sand.
 - **Lines.** Every line is a 1 CSS px `LineSegments2`. Faces are flat, unlit and opaque.
@@ -297,3 +297,21 @@ circuit built; 30 the race weekend run on it; 31 docs and figures. Nothing is pu
   and spur wheel, the stone nuts, the governor and the sack on the hoist. The miller (`look:'miller'`) walks his floors
   with a height of his own (`lz`), climbing the ladders slowly; `peek.hides` hides only those inside the walls. The
   windpump's fan now follows the same wind.
+- Phase 29: the plate widened east to x 2420 (`EAST.x1`; `EAST.old` is the old edge, where the east country's tree and beach
+  loops still stop so their `rand()` order is unchanged). The low hills at the east edge moved out to x 2352–2420, the hill
+  band got more peaks, and the Vale Road runs on straight to the new edge (Sahel's through traffic follows it). Gull Bay
+  Circuit (`world/circuit.ts`) stands on the plain between: `TRACK` is a closed `Path` through `V`'s corners, each with a
+  fillet of its own radius; `KAPPA` and `VPROF` are its curvature and fastest speed every metre (cornering, braking and
+  accelerating limits, passed round the lap three times). The track is drawn from samples every 2 m: asphalt, edge lines,
+  kerbs where the corner is tight, and on each side a run-off whose width is marched out until it meets another part of
+  the track or something in `KEEP`; outside a corner it is asphalt then gravel and ends in a tyre wall, elsewhere a
+  concrete wall, with a catch fence. The pit lane (`PIT_LANE`, and per garage `pitPaths(i)`: out, in, and through its box)
+  runs in from Bay and out at the Mill Kink; the pit building is a peek building with all its garage doors in one group.
+  The main grandstand has no roof, which would hide the grid. View 14 and key `R`.
+- Phase 30: the weekend (`sim/f1.ts`, `models/f1.ts`). Each `Racer` is on the track (`s` along the lap, `off` to the right
+  of the racing line, `d` its total distance) or on one of its pit paths (`ps`); in the pit lane its place on the lap is
+  `pitS()`, so lap counting goes on through a stop. Speed is `vAt(s)` times `pace()` (by plan and tyre wear); a car closes
+  up behind one in its lane, takes a tow and pulls out to pass where the next 70 m are fast, and slots onto the grid by
+  coming down its middle. `race.phase` runs grid → formation → lights → race → finish → podium → closed on race day and
+  practice → quali → closed the day after (`race.next`); the race is four laps, so it runs from about noon into the night.
+  Spins (`spinAt`) and a rare stop for good are drawn at the line. Debug `yard.race(session)`.
