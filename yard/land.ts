@@ -12,7 +12,7 @@ import { ease } from './kernel/math';
 //
 // This module is plain arithmetic: heights, the corridors and how they are cut through the land. The builders in
 // world/east*.ts draw it, layout's zAt reads it, and the metro, the traffic and the train follow its lines.
-export const EAST = { x0:1000, x1:1900, y0:-84, y1:244, step:[5, 4] as [number, number],
+export const EAST = { x0:1000, x1:2420, old:1900, y0:-84, y1:244, step:[5, 4] as [number, number],
   gorge:{ half:10, rim:[29, 25] }, saddle:{ y:96, depth:11 }, qamar:[1440, 45] as [number, number] };
 // the observatory's pad on Beacon Hill: its centre, its flat radius, the apron round it, its height
 export const OBS = { c:[1440, 45] as [number, number], r:34, apron:22, z:54 };
@@ -27,7 +27,8 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 // the hills along the north edge of the plate: a ridge of peaks, its foot at y −4 (the old town's Grey Peaks, the lower
 // Sahel hills behind the city, and the mountains east of it, higher again)
 const PEAKS = [[-42, 26], [30, 30], [95, 44], [160, 33], [228, 48], [300, 38], [362, 46], [425, 34], [496, 28], [574, 24], [652, 32], [738, 27], [818, 36], [898, 30], [978, 38],
-  [1062, 44], [1132, 52], [1210, 58], [1296, 50], [1364, 62], [1446, 66], [1522, 56], [1604, 64], [1684, 70], [1766, 60], [1842, 68], [1904, 58]];
+  [1062, 44], [1132, 52], [1210, 58], [1296, 50], [1364, 62], [1446, 66], [1522, 56], [1604, 64], [1684, 70], [1766, 60], [1842, 68], [1904, 58],
+  [1982, 64], [2062, 72], [2140, 60], [2222, 68], [2300, 62], [2378, 74], [2450, 60]];
 export function hillNatural(x: number, y: number, t: number) {
   const ridge = Math.max(...PEAKS.map(([px, ph]) => ph * Math.exp(-(((x - px) / 34) ** 2)))) + 7;
   const s = t < 0.72 ? ease(t / 0.72) : 1 - 0.3 * (t - 0.72) / 0.28;
@@ -49,8 +50,8 @@ export function natural(x: number, y: number) {
   const pl = 26 * (1 - ss(186, 232, y)) * ss(1262, 1282, x) * (1 - ss(1548, 1564, x)), plat = pl > 0 ? pl + (und + qamar) * Math.min(1, pl / 26) : 0;
   // the second ridge, its east face falling into Millbrook Vale
   const ry = 42 * (1 - ss(150, 232, y)), r2 = ry * (x < 1556 ? ss(1500, 1556, x) : 1 - ss(1556, 1622, x));
-  // low hills at the east edge, north of the coast
-  const eh = 34 * ss(1840, 1900, x) * (1 - ss(110, 170, y));
+  // low hills at the east edge, north of the coast, past Gull Bay Circuit
+  const eh = 34 * ss(2352, 2420, x) * (1 - ss(110, 170, y));
   let east = Math.max(r1, plat, r2, eh);
   if (east > 1) east += (1.3 * Math.sin(x * 0.11 + y * 0.07) + 1.0 * Math.sin(x * 0.05 - y * 0.13)) * Math.min(1, (east - 1) / 6);
   // Beacon Hill's summit, levelled for the observatory, easing back into the hillside round it
@@ -116,7 +117,7 @@ export const LINE_EAST = new Corridor('Line 1', L1X.path, s => L1_DECK + l1Rise(
 export const ROAD_PTS: [number, number, number][] = [[1000, 131, 0], [1040, 131, 0], [1076, 126, 1.0], [1084, 44, 6.6],
   [1084, 36, 7.1], [1099, 36, 7.6], [1099, 118, 13.4], [1099, 126, 13.9], [1114, 126, 14.4], [1114, 44, 20.2], [1114, 36, 20.7], [1129, 36, 21.2], [1129, 106, 26.4],
   [1140, 112, 27.4], [1172, 100, 29.6], [1214, 94, 30.6], [1252, 90, 31.0], [1304, 86, 29.2], [1380, 84, 27.6], [1470, 80, 27.4], [1514, 78, 27.8], [1582, 76, 22.6],
-  [1640, 48, 17.0], [1700, 34, 12.0], [1748, 64, 7.6], [1754, 112, 3.6], [1756, 156, 0.4], [1790, 172, 0], [1908, 176, 0]];
+  [1640, 48, 17.0], [1700, 34, 12.0], [1748, 64, 7.6], [1754, 112, 3.6], [1756, 156, 0.4], [1790, 172, 0], [1908, 176, 0], [2428, 176, 0]];
 export const ROAD_HW = 4.6, LANE = 1.75;
 // a height along a polyline of (x, y, z): the z of the nearest point on it
 export function zAlong(pts: number[][]) {

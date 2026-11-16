@@ -71,6 +71,7 @@ export function crossClear(a, b) {
 export const compass = h => { const c = Math.cos(h), s = Math.sin(h); return c > 0.7 ? 'eastbound' : c < -0.7 ? 'westbound' : s > 0.7 ? 'southbound' : s < -0.7 ? 'northbound' : 'turning'; };
 export function streetAt(x, y) {
   if (Math.hypot(x - RAB.x, y - RAB.y) < 16) return 'the roundabout';
+  if (x > 1936 && x < 2340 && y > 0 && y < 170) return 'Gull Bay Circuit';
   if (x > 436) return sahelStreet(x, y);
   if (y > 138 && y < 142.7 && x > 345 && x < 384) return 'the parking on Riverside Rd';
   if (y > 117 && y < 140) return x > 136 && x < 198 && y < 124 ? 'the truck park' : 'Riverside Rd';

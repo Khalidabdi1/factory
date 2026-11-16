@@ -23,7 +23,7 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys, f1Sys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 // (stood well back, so that a rocket three kilometres up is still in front of it)
@@ -39,7 +39,7 @@ controls.listenToKeyEvents(window);
 // the places the caption links jump to: [x0, x1, y0, y1]
 const WB = [WORLD.x0, WORLD.x1, WORLD.y0, WORLD.y1];
 const VIEWS = [[0, 200, 0, 150], [204, 360, 0, 150], [352, 440, 212, 298], [53, 300, 138, 262], [0, 440, 255, 336], [206, 410, -58, 2], [520, 960, 0, 270], [566, 760, 120, 284], [448, 676, -56, 6], [640, 966, 276, 420],
-  [1040, 1640, -40, 250], [1612, 1850, -20, 236], [1348, 1500, 0, 90, 30, 66], [1300, 1880, 286, 406, 0, 60]];
+  [1040, 1640, -40, 250], [1612, 1850, -20, 236], [1348, 1500, 0, 90, 30, 66], [1300, 1880, 286, 406, 0, 60], [1936, 2340, 0, 172, 0, 8]];
 // fitZoom frames the whole plate; baseZoom frames the two towns (the plate as it was before the east country), and the
 // closest zoom and the debug look() go by it
 let fitZoom = 1, baseZoom = 1, HOME = CENTER.clone(), goal = null, follow = false, sized = false;
@@ -113,7 +113,7 @@ function select(ent) {
 }
 hooks.forget = forget;
 function forget(ent) { if (selected === ent) select(null); if (hovered === ent) hovered = null; }
-const STILL = ['factory', 'works', 'lot', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'station', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride', 'brtstop', 'line', 'showroom', 'cartower', 'crossing', 'terminal', 'block', 'observatory', 'starbase', 'engine', 'windmill'];
+const STILL = ['factory', 'works', 'lot', 'gate', 'conveyor', 'warehouse', 'shop', 'bank', 'police', 'station', 'building', 'house', 'range', 'lighthouse', 'resident', 'pier', 'ride', 'brtstop', 'line', 'showroom', 'cartower', 'crossing', 'terminal', 'block', 'observatory', 'starbase', 'engine', 'windmill', 'circuit', 'pits'];
 const followable = ent => !!ent && !STILL.includes(ent.kind);
 function setFollow(on) { follow = on && followable(selected); $('cardFollow').setAttribute('aria-pressed', follow); }
 function refresh() {
@@ -184,7 +184,7 @@ function drawRoute() {
 // to show who is in) the first time they open.
 const PEEK = [[whG, warehouse], [shopG, shop], [bank.groups[0], bank], [fireSys.station.groups[0], fireSys.station], [worksSys.works.groups[0], worksSys.works], ...homes.map(h => [h.groups[0], h]),
   ...Object.values(metroSys.stations).map(s => [s.groups[0], s]), [motorsSys.groups[0], motorsSys], [obsSys.main.g, obsSys.main],
-  ...['factory', 'shop', 'bay1', 'bay2'].map(k => [sbSys.groups[k], sbSys.ents[k]]), [millSys.mill.groups[0], millSys.mill]];
+  ...['factory', 'shop', 'bay1', 'bay2'].map(k => [sbSys.groups[k], sbSys.ents[k]]), [millSys.mill.groups[0], millSys.mill], [f1Sys.pits.groups[0], f1Sys.pits]];
 hooks.inBuilding = (x, y) => PEEK.some(([g]) => { const b = g.userData.peek.box; return x > b[0] && x < b[1] && y > b[2] && y < b[3]; });
 // a shut building hides who is in it; a station only those up on its floors, not those in the street beneath it
 hooks.closedAt = (x, y, p) => { for (const [g] of PEEK) { const pk = g.userData.peek, b = pk.box;
@@ -257,7 +257,7 @@ window.addEventListener('keydown', e => {
   if (e.key.startsWith('Arrow')) { goal = null; setFollow(false); return; }
   const act = { Escape:() => select(null), f:() => setFollow(!follow), F:() => setFollow(!follow), ']':() => cycle(1), '[':() => cycle(-1), ' ':togglePause,
     '+':() => zoomBy(1.4), '=':() => zoomBy(1.4), '-':() => zoomBy(1 / 1.4), '_':() => zoomBy(1 / 1.4), '0':resetView, Home:resetView, t:toggleTheme, T:toggleTheme,
-    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5), 7:() => goView(6), 8:() => goView(7), 9:() => goView(8), p:() => goView(9), P:() => goView(9), e:() => goView(10), E:() => goView(10), v:() => goView(11), V:() => goView(11), o:() => goView(12), O:() => goView(12), s:() => goView(13), S:() => goView(13) }[e.key];
+    n:skipTime, N:skipTime, 1:() => goView(0), 2:() => goView(1), 3:() => goView(2), 4:() => goView(3), 5:() => goView(4), 6:() => goView(5), 7:() => goView(6), 8:() => goView(7), 9:() => goView(8), p:() => goView(9), P:() => goView(9), e:() => goView(10), E:() => goView(10), v:() => goView(11), V:() => goView(11), o:() => goView(12), O:() => goView(12), s:() => goView(13), S:() => goView(13), r:() => goView(14), R:() => goView(14) }[e.key];
   if (act) { act(); e.preventDefault(); }
 });
 
@@ -295,7 +295,7 @@ function tick(now) {
   // people's detail by how big they are on screen (zoom is screen px per metre): a lite figure under about 4 px a
   // metre, none at all under about 1.5
   const tiny = camera.zoom < 4.2, far = camera.zoom < 1.5;
-  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); setTextFar(far); motorsSys.detail(!tiny); portSys.detail(far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place(); for (const b of brtSys.buses) b.place(); for (const f of sim.forklifts) f.place(); villageSys.detail(); sbSys.detail(far); millSys.detail();
+  if (tiny !== TINY || far !== FAR) { setTiny(tiny, far); setTextFar(far); motorsSys.detail(!tiny); portSys.detail(far); for (const p of sim.people) p.place(); for (const c of sim.cars) c.place(); for (const t of metroSys.trains) t.place(); for (const b of brtSys.buses) b.place(); for (const f of sim.forklifts) f.place(); villageSys.detail(); sbSys.detail(far); millSys.detail(); f1Sys.detail();
     // a pallet a few pixels across is its load and nothing else: one draw call instead of four
     for (const pl of sim.pallets) for (const m of pl.group.children) if (m.userData.fill !== 'kob') m.visible = !far; }
   updatePeek();
@@ -323,7 +323,7 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [...millSys.entities(), ...sbSys.entities(), ...obsSys.entities(), ...villageSys.entities(), ...eastSys.places, eastSys.road, ...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [...f1Sys.entities(), ...millSys.entities(), ...sbSys.entities(), ...obsSys.entities(), ...villageSys.entities(), ...eastSys.places, eastSys.road, ...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...(incident.heli ? [incident.heli] : []), ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {
@@ -342,8 +342,10 @@ if (DEBUG) {
     // and for a getaway, end 'roadblock' | 'bail' | 'escape'; any left out are drawn as usual
     robbery:(job, plan, end) => { if (incident.phase === 'quiet') { incident.force = { job, plan, end }; incident.next = sim.t; } return incident.phase; },
     // a chimney fire now, at a house by id or any house with a chimney (when none is burning): returns the house
-    worksSys, trainSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys,
+    worksSys, trainSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys, f1Sys,
     // a launch now, if a stack stands on the mount
+    // a session at Gull Bay now: 'practice', 'quali' or 'grid' (from which the formation lap, the start and the race follow)
+    race:(ph = 'grid') => f1Sys.jump(ph),
     launch:() => sbSys.launchNow(),
     // the next train now (when none is in): returns its state
     train:() => { if (trainSys.state === 'away') trainSys.next = sim.t; return trainSys.state; },

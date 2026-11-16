@@ -55,7 +55,7 @@ function gorgeFloor(p: Part) {
   // the beach from the woods to the east edge, shelving into the sea, the stream running out across it
   p.fill2(G, EAST.x0, 279, EAST.x1 - EAST.x0, 10, 'sand', 0.015);
   p.poly('sand', [W(EAST.x0, 289, 0.015), W(EAST.x1, 289, 0.015), W(EAST.x1, 296, SEA_Z + 0.015), W(EAST.x0, 296, SEA_Z + 0.015)]);
-  for (let i = 0; i < 520; i++) { const x = rand(EAST.x0 + 1, EAST.x1 - 1), y = rand(280, 294.5); p.seg('detail', W(x, y, beachZ(y) + 0.04), W(x + 0.35, y + 0.2, beachZ(y) + 0.04)); }
+  for (let i = 0; i < 520; i++) { const x = rand(EAST.x0 + 1, EAST.old - 1), y = rand(280, 294.5); p.seg('detail', W(x, y, beachZ(y) + 0.04), W(x + 0.35, y + 0.2, beachZ(y) + 0.04)); }
 }
 
 // ---- what the trees keep off: the corridors as cut, the coast road, the beach, the gorge's floor ----
@@ -86,7 +86,7 @@ function trees(p: Part) {
     if (k < 0.55) tree(p, x, y, s, landZ(x, y)); else pine(p, x, y, s * 1.1, landZ(x, y));
   }
   // pines up the slopes, thinning with height; none on cliffs, on the snow, in the gorge or on the valley floor
-  for (let gx = 1062; gx < EAST.x1 - 2; gx += 7) for (let gy = -80; gy < 236; gy += 7) {
+  for (let gx = 1062; gx < EAST.old - 2; gx += 7) for (let gy = -80; gy < 236; gy += 7) {
     const x = gx + rand(-2.6, 2.6), y = gy + rand(-2.6, 2.6), s = rand(0.7, 1.12), r = rand(0, 1), z = landZ(x, y), sl = slope(x, y);
     const keep = z < 3 ? 0.04 : z < 20 ? 0.5 : z < 34 ? 0.26 : z < 46 ? 0.08 : 0;
     if (r > keep || sl > 1.15 || kept(x, y) || Math.abs(x - gorgeC(y)) < 31) continue;

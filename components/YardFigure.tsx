@@ -31,6 +31,7 @@ export default function YardFigure() {
           <button data-view="11" title="Millbrook (V)">Village</button>
           <button data-view="12" title="Beacon Hill Observatory (O)">Sky</button>
           <button data-view="13" title="Gull Spit Starbase (S)">Starbase</button>
+          <button data-view="14" title="Gull Bay Circuit (R)">Circuit</button>
         </nav>
       </div>
       <div className="stage" id="stage">

@@ -41,6 +41,8 @@ export const OUTFITS = {
     civ('k', 'k', 'coat', 'short', 'hat', null, false), civ('n', 'n', 'skirt', 'bun', null, null, true), civ('k', 'n', 'trousers', 'none', 'cap', null, false)],
   // the miller at Knoll Mill: white with flour from his cap to his boots
   miller:[civ('n', 'n', 'trousers', 'short', 'cap', null, false)],
+  // racing drivers on the podium, in their overalls and the team's cap
+  racer:[civ('k', 'k', 'trousers', 'short', 'cap', null, false), civ('n', 'n', 'trousers', 'short', 'cap', null, false), civ('k', 'n', 'trousers', 'short', 'cap', null, true)],
 };
 OUTFITS.shopper = OUTFITS.walker;
 export const LOOKS = Object.keys(OUTFITS);
