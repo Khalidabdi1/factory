@@ -457,7 +457,7 @@ export function buildStarbaseSys() {
     new Hand('T. Okonjo', 1334, 318.5, 0, () => cur() ? `rolling a ring · ${cur()}` : 'waiting for the next order', 'the Starfactory'),
     new Hand('L. Brennan', 1350, 318.5, Math.PI / 2, () => cur() ? `welding a ring's seam · ${cur()}` : 'checking the welder', 'the Starfactory'),
     new Hand('M. Ferreira', 1369, 326.5, -Math.PI / 4, () => cur() ? `welding a barrel · ${cur()}` : 'cleaning the turntable', 'the Starfactory'),
-    new Hand('J. Haddad', 1398, 327, -Math.PI / 3, () => cur()?.includes('Ship') ? `laying tiles · ${cur()}` : 'sorting tiles', 'the Starfactory'),
+    new Hand('J. Hollis', 1398, 327, -Math.PI / 3, () => cur()?.includes('Ship') ? `laying tiles · ${cur()}` : 'sorting tiles', 'the Starfactory'),
     ...shop.stands.map((s: any, i: number) => new Hand(['R. Iyer', 'K. Novak', 'D. Mensah'][i], SB.shop.stands[i][0], SB.shop.stands[i][1] + 2.6, -Math.PI / 2,
       () => s.on ? `fitting ${RAPTOR.pieces[Math.min(5, Math.floor(s.t * 6))]} · ${s.id}` : 'waiting for parts', 'the Engine Shop')),
     ...bays.map((b, i) => new Hand(['P. Lindqvist', 'A. Sato'][i], b.b.c[0] + 7.5, b.b.c[1] + 6, -Math.PI * 0.75,

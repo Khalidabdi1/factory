@@ -196,7 +196,7 @@ class Crane {
     const m = buildSTS(`STS ${i + 1}`);
     Object.assign(this, { kind:'sts', id:`STS ${i + 1}`, i, x:PORT.cranes[i], tx:PORT.cranes[i], ty:STS.back + 3, sz:TRAVEL, boomK:1, box:null, mode:'idle', step:'park', t:0,
       d:0, l:0, lPlanned:0, moves:0, k:null, r:0, pick:[0, 330, 20], g:m.g, boom:m.boom, trolley:m.trolley, spreader:m.spreader, ropes:m.ropes, staysG:m.stays, staysK:-1,
-      op:pickOf(['Y. Saleh', 'R. Kurian', 'M. Haddad', 'J. Ferreira', 'A. Mubarak', 'T. Okoye']) });
+      op:pickOf(['Y. Salter', 'R. Kurian', 'M. Hadley', 'J. Ferreira', 'A. Mayberry', 'T. Okoye']) });
     this.g.userData.entity = this; this.groups = [this.g]; scene.add(this.g);
     this.bays = i === 0 ? [0, 1, 2] : i === 1 ? [3, 4, 5] : [6, 7];
   }
@@ -352,7 +352,7 @@ class Tractor {
       return;
     }
     Object.assign(this, { kind:'tractor', id:`T-0${i + 1}`, i, pair:Math.floor(i / 2), toff:TOFF, pin:TRAILER.pin, s:sOf(700 + i * 21, LANE) + TOFF, v:0, lat:0, latT:0, box:null, next:'crane', at:null, ready:false, trips:0, pick:[-2, 0, 2.6],
-      driver:pickOf(['K. Nair', 'H. Al-Shammari', 'S. Pillai', 'O. Haddad', 'P. Musa', 'F. Rahimi', 'D. Mensah', 'I. Qureshi']) });
+      driver:pickOf(['K. Nair', 'H. Shaw', 'S. Pillai', 'O. Holden', 'P. Moss', 'F. Rimmer', 'D. Mensah', 'I. Quinlan']) });
     this.cab = buildYardTractor(); this.trailer = buildSkeletal();
     for (const g of [this.cab, this.trailer]) { g.userData.entity = this; scene.add(g); }
     this.lite = [new Part().box(-4.4, -1.2, 0.5, 4.4, 2.4, 2.4, 'kb').build('tractorLite'), new Part().box(-TRAILER.len, -1.22, 0.5, TRAILER.len, 2.44, 1.0, 'kb').build('trailerLite')];

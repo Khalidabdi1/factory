@@ -23,10 +23,10 @@ export const clock = t => hhmm(hourAt(t));
 const nightOf = h => h < 5 ? 1 : h < 7 ? 1 - ease((h - 5) / 2) : h < 18.5 ? 0 : h < 20.5 ? ease((h - 18.5) / 2) : 1;
 export const night = () => nightOf(hourAt(sim.t));
 export const kmh = v => `${Math.round(v * 3.6)} km/h`;
-export const DRIVERS = ['A. Haddad', 'S. Okafor', 'M. Rossi', 'J. Park', 'L. Novak', 'R. Silva', 'T. Brandt', 'K. Mensah', 'D. Ferreira'];
-export const STAFF = ['R. Diaz', 'M. Chen', 'O. Bakr', 'L. Ferraro'];
-export const NAMES = ['A. Costa', 'B. Ivanova', 'C. Murphy', 'D. Sato', 'E. Lund', 'F. Kaya', 'G. Moreau', 'H. Ali', 'I. Novak', 'J. Smith', 'K. Osei', 'L. Berg',
-  'M. Dubois', 'N. Rao', 'O. Weiss', 'P. Quinn', 'Q. Zhou', 'R. Lopes', 'S. Mäkinen', 'T. Okoro', 'U. Varga', 'V. Petrov', 'W. Hughes', 'Y. Tanaka', 'Z. Haddad'];
+export const DRIVERS = ['A. Harding', 'S. Okafor', 'M. Rossi', 'J. Park', 'L. Novak', 'R. Silva', 'T. Brandt', 'K. Mensah', 'D. Ferreira'];
+export const STAFF = ['R. Diaz', 'M. Chen', 'O. Baker', 'L. Ferraro'];
+export const NAMES = ['A. Costa', 'B. Ivanova', 'C. Murphy', 'D. Sato', 'E. Lund', 'F. Kaya', 'G. Moreau', 'H. Allen', 'I. Novak', 'J. Smith', 'K. Osei', 'L. Berg',
+  'M. Dubois', 'N. Rao', 'O. Weiss', 'P. Quinn', 'Q. Zhou', 'R. Lopes', 'S. Mäkinen', 'T. Okoro', 'U. Varga', 'V. Petrov', 'W. Hughes', 'Y. Tanaka', 'Z. Hadley'];
 export const SKUS = [
   { name:'Gear housings', code:'GH-24', units:[24, 48], kg:[380, 520] },
   { name:'Cartons', code:'CT-60', units:[48, 96], kg:[160, 260] },

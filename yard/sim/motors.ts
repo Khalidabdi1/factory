@@ -310,7 +310,7 @@ class NewCar extends Car {
 }
 
 // ---- the people: consultants at the desks, a receptionist, and the city's customers ----
-const STAFF = ['R. Al-Amri', 'S. Haddad', 'M. Okafor', 'L. Al-Sudairi'], DESK_NAME = ['desk 1', 'desk 2', 'desk 3', 'desk 4'];
+const STAFF = ['R. Amery', 'S. Harper', 'M. Okafor', 'L. Sutherland'], DESK_NAME = ['desk 1', 'desk 2', 'desk 3', 'desk 4'];
 class Consultant extends Person {
   [k: string]: any;
   constructor(id: string, seat: any, role: string, at: number[]) { super({ look:'teller', id, x:at[0], y:at[1], speed:1.3 }); Object.assign(this, { seat, role, sold:0, with:null }); }

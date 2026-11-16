@@ -15,7 +15,7 @@ export const HOUSEHOLDS = [{ text:'two adults, two children', n:4 }, { text:'a r
   { text:'a family of five', n:5 }, { text:'one adult and a cat', n:1, pet:'cat' }, { text:'two adults', n:2 }, { text:'a young couple and a baby', n:3 },
   { text:'a nurse on night shifts', n:1, nights:true }, { text:'two brothers', n:2 }, { text:'a painter and her dog', n:1, pet:'dog' }, { text:'a fisherman', n:1 },
   { text:'grandparents and a grandson', n:3 }, { text:'a doctor and a teacher', n:2 }, { text:'two flatmates', n:2, mixed:true }];
-const SURNAMES = ['Novak', 'Haddad', 'Costa', 'Okafor', 'Lindqvist', 'Moreau', 'Rossi', 'Tanaka', 'Mensah', 'Kowalski', 'Ferreira', 'Brandt', 'Osei',
+const SURNAMES = ['Novak', 'Holland', 'Costa', 'Okafor', 'Lindqvist', 'Moreau', 'Rossi', 'Tanaka', 'Mensah', 'Kowalski', 'Ferreira', 'Brandt', 'Osei',
   'Petrov', 'Dubois', 'Quinn', 'Sato', 'Varga', 'Ali', 'Berg', 'Rao', 'Lopes', 'Weiss', 'Hughes'];
 const INITIALS = 'ABCDEFGHIJKLMNOPRSTVW';
 const hash = s => { let h = 2166136261; for (const ch of s) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };

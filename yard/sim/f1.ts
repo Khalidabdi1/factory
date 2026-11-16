@@ -21,7 +21,7 @@ import { FAR, Person } from './person';
 const TEAMS = [{ name:'Sahel Motors Racing', short:'Sahel', body:'k', wing:'n', stripe:false }, { name:'Harrow Grand Prix', short:'Harrow', body:'n', wing:'k', stripe:false },
   { name:'Kestrel Racing', short:'Kestrel', body:'k', wing:'k', stripe:false }, { name:'Fairhaven F1', short:'Fairhaven', body:'n', wing:'n', stripe:false },
   { name:'Moorland Motorsport', short:'Moorland', body:'n', wing:'k', stripe:true }];
-const DRIVERS: [string, string, number][] = [['F. Al-Harbi', '7', 1.0], ['J. Kerr', '11', 0.985], ['M. Lindqvist', '4', 0.992], ['T. Ibanez', '23', 0.978], ['C. Moreau', '16', 0.988],
+const DRIVERS: [string, string, number][] = [['F. Ashcroft', '7', 1.0], ['J. Kerr', '11', 0.985], ['M. Lindqvist', '4', 0.992], ['T. Ibanez', '23', 0.978], ['C. Moreau', '16', 0.988],
   ['P. Hartmann', '31', 0.972], ['S. Whitlock', '55', 0.981], ['E. Vasquez', '63', 0.968], ['N. Petit', '10', 0.975], ['O. Brennan', '81', 0.962]];
 export const RACE_LAPS = 4;
 const COMPOUNDS = ['soft', 'medium', 'hard'], GRIP = { soft:1.0, medium:0.99, hard:0.982 } as Record<string, number>, WEAR = { soft:0.006, medium:0.0035, hard:0.002 } as Record<string, number>;

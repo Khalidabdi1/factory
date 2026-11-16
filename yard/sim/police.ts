@@ -320,7 +320,7 @@ class Crook extends Person {
 }
 
 // ---- the police ----
-const CREWS = { 'POL-1':['D. Kowalski', 'R. Haddad'], 'POL-2':['A. Mensah', 'T. Lund'], 'POL-3':['S. Brennan', 'I. Novak'] };
+const CREWS = { 'POL-1':['D. Kowalski', 'R. Holt'], 'POL-2':['A. Mensah', 'T. Lund'], 'POL-3':['S. Brennan', 'I. Novak'] };
 class Officer extends Person {
   constructor(car, k) {
     const d = car.door(k);

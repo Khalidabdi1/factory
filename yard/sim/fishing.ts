@@ -28,7 +28,7 @@ class FishingBoat {
     [this.rod, this.float, this.fish] = ['rod', 'float', 'fish'].map(n => this.group.getObjectByName(n));
     // the skipper is whoever in town lives as "a fisherman"
     const home = homes.find(h => h.household.text === 'a fisherman');
-    this.skipper = home?.residents[0] ?? 'H. Ali'; this.home = home;
+    this.skipper = home?.residents[0] ?? 'H. Allen'; this.home = home;
     const { variant } = lookOf('fisher', this.skipper), man = PROTO.person.fisher[variant].clone();
     man.getObjectByName('carry').visible = false; pose(man, -1.9, 0.2, Math.PI / 2, 0.5); this.group.add(man); this.man = man; this.arms = ['armL', 'armR'].map(n => man.getObjectByName(n));
     scene.add(this.group);

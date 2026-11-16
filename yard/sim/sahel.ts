@@ -107,8 +107,8 @@ export function nextCity(from: Portal | null, avoid?: string) {
 }
 const startCity = () => { const pool = CITY_PORTALS.filter(q => ['edge', 'home', 'office', 'hotel'].includes(q.kind)); return pool[Math.floor(rng() * pool.length)]; };
 const SEATS = PARK_SEATS.map(([x, y, h]) => ({ at:[x, y], h, z:0.45, by:null as any }));
-const NAMES_SAHEL = ['A. Al-Harbi', 'N. Al-Qahtani', 'S. Al-Otaibi', 'F. Al-Shehri', 'M. Al-Dosari', 'L. Haddad', 'R. Nasser', 'K. Al-Ghamdi', 'H. Saleh', 'Y. Al-Zahrani',
-  'D. Farouk', 'J. Mansour', 'O. Khalil', 'T. Hamdan', 'W. Al-Mutairi', 'Z. Barakat', 'B. Yousef', 'I. Rahman', 'G. Kareem', 'E. Salem', 'P. Mendes', 'C. Lindqvist', 'V. Anand', 'U. Obi'];
+const NAMES_SAHEL = ['A. Ashby', 'N. Quayle', 'S. Ottley', 'F. Shepherd', 'M. Dorsey', 'L. Hadfield', 'R. Nash', 'K. Gamble', 'H. Sayer', 'Y. Zeller',
+  'D. Farrow', 'J. Manson', 'O. Kemp', 'T. Hamlin', 'W. Morrow', 'Z. Barker', 'B. Young', 'I. Rand', 'G. Kirby', 'E. Selby', 'P. Mendes', 'C. Lindqvist', 'V. Anand', 'U. Obi'];
 let citizenSeq = 0;
 export const CITIZENS = () => sim.people.filter((p: any) => p instanceof Citizen);
 export class Citizen extends Person {
