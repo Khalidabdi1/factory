@@ -14,10 +14,10 @@ const { PROTO, Pallet, SKUS, kmh, putIn, sim } = core as any, { gapE, gapW, road
 
 // ---- freight by box: Plant 01 → the container terminal → Warehouse 01 ----
 // CTR-01 carries a forty-foot box on a skeletal trailer round a triangle. At a Plant 01 bay the forklifts load five
-// pallets into it through its side doors; out along Riverside Rd, round the roundabout's east arm, along Sahel Blvd and
-// down Port Av, over the Corniche and up the ramp to the terminal's gate. Inside it joins the tractors' circuit, and
+// pallets into it through its side doors; out along Riverside Rd, round the roundabout's east arm, along Newhaven Blvd and
+// down Port Av, over the Esplanade and up the ramp to the terminal's gate. Inside it joins the tractors' circuit, and
 // block C's gantry lifts its box off (into the stack, to go out on a ship) and sets an import on; round the circuit
-// and out by the gate, west along the Corniche and Coast Rd, up Harbour Av and over Riverside Rd into the warehouse,
+// and out by the gate, west along the Esplanade and Coast Rd, up Harbour Av and over Riverside Rd into the warehouse,
 // where the import is unloaded into the racks. The empty box goes back to the plant to be filled.
 const L = CITY.lanes, [LX0, LX1] = PORT.loop, ROAD_IN = 850, ROAD_OUT = 893, RAMP = PORT.ramp;
 // the ramp up to the terminal's deck, and the deck
@@ -43,15 +43,15 @@ function boxVariant(bay: any, dock: any) {
       left:(t: any) => { sim.stats.plantOut++; t.bay.truck = null; Object.assign(t.box, { goods:'parts from Plant 01', from:'Plant 01', to:'the terminal', tonnes:Math.round(t.kg() / 1000) }); } }),
     holdOn(path, 118, 121, { name:'plantGate', stop:'the plant gate', toward:'to the plant gate', label:'waiting for a gap in traffic',
       release:(t: any) => gapW(t, 108, 162) && gapE(t, 66, 126) }),
-    holdOn(path, 876.5, 254, { name:'yield', soft:14, toward:'', label:'waiting to cross the Corniche', release:(t: any) => !roadBusy(t, 846, 906, 263.5) && !roadBusy(t, 846, 906, 270.5) }),
+    holdOn(path, 876.5, 254, { name:'yield', soft:14, toward:'', label:'waiting to cross the Esplanade', release:(t: any) => !roadBusy(t, 846, 906, 263.5) && !roadBusy(t, 846, 906, 270.5) }),
     holdOn(path, 876.5, 296.5, { name:'portGate', stop:'the terminal gate', toward:'to the container terminal', label:'at the terminal gate · checking in',
       arrive:(t: any) => { t.dwell = 0; }, release:(t: any, dt: number) => (t.dwell += dt) > 2.5 && t.port.laneFree(),
       wait:(t: any) => t.dwell > 2.5 ? 'at the terminal gate · waiting for the road to clear' : null, left:(t: any) => t.port.reserve(t) }),
     holdOn(path, ROAD_IN, 304, { name:'terminal', stop:'the container terminal', toward:'into the terminal', label:'in the terminal',
       arrive:(t: any) => t.port.admit(t), release:(t: any) => t.portDone, wait:(t: any) => t.inPort ?? 'in the terminal',
       left:(t: any) => { t.portDone = false; t.inPort = null; t.s = t.base + exitS + 0.1; } }),
-    // down the ramp and left into the Corniche's westbound lane; a dock at the warehouse first
-    holdOn(path, 883.5, 276, { name:'portOut', stop:'the foot of the ramp', toward:'out of the terminal', label:'waiting to turn onto the Corniche',
+    // down the ramp and left into the Esplanade's westbound lane; a dock at the warehouse first
+    holdOn(path, 883.5, 276, { name:'portOut', stop:'the foot of the ramp', toward:'out of the terminal', label:'waiting to turn onto the Esplanade',
       release:(t: any) => {
         if (roadBusy(t, 860, 960, 270.5) || roadBusy(t, 820, 900, 263.5)) return false;
         if (t.dock.truck !== t) { const d = DOCKS.find((d: any) => !d.truck); if (!d) return false; d.truck = t; t.reroute(t.bay, d); }
@@ -103,7 +103,7 @@ export function buildFreight(port: any) {
   const v = boxVariant(BAYS[0], DOCKS[0]);
   const t: any = new Truck({ model:'boxer', id:'CTR-01', driver:'B. Okafor', bay:BAYS[0], dock:DOCKS[0], path:v.path, holds:v.holds, s:v.path.project(198, 127.5), variant:boxVariant, port });
   Object.assign(t, boxer);
-  const c = port.newBox({ goods:'nothing (empty)', from:'Sahel', to:'Plant 01', tonnes:4 });
+  const c = port.newBox({ goods:'nothing (empty)', from:'Newhaven', to:'Plant 01', tonnes:4 });
   t.box = c; c.where = { at:'truck', t }; const g = c.own(); t.trailer.add(g); pose(g, -TRAILER.len / 2 + 0.15, 0, 0, TRAILER.deck);
   return { trucks:[t] };
 }

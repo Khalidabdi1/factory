@@ -10,9 +10,9 @@ import { brtDoorX, buildBrtStations, crossingX } from '../world/brt';
 import { DRIVERS, clock, kmh, night, sim } from './core';
 import { FAR, Person } from './person';
 import { nextRoadSeq } from './roads';
-import { Citizen, cportal, nextCity } from './sahel';
+import { Citizen, cportal, nextCity } from './newhaven';
 
-// ---- the Metrobus: Line M1 along Sahel Blvd's busway ----
+// ---- the Metrobus: Line M1 along Newhaven Blvd's busway ----
 // Articulated buses run east along the eastbound busway, turn back in the loop at the east edge, run west and turn back
 // again at Gate Av. They stop at each station on the median, with their left-hand doors to its doors; nothing else
 // runs in the busway, so the only thing they wait for is a bus ahead, or someone on a crossing.
@@ -99,7 +99,7 @@ export class Metrobus {
   info() {
     const nx = this.stop ?? STOPS[this.si];
     return { kind:'Metrobus · Line M1', title:this.id, status:this.status(), bar:{ v:this.aboard(), max:110, label:`${this.aboard()} aboard · room for 110` },
-      rows:[['Route', 'Sahel Blvd · Gate Av ⇄ Sahel Tower'], [this.stop ? 'At' : 'Next stop', nx.name], ['Driver', this.driver], ['Speed', kmh(this.v)], ['Bus', 'articulated, 18 m, air-conditioned'],
+      rows:[['Route', 'Newhaven Blvd · Gate Av ⇄ Newhaven Tower'], [this.stop ? 'At' : 'Next stop', nx.name], ['Driver', this.driver], ['Speed', kmh(this.v)], ['Bus', 'articulated, 18 m, air-conditioned'],
         ['Stops made', String(this.trips)], ['Riders followed', `${this.pax.length} aboard · ${this.carried} so far`]] };
   }
   readout() { return `${this.id} · ${this.status()}`.toLowerCase(); }
@@ -118,7 +118,7 @@ function etaBus(stn: BrtStation, dir: number) {
 const etaText = (e: number) => e === 0 ? 'at the station' : e < 10 ? 'arriving' : `in ${Math.floor(e / 60)}:${String(Math.round(e % 60)).padStart(2, '0')}`;
 export class BusRider extends Person {
   [k: string]: any;
-  constructor(o: any) { super({ look:'sahel', speed:rand(1.1, 1.4), ...o }); }
+  constructor(o: any) { super({ look:'newhaven', speed:rand(1.1, 1.4), ...o }); }
   // over the crossing from the pavement and into the station, to wait by the doors on the side its bus comes
   enter() {
     const stn = this.stn as BrtStation, y = this.dir > 0 ? M1 - 0.9 : M0 + 0.9, cx = crossingX(stn.x);
@@ -153,7 +153,7 @@ export function buildBrt() {
     const stn: BrtStation = { kind:'brtstop', id:name, i, x, waiting:[], groups:[], bbox:new THREE.Box3(W(x - 13, M0 - 1, 0), W(x + 13, M1 + 1, 3.6)), pick:[x, M1, 2],
       info() { return { kind:'Metrobus station · Line M1', title:this.id, status:`next bus east ${etaText(etaBus(this, 1))}`,
         rows:[['Eastbound', etaText(etaBus(this, 1))], ['Westbound', etaText(etaBus(this, -1))], ['Waiting', String(this.waiting.length)], ['Platform', 'a cooled glass box on the median, doors both sides'],
-          ...(name === 'Sahel Central' ? [['Change for', 'Sahel Metro, at Sahel Central']] as [string, string][] : [])] }; },
+          ...(name === 'Newhaven Central' ? [['Change for', 'Newhaven Metro, at Newhaven Central']] as [string, string][] : [])] }; },
       readout() { return `${this.id} stop · next bus east ${etaText(etaBus(this, 1))}`.toLowerCase(); } };
     BRT_STATIONS.push(stn);
     for (const y of [113.4, 148.6]) cportal('brt', `the ${name} stop`, [crossingX(x), y], 0.45);

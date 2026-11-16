@@ -13,14 +13,14 @@ import { PROTO as PROTO_, clock, hourAt, kmh, sim } from './core';
 import { Car } from './cars';
 import { Person } from './person';
 import { bendLimit } from './roads';
-import { CITY_PORTALS, Citizen, boxBusy } from './sahel';
+import { CITY_PORTALS, Citizen, boxBusy } from './newhaven';
 import { Body, lot } from './works';
 
-// ---- Sahel Motors ----
+// ---- Newhaven Motors ----
 // Car Works' dealer. Its shuttle, CS-1, takes finished cars off the works' lot (FRT-7 and it take turns there) and runs
 // them along its siding to the showroom, where a ramp rises behind it and the cars back off one by one and drive to the
 // towers. A tower's lift takes each up to a bay and pushes it in. People come up from the city (the metro's Motor
-// District station is just down Najd Av), look at the cars on show, take one round the test track, sit down with a
+// District station is just down Highland Av), look at the cars on show, take one round the test track, sit down with a
 // consultant, and some buy: the lift brings their car down, it is driven round to the handover bay, and they drive it
 // away over the level crossing into town.
 const PROTO: any = PROTO_, SY = MOTORS.sidingY, P = SIDING, X = (x: number) => x - 400, A = MOTORS, [T0, T1] = A.towers;
@@ -31,7 +31,7 @@ export const OPEN: [number, number] = [9, 22];
 const isOpen = () => { const h = hourAt(sim.t); return h >= OPEN[0] && h < OPEN[1]; };
 const NAME = (t: number) => `Tower ${'AB'[t]}`;
 
-// how high a car stands: up the dock at Car Works, up the ramp at Sahel Motors, on a carrier's deck
+// how high a car stands: up the dock at Car Works, up the ramp at Newhaven Motors, on a carrier's deck
 const deckZ = (ramp: () => number) => (x: number, y: number) => Math.abs(y - SY) > 1.7 ? 0
   : x < 480 ? WDECK * clamp((x - (A.dock - 7)) / 7, 0, 1) : WDECK * clamp((x - (A.ramp - 7)) / 7, 0, 1) * (x < A.ramp ? ramp() : 1);
 
@@ -134,7 +134,7 @@ class Tower {
   }
   info() {
     const n = this.cars().length, cap = A.levels * 8;
-    return { kind:'Car tower · Sahel Motors', title:this.id, status:this.status(), bar:{ v:n, max:cap, label:`${n} of ${cap} bays full` },
+    return { kind:'Car tower · Newhaven Motors', title:this.id, status:this.status(), bar:{ v:n, max:cap, label:`${n} of ${cap} bays full` },
       rows:[['Levels', `${A.levels} · 8 bays each, round the lift`], ['Height', `${Math.round((A.levels + 1) * A.levelH + 1.5)} m`], ['Taken in', String(this.stored)], ['Sent down', String(this.served)],
         ['Models', ['Gull 1.2', 'Gull 1.6 estate', 'Petrel GT'].map(m => `${this.cars().filter((b: any) => b.model === m).length} ${m.split(' ')[0] === 'Gull' ? m.replace('Gull ', 'G') : 'GT'}`).join(' · ')]] };
   }
@@ -227,21 +227,21 @@ const shuttle: any = { kind:'train', id:'CS-1', groups:[], pick:[-8, 0, 3], s:S_
   status() {
     const n = this.cars.length;
     return { dock:lot.holder && lot.holder !== this ? `at Car Works · waiting for ${lot.holder.id}` : `at Car Works · loading (${n} on, ${this.coming.length} coming)`,
-      east:`to Sahel Motors · ${n} cars · ${kmh(this.v)}`, motors:`at Sahel Motors · unloading (${n + (this.off ? 1 : 0)} to come off)`, west:`back to Car Works · ${kmh(this.v)}` }[this.state as string];
+      east:`to Newhaven Motors · ${n} cars · ${kmh(this.v)}`, motors:`at Newhaven Motors · unloading (${n + (this.off ? 1 : 0)} to come off)`, west:`back to Car Works · ${kmh(this.v)}` }[this.state as string];
   },
   info() {
     const n = this.cars.length;
-    return { kind:'Car shuttle · Car Works to Sahel Motors', title:this.id, status:this.status(), bar:{ v:n, max:CAP, label:`${n} of ${CAP} cars aboard` },
-      rows:[['Next stop', { dock:'Sahel Motors', east:'Sahel Motors', motors:'Car Works', west:'Car Works' }[this.state as string]], ['Speed', kmh(this.v)],
+    return { kind:'Car shuttle · Car Works to Newhaven Motors', title:this.id, status:this.status(), bar:{ v:n, max:CAP, label:`${n} of ${CAP} cars aboard` },
+      rows:[['Next stop', { dock:'Newhaven Motors', east:'Newhaven Motors', motors:'Car Works', west:'Car Works' }[this.state as string]], ['Speed', kmh(this.v)],
         ['Consist', 'loco, two car carriers'], ['Trips', String(this.trips)], ['Delivered', `${this.delivered} cars`]] };
   },
   readout() { return `${this.id} · ${this.status()}`.toLowerCase(); },
-  route() { return this.state === 'east' || this.state === 'west' ? { path:P, s:this.s, closed:false, next:null, stop:this.state === 'east' ? 'Sahel Motors' : 'Car Works' } : null; },
+  route() { return this.state === 'east' || this.state === 'west' ? { path:P, s:this.s, closed:false, next:null, stop:this.state === 'east' ? 'Newhaven Motors' : 'Car Works' } : null; },
 };
 
-// ---- the level crossing where Najd Av meets the main line: lamps flash, then the barriers come down, while FRT-7
+// ---- the level crossing where Highland Av meets the main line: lamps flash, then the barriers come down, while FRT-7
 // comes through ----
-const crossing: any = { kind:'crossing', id:'Najd Av level crossing', groups:[], arms:[], lamps:[], k:0, warn:false, tWarn:0, closings:0, pick:[640, RAIL.y, 1.5],
+const crossing: any = { kind:'crossing', id:'Highland Av level crossing', groups:[], arms:[], lamps:[], k:0, warn:false, tWarn:0, closings:0, pick:[640, RAIL.y, 1.5],
   bbox:new THREE.Box3(W(A.road[0] - 4, A.cross[0] - 1.5, 0), W(A.road[1] + 1, A.cross[1] + 1, 4.5)),
   open() { return this.k < 0.01 && !this.warn; },
   update(dt: number) {
@@ -255,7 +255,7 @@ const crossing: any = { kind:'crossing', id:'Najd Av level crossing', groups:[],
     this.lamps.forEach((l: any, i: number) => glow(l, on && (i % 2 ? ph : !ph)));
   },
   status() { return this.k >= 1 ? 'barriers down · FRT-7 passing' : this.k > 0 ? (this.warn ? 'barriers coming down' : 'barriers going up') : this.warn ? 'lamps flashing · FRT-7 coming' : 'open'; },
-  info() { return { kind:'Level crossing · half barriers', title:this.id, status:this.status(), rows:[['Line', 'the main line, Car Works to the east edge'], ['Road', 'Najd Av up to Sahel Motors'], ['Closed', `${this.closings} times`]] }; },
+  info() { return { kind:'Level crossing · half barriers', title:this.id, status:this.status(), rows:[['Line', 'the main line, Car Works to the east edge'], ['Road', 'Highland Av up to Newhaven Motors'], ['Closed', `${this.closings} times`]] }; },
   readout() { return `level crossing · ${this.status()}`; },
 };
 hooks.levelShut = (a: number[], b: number[]) => !crossing.open() && (a[1] - RAIL.y) * (b[1] - RAIL.y) <= 0 && Math.min(a[0], b[0]) > A.road[0] - 5 && Math.max(a[0], b[0]) < A.road[1] + 1;
@@ -277,13 +277,13 @@ const testCar: any = { kind:'testcar', id:'Petrel GT · demonstrator', model:'Pe
   },
   status() { return this.driver ? `on a test drive with ${this.driver.id} · ${kmh(this.v)}` : this.busy ? `waiting for ${this.busy.id}` : 'at the line · free'; },
   info() { const t = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
-    return { kind:'Test-drive car · Sahel Motors', title:this.id, status:this.status(), rows:[['Model', 'Petrel GT · slate, two-tone'], ['Test drives', String(this.drives)], ['Laps', String(this.laps)], ['Best lap', this.best ? t(this.best) : '—'], ['Driven', `${(this.total / 1000).toFixed(1)} km`]] }; },
+    return { kind:'Test-drive car · Newhaven Motors', title:this.id, status:this.status(), rows:[['Model', 'Petrel GT · slate, two-tone'], ['Test drives', String(this.drives)], ['Laps', String(this.laps)], ['Best lap', this.best ? t(this.best) : '—'], ['Driven', `${(this.total / 1000).toFixed(1)} km`]] }; },
   readout() { return `${this.id} · ${this.status()}`.toLowerCase(); },
   route() { return this.driver ? { path:TRACK, s:this.s, closed:true, next:null, stop:'the line' } : null; },
 };
 
-// ---- a sold car, its new owner at the wheel: out along the drive, over the crossing and down Najd Av, then west along
-// Sahel Blvd and Riverside Rd for the old town ----
+// ---- a sold car, its new owner at the wheel: out along the drive, over the crossing and down Highland Av, then west along
+// Newhaven Blvd and Riverside Rd for the old town ----
 const OUT_PTS = (front: number[]) => [front, [front[0], A.out], [A.road[0] + 3.5, A.out], [A.road[0] + 3.5, 110], [A.road[0] - 5, CITY.lanes.gW], [552, CITY.lanes.gW], [520, 127.5],
   [438, 127.5], [RAB.x, 119], [404, 127.5], [WORLD.x0 - 8, 127.5]];
 class NewCar extends Car {
@@ -304,8 +304,8 @@ class NewCar extends Car {
   }
   remove() { apron.release(this); super.remove(); }
   info() {
-    return { kind:`New car · ${this.model}`, title:this.id, status:this.v < 0.3 ? (this.front.y < A.cross[0] && !crossing.open() ? 'waiting at the crossing' : 'waiting') : `${this.front.y < 0 ? 'leaving Sahel Motors' : 'driving home to the old town'} · ${kmh(this.v)}`,
-      rows:[['Driver', this.owner], ['Model', this.model], ['VIN', this.vin], ['Bought', `${clock(this.bought)} · ${sar(MODELS_PRICE[this.model] ?? 90000)}`], ['Going', 'the old town, by Sahel Blvd']] };
+    return { kind:`New car · ${this.model}`, title:this.id, status:this.v < 0.3 ? (this.front.y < A.cross[0] && !crossing.open() ? 'waiting at the crossing' : 'waiting') : `${this.front.y < 0 ? 'leaving Newhaven Motors' : 'driving home to the old town'} · ${kmh(this.v)}`,
+      rows:[['Driver', this.owner], ['Model', this.model], ['VIN', this.vin], ['Bought', `${clock(this.bought)} · ${sar(MODELS_PRICE[this.model] ?? 90000)}`], ['Going', 'the old town, by Newhaven Blvd']] };
   }
 }
 
@@ -315,7 +315,7 @@ class Consultant extends Person {
   [k: string]: any;
   constructor(id: string, seat: any, role: string, at: number[]) { super({ look:'teller', id, x:at[0], y:at[1], speed:1.3 }); Object.assign(this, { seat, role, sold:0, with:null }); }
   info() {
-    return { kind:`${this.role} · Sahel Motors`, title:this.id, status:this.status(), rows:[['At', this.role === 'Receptionist' ? 'reception' : this.desk],
+    return { kind:`${this.role} · Newhaven Motors`, title:this.id, status:this.status(), rows:[['At', this.role === 'Receptionist' ? 'reception' : this.desk],
       ...(this.role === 'Receptionist' ? [] : [['With', this.with?.id ?? 'no one'], ['Sold today', String(this.sold)]]), ['Hours', `${String(OPEN[0]).padStart(2, '0')}:00–${OPEN[1]}:00`]] };
   }
 }
@@ -323,7 +323,7 @@ const viewSpots = () => [...TURNTABLES.map(([x], i) => ({ x, h:Math.PI / 2, mode
 const IN_DOOR = [DOOR[0] - 1.8, DOOR[1]], OUT_DOOR = [DOOR[0] + 1.8, DOOR[1]];
 const BAY_GATE = [[587.5, -29.6], [584.5, -29.6]];
 
-export const motors: any = { kind:'showroom', id:'Sahel Motors', groups:[], pick:[600, -31, 7], towers:[] as Tower[], visitors:new Set(), orders:[] as any[], bay:{ car:null as any, order:null as any },
+export const motors: any = { kind:'showroom', id:'Newhaven Motors', groups:[], pick:[600, -31, 7], towers:[] as Tower[], visitors:new Set(), orders:[] as any[], bay:{ car:null as any, order:null as any },
   delivered:0, sold:0, soldDay:0, day:-1, staff:[] as Consultant[],
   room() { return this.towers.reduce((s: number, t: Tower) => s + t.free(), 0); },
   stock() { return this.towers.reduce((s: number, t: Tower) => s + t.cars().length, 0); },
@@ -340,7 +340,7 @@ export const motors: any = { kind:'showroom', id:'Sahel Motors', groups:[], pick
       case 'toBay': return `on its way to the handover bay · sold to ${b.buyer}`;
       case 'bay': return `in the handover bay · waiting for ${b.buyer}`;
     }
-    return 'at Sahel Motors';
+    return 'at Newhaven Motors';
   },
   carRows(b: any) { const w = b.mstate === 'stored' && b.tower?.where(b);
     return [['Price', sar(price(b))], ...(w ? [['Kept', `${b.tower.id} · level ${w[0]} · bay ${w[1] + 1}`]] : []), ...(b.buyer ? [['Sold to', b.buyer]] : [])]; },
@@ -348,10 +348,10 @@ export const motors: any = { kind:'showroom', id:'Sahel Motors', groups:[], pick
   open:isOpen,
   // ---- a customer's visit, step by step ----
   visit(p: any, done: () => void) {
-    if (!isOpen()) { p.forMotors = false; p.wait(1.5, 'Sahel Motors is shut').then(() => done()); return; }
+    if (!isOpen()) { p.forMotors = false; p.wait(1.5, 'Newhaven Motors is shut').then(() => done()); return; }
     p.forMotors = false;
     this.visitors.add(p); p.mv = { done, wants:null, tries:0 };
-    p.walk([OUT_DOOR, IN_DOOR, [624, AISLE]], 'going in to Sahel Motors');
+    p.walk([OUT_DOOR, IN_DOOR, [624, AISLE]], 'going in to Newhaven Motors');
     const spots = viewSpots(), n = rng() < 0.5 ? 2 : 1;
     for (let i = 0; i < n; i++) { const s = spots[Math.floor(rng() * spots.length)]; p.mv.wants = s.model;
       p.walk([[s.x, AISLE]], `looking at the ${s.model}`).face(s.h).wait(rand(5, 9), `looking at the ${s.model}`); }
@@ -419,7 +419,7 @@ export const motors: any = { kind:'showroom', id:'Sahel Motors', groups:[], pick
     if (followed) car.followed = true;
   },
   leave(p: any, first: number[][]) {
-    p.walk([...first, [624, AISLE], IN_DOOR, OUT_DOOR], 'leaving Sahel Motors').then((q: any) => { this.visitors.delete(q); q.mv.done(); });
+    p.walk([...first, [624, AISLE], IN_DOOR, OUT_DOOR], 'leaving Newhaven Motors').then((q: any) => { this.visitors.delete(q); q.mv.done(); });
   },
   testDrive(p: any) {
     testCar.busy = p; p.mv.drove = true;
@@ -481,7 +481,7 @@ export const motors: any = { kind:'showroom', id:'Sahel Motors', groups:[], pick
         ['By rail', `${this.delivered} cars on ${shuttle.id}`], ['Prices', 'Gull from SAR 79,900 · Petrel GT SAR 164,000']],
       actions:[['Look inside', () => hooks.lookInside(this)]] };
   },
-  readout() { return `sahel motors · ${this.status()}`; },
+  readout() { return `newhaven motors · ${this.status()}`; },
   entities() { return [this, ...this.towers, shuttle, crossing, testCar, ...this.towers.flatMap((t: Tower) => [...t.kept]), ...shuttle.coming.map((q: any) => q.b), ...(shuttle.off ? [shuttle.off.b] : []),
     ...this.moving.map((j: Jockey) => j.b), ...(this.bay.car ? [this.bay.car] : []), ...this.towers.flatMap((t: Tower) => t.jobs.filter((j: any) => j.b && (j.step === 'rise' || j.step === 'push' || j.step === 'pull' || j.step === 'down' || j.step === 'leave') && j.b.group.parent).map((j: any) => j.b))]; },
 };
@@ -494,7 +494,7 @@ export function buildMotors() {
   motors.towers = [new Tower(0), new Tower(1)];
   Object.assign(motors, { shuttle, crossing, testCar });
   // a click on the site's own part says which of its things it was
-  site.userData.entity = { kind:'showroom', id:'Sahel Motors', groups:[], resolve:(pt: THREE.Vector3) => {
+  site.userData.entity = { kind:'showroom', id:'Newhaven Motors', groups:[], resolve:(pt: THREE.Vector3) => {
     for (const t of motors.towers) if (Math.hypot(pt.x - t.cx, pt.z - t.cy) < A.towerR + 0.8) return t;
     if (pt.x > A.track[0] - 2 && pt.x < A.track[1] + 2 && pt.z > A.track[2] - 2 && pt.z < A.track[3] + 2) return testCar;
     if (crossing.bbox.containsPoint(pt)) return crossing;

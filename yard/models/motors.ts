@@ -3,7 +3,7 @@ import { W } from '../kernel/iso';
 import { Part } from '../kernel/part';
 import { WDECK, carAlong } from './train';
 
-// ---- Sahel Motors: what moves there (local frames: +x forward, origin at the front or the pivot) ----
+// ---- Newhaven Motors: what moves there (local frames: +x forward, origin at the front or the pivot) ----
 
 // a finished car as a part of its own, front at the origin facing +x, on the ground: drawn into a shared part at any
 // angle with put() (the towers draw every car they hold as one)
@@ -29,7 +29,7 @@ export function buildBarrierArm(len: number) {
   const lamp = new Part().box(len - 0.6, -0.1, 0.07, 0.2, 0.2, 0.12, 'l').build('armLamp'); g.add(lamp);
   return g;
 }
-// the ramp that rises out of the track behind the shuttle at Sahel Motors: a steel plate hinged at its low end (the
+// the ramp that rises out of the track behind the shuttle at Newhaven Motors: a steel plate hinged at its low end (the
 // origin), 7 m long to its lip, with kerbs along its sides and two rams under the lip
 export function buildMotorsRamp() {
   const g = new THREE.Group(), tilt = new Part();

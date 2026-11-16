@@ -2,7 +2,7 @@ import { FRONT, SIDE, TOP, W } from '../kernel/iso';
 import { Part } from '../kernel/part';
 import { BRT, CITY, CURB } from '../layout';
 
-// ---- Metrobus stations: glass boxes on the boulevard's median, after Riyadh's ----
+// ---- Metrobus stations: glass boxes on the boulevard's median ----
 // Each is 24 m of glazing between the two busways, cooled inside, with sliding doors on both sides where the buses' doors
 // stop; a deep canopy over it, panels on the canopy, a lit band round its edge; ticket gates at its west end, where a
 // crossing comes over from each pavement. The glass is drawn as its frames, so the people waiting show through.

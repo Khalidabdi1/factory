@@ -5,13 +5,13 @@ import { rand } from '../kernel/math';
 import { BRT_STOPS, CITY, CURB, MARINA, SEA_Z } from '../layout';
 import { crown, lampPost, palm, tree, yaw } from './ground';
 
-// Sahel's streets: the asphalt and its paint, the kerbs' furniture (lamps, palms, parked cars), the boulevard with its
+// Newhaven's streets: the asphalt and its paint, the kerbs' furniture (lamps, palms, parked cars), the boulevard with its
 // busway, and the marina off the beach. The blocks themselves are kerbed with the old town's (layout's BLOCKS); what
-// stands on them is in sahelBuildings.
-const G = TOP(0, 0, 0), AV = CITY.av, [NY0, NY1] = CITY.north, [BY0, BY1] = CITY.blvd, [SY0, SY1] = CITY.souq, [CY0, CY1] = CITY.corniche;
+// stands on them is in newhavenBuildings.
+const G = TOP(0, 0, 0), AV = CITY.av, [NY0, NY1] = CITY.north, [BY0, BY1] = CITY.blvd, [SY0, SY1] = CITY.exchange, [CY0, CY1] = CITY.esplanade;
 const L = CITY.lanes;
-// ground the stations will stand on, kept clear of street furniture: Central over Najd Av and Souq St, Motor District
-// over Najd Av at the north end, Port over Souq St's east end
+// ground the stations will stand on, kept clear of street furniture: Central over Highland Av and Exchange St, Motor District
+// over Highland Av at the north end, Port over Exchange St's east end
 export const STATION_SITES: [number, number, number, number][] = [[612, 704, 160, 250], [646, 670, 16, 110], [866, 952, 190, 222]];
 const onSite = (x: number, y: number) => STATION_SITES.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);
 const nearAv = (x: number, m = 9) => AV.some(a => Math.abs(x - a) < m);
@@ -27,7 +27,7 @@ function dashes(p: Part, x0: number, y0: number, x1: number, y1: number, skip: (
   const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len;
   for (let d = 1; d < len - 3; d += 6) { const x = x0 + ux * d, y = y0 + uy * d; if (!skip(x, y) && !skip(x + ux * 3, y + uy * 3)) p.draw(G, [x, y, x + ux * 3, y + uy * 3], k, 0.05); }
 }
-// Sahel's lamps: a tall pole, a slim arm out over the street (one each way on the median), a lamp head at its end
+// Newhaven's lamps: a tall pole, a slim arm out over the street (one each way on the median), a lamp head at its end
 export function cityLamp(p: Part, x: number, y: number, double = false, ax = 0, ay = 1, z = CURB) {
   p.box(x - 0.11, y - 0.11, z, 0.22, 0.22, 7.2);
   const [hw, hd] = ax ? [0.9, 0.4] : [0.4, 0.9];
@@ -36,7 +36,7 @@ export function cityLamp(p: Part, x: number, y: number, double = false, ax = 0, 
     p.seg('line', W(x, y, z + 7.0), W(hx, hy, z + 7.25)).box(hx - hw / 2, hy - hd / 2, z + 7.05, hw, hd, 0.16, 'l');
   }
 }
-// a date palm: straighter and taller than the seafront's, a heavier crown of fronds
+// a tall palm: straighter and taller than the seafront's, a heavier crown of fronds
 export function datePalm(p: Part, x: number, y: number, s = 1, z = CURB, a0 = rand(0, 1)) {
   const top = W(x, y, z + 7.2 * s);
   p.geo(new THREE.CylinderGeometry(0.2, 0.3, 7.2 * s, 7), new THREE.Matrix4().compose(W(x, y, z + 3.6 * s), new THREE.Quaternion(), v3(1, 1, 1)));
@@ -55,7 +55,7 @@ export function parkedCar(p: Part, x: number, y: number, alongX = true, tone = '
   }
 }
 
-export function buildSahelGround() {
+export function buildNewhavenGround() {
   const p = new Part(), GC = TOP(0, 0, CURB);
   // ---- asphalt: the boulevard (busways a shade lighter), the streets and avenues ----
   p.fill2(G, 520, BY0, 480, BY1 - BY0, 'glass', 0.02);
@@ -84,8 +84,8 @@ export function buildSahelGround() {
     }
   }
   // street names on the asphalt
-  p.text(G, 'SAHEL BLVD', 552, L.gE + 0.6, 1.3, 'paint').text(G, 'SAHEL BLVD', 770, L.gW + 0.6, 1.3, 'paint').text(G, 'NORTH ST', 552, 16.9, 1.2, 'paint')
-    .text(G, 'SOUQ ST', 690, 209, 1.2, 'paint').text(G, 'CORNICHE', 552, 271, 1.3, 'paint');
+  p.text(G, 'NEWHAVEN BLVD', 552, L.gE + 0.6, 1.3, 'paint').text(G, 'NEWHAVEN BLVD', 770, L.gW + 0.6, 1.3, 'paint').text(G, 'NORTH ST', 552, 16.9, 1.2, 'paint')
+    .text(G, 'EXCHANGE ST', 690, 209, 1.2, 'paint').text(G, 'ESPLANADE', 552, 271, 1.3, 'paint');
   // ---- the boulevard's strips and median: palms on the strips, double lamps down the median (clear of the stops) ----
   for (const [x0, x1] of [[547, 633], [647, 753], [767, 873], [887, 1000]]) {
     for (let x = x0 + 5; x < x1 - 3; x += 12) for (const [y0, y1] of CITY.sep) if (Math.abs(x - 658) > 3 && !BRT_STOPS.some(q => Math.abs(x - q) < 15)) datePalm(p, x, (y0 + y1) / 2, rand(0.85, 1.05), CURB); else rand(0, 1);
@@ -107,9 +107,9 @@ export function buildSahelGround() {
   // the west verge, where the city meets the green belt: palms along it, a gateway pylon each side of the boulevard
   for (let y = 26; y < 258; y += 11) if (y < 112 || y > 150) { if (y > 194 && y < 216) continue; datePalm(p, 526.5, y, rand(0.85, 1.05)); }
   for (const y of [110.5, 151.5]) { p.box(524, y - 1.2, CURB, 2.4, 2.4, 9).box(523.6, y - 1.6, CURB + 9, 3.2, 3.2, 0.4, 'k').fill2(FRONT(524, y + 1.2, CURB + 8.4), 0.3, 0.3, 1.8, 7.4, 'window', 0.03); }
-  p.text(FRONT(524, 152.7, CURB + 8.6), 'SAHEL', 1.2, 1.2, 0.7, 'ink', 'middle', 0.04);
+  p.text(FRONT(524, 152.7, CURB + 8.6), 'NEWHAVEN', 1.2, 1.2, 0.5, 'ink', 'middle', 0.04);
   buildMarina(p);
-  return p.build('sahelGround');
+  return p.build('newhavenGround');
 }
 
 // The marina: the promenade's rail and palms, a beach west of it, the jetty and its finger piers over the water,
@@ -153,5 +153,5 @@ function buildMarina(p: Part) {
   // the harbour master's hut at the head of the jetty, and the marina's name on the promenade's edge
   p.box(603.2, 276.4, CURB, 4.2, 2.4, 2.8).box(602.9, 276.1, CURB + 2.8, 4.8, 3.0, 0.2, 'k');
   p.fill2(FRONT(603.2, 278.8, CURB + 2.8), 0.4, 0.6, 1.6, 1.0, 'window').fill2(FRONT(603.2, 278.8, CURB + 2.8), 2.4, 0.5, 1.0, 2.2, 'glass');
-  p.text(G, 'SAHEL MARINA', 606, 277.6, 0.9, 'paint', 'start', CURB + 0.03);
+  p.text(G, 'NEWHAVEN MARINA', 606, 277.6, 0.9, 'paint', 'start', CURB + 0.03);
 }

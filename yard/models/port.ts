@@ -4,7 +4,7 @@ import { Part } from '../kernel/part';
 import { PORT, SEA_Z } from '../layout';
 import { beam } from './works';
 
-// ---- Sahel Container Terminal: what moves there ----
+// ---- Newhaven Container Terminal: what moves there ----
 // Frames: a crane or a yard gantry is posed at its x along the quay with y and z left as the town's (its parts are
 // drawn at their real y and height); a vehicle or a ship is drawn with +x forward, from its front or its middle.
 const PZ = PORT.z;

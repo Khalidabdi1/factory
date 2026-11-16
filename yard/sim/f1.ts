@@ -18,7 +18,7 @@ import { FAR, Person } from './person';
 // the corners it has to wait. Now and then one spins at a corner (the marshal shows the yellow flag) and rejoins, and
 // once in a while one stops for good. The race runs on into the night under the floodlights; the first three go up to
 // the podium on the pit building's balcony, and the cars are pushed back into their garages for the night.
-const TEAMS = [{ name:'Sahel Motors Racing', short:'Sahel', body:'k', wing:'n', stripe:false }, { name:'Harrow Grand Prix', short:'Harrow', body:'n', wing:'k', stripe:false },
+const TEAMS = [{ name:'Newhaven Motors Racing', short:'Newhaven', body:'k', wing:'n', stripe:false }, { name:'Harrow Grand Prix', short:'Harrow', body:'n', wing:'k', stripe:false },
   { name:'Kestrel Racing', short:'Kestrel', body:'k', wing:'k', stripe:false }, { name:'Fairhaven F1', short:'Fairhaven', body:'n', wing:'n', stripe:false },
   { name:'Moorland Motorsport', short:'Moorland', body:'n', wing:'k', stripe:true }];
 const DRIVERS: [string, string, number][] = [['F. Ashcroft', '7', 1.0], ['J. Kerr', '11', 0.985], ['M. Lindqvist', '4', 0.992], ['T. Ibanez', '23', 0.978], ['C. Moreau', '16', 0.988],

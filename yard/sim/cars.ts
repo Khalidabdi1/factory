@@ -14,7 +14,7 @@ import { FAR } from './person';
 // Through traffic comes in from the west and goes round the roundabout; town traffic drives closed loops of
 // right turns round the blocks, giving way where it joins a busier street; customers park opposite the shop.
 export const ROAD = { path:new Path([[WORLD.x0 - 8, 134.5], [404, 134.5], [RAB.x, 143], [434, RAB.y], [RAB.x, 119], [404, 127.5], [WORLD.x0 - 8, 127.5]], 8), next:0 };
-// (Coast Rd runs on east past Sahel to the edge, over the low bridge at the mouth of Raven Gorge)
+// (Coast Rd runs on east past Newhaven to the edge, over the low bridge at the mouth of Raven Gorge)
 const onCoast = (x, y) => coastZ(x);
 export const COAST = { e:withHeights(new Path([[WORLD.x0 - 8, 270.5], [WORLD.x1 + 8, 270.5]]), onCoast), w:withHeights(new Path([[WORLD.x1 + 8, 263.5], [WORLD.x0 - 8, 263.5]]), onCoast), nextE:2, nextW:5 };
 const plate = () => `${String.fromCharCode(65 + Math.floor(rng() * 26))}${String.fromCharCode(65 + Math.floor(rng() * 26))} ${Math.floor(rand(100, 999))}`;

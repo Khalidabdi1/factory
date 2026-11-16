@@ -25,7 +25,7 @@ function section(len: number, front: boolean, doors: number[], lite: boolean) {
     // the windscreen, the route's sign over it, headlamps, the stripe across the front
     const F = SIDE(0, Y, Z1);
     p.fill2(F, 0.15, 0.25, 2 * Y - 0.3, 0.55, 'w', 0.03).fill2(F, 0.12, 0.9, 2 * Y - 0.24, 1.55, 'glass', 0.03).rect2(F, 0.12, 0.9, 2 * Y - 0.24, 1.55, 'line', 0.035);
-    if (!lite) p.text(F, 'M1  SAHEL BLVD', Y, 0.68, 0.26, 'ink', 'middle', 0.04).fill2(F, 0, 2.55, 2 * Y, 0.2, 'kob', 0.03);
+    if (!lite) p.text(F, 'M1  NEWHAVEN BLVD', Y, 0.68, 0.26, 'ink', 'middle', 0.04).fill2(F, 0, 2.55, 2 * Y, 0.2, 'kob', 0.03);
     for (const y of [0.85, -0.85]) p.box(-0.04, y - 0.2, 0.55, 0.08, 0.4, 0.18, 'l');
   }
   if (!lite) for (const x of front ? [-2.3, -9.4] : [-5.2]) { p.cylY(x, Y - 0.25, 0.48, 0.48, 0.3, 12, 'kb'); p.cylY(x, -Y - 0.05, 0.48, 0.48, 0.3, 12, 'kb'); }

@@ -7,9 +7,9 @@ import { MOTORS, RAIL } from '../layout';
 import { carPart } from '../models/motors';
 import { WDECK } from '../models/train';
 import { trackOn } from './rail';
-import { cityLamp, datePalm } from './sahel';
+import { cityLamp, datePalm } from './newhaven';
 
-// ---- Sahel Motors: the showroom Car Works sells through, on its terrace at the foot of the hills ----
+// ---- Newhaven Motors: the showroom Car Works sells through, on its terrace at the foot of the hills ----
 // After Volkswagen's Autostadt: the cars come from the works by rail and wait in two glass towers, each a lift in a
 // ring of bays eight levels high, until one is sold and comes down to the handover bay in the showroom. The towers
 // are drawn as their frames, so every car in them can be seen; their floors' edges are lit after dark.
@@ -52,7 +52,7 @@ function tower(p: Part, t: number) {
   p.extrude(O(R + 0.35, top), [0, 0, 0.45], 'n');
   const C = O(R + 0.35, top + 0.45); for (let j = 0; j < 8; j++) band(p, C[j], C[(j + 1) % 8], cx, cy, 0.25, top + 0.45, 1.1, j === 1 || j === 0 || j === 7 ? 'w' : 'n');
   const fw = 2 * (R + 0.35) * Math.tan(Math.PI / 8);
-  p.text(FRONT(cx - fw / 2, cy + R + 0.36, top + 1.5), 'SAHEL MOTORS', fw / 2, 0.82, 0.5, 'ink', 'middle', 0.03);
+  p.text(FRONT(cx - fw / 2, cy + R + 0.36, top + 1.5), 'NEWHAVEN MOTORS', fw / 2, 0.82, 0.5, 'ink', 'middle', 0.03);
   p.text(SIDE(cx + R + 0.36, cy + fw / 2, top + 1.5), `TOWER ${'AB'[t]}`, fw / 2, 0.82, 0.5, 'ink', 'middle', 0.03);
   // the gate the cars come in by and go out by, on the south face: a portal, its sign, lamps either side
   const gy = cy + R + 0.4;
@@ -109,7 +109,7 @@ function showroom() {
   // reception, by the door: a curved front (in three straight pieces), a screen, the receptionist's chair behind it
   f.box(619.6, -21.1, 0.04, 4.8, 0.7, 1.05, 'n').box(619.6, -21.1, 1.09, 4.8, 0.7, 0.05, 'k').box(621.6, -21.0, 1.14, 0.8, 0.08, 0.5, 'w');
   f.box(RECEPTION.at[0] - 0.35, RECEPTION.at[1] - 0.35, 0.04, 0.7, 0.7, 0.44, 'k');
-  f.text(FRONT(619.6, -20.39, 1.0), 'WELCOME · أهلاً', 2.4, 0.5, 0.28, 'paint', 'middle', 0.015);
+  f.text(FRONT(619.6, -20.39, 1.0), 'WELCOME', 2.4, 0.5, 0.28, 'paint', 'middle', 0.015);
   // the sales desks: a desk, a screen on it, a chair either side
   for (const d of DESKS) {
     f.box(d.x - 0.95, -40.1, 0.04, 1.9, 0.95, 0.74, 'n').box(d.x - 0.95, -40.1, 0.78, 1.9, 0.95, 0.04, 'k').box(d.x - 0.3, -40.0, 0.82, 0.6, 0.06, 0.42, 'w');
@@ -153,8 +153,8 @@ function showroom() {
   for (let y = d - 1; y > c + 0.5; y -= 3) s.box(b - 0.25, y - 2, zr(b, y) - 0.95, 0.12, 2, 0.12, 'l');
   // the name along the glass, on a fascia at the mezzanine's height
   s.box(588, Y1 - 0.08, 5.3, 36, 0.16, 1.0, 'n');
-  s.text(FRONT(588, Y1 + 0.09, 6.2), 'SAHEL MOTORS', 18, 0.78, 0.62, 'ink', 'middle', 0.02);
-  s.box(X1 - 0.08, -44, 5.3, 0.16, 16, 1.0, 'n').text(SIDE(X1 + 0.09, -28, 6.2), 'SHOWROOM · معرض', 8, 0.78, 0.55, 'ink', 'middle', 0.02);
+  s.text(FRONT(588, Y1 + 0.09, 6.2), 'NEWHAVEN MOTORS', 18, 0.78, 0.62, 'ink', 'middle', 0.02);
+  s.box(X1 - 0.08, -44, 5.3, 0.16, 16, 1.0, 'n').text(SIDE(X1 + 0.09, -28, 6.2), 'SHOWROOM', 8, 0.78, 0.55, 'ink', 'middle', 0.02);
   // panels on the roof: a field of solar cells over the north half
   for (let x = a + 3; x < b - 4; x += 4.2) for (let y = c + 3; y < -30; y += 3.4) { const M = plane([x, y, zr(x, y) + 0.06], [3.6, 0, 3 * 3.6 / (b - a)], [0, 2.8, 2 * 2.8 / (d - c)]);
     s.fill2(M, 0, 0, 1, 1, 'glass', 0.01).rect2(M, 0, 0, 1, 1, 'line', 0.012); }
@@ -202,7 +202,7 @@ function testTrack(p: Part) {
   for (const [cx] of [[TXA], [TXB]]) { const pts: THREE.Vector3[] = []; for (let i = 0; i <= 16; i++) { const a = (cx === TXA ? Math.PI / 2 : -Math.PI / 2) + i / 16 * Math.PI; pts.push(W(cx + Math.cos(a) * (TR - 3), TCY + Math.sin(a) * (TR - 3), 0.04)); }
     p.poly('grass', pts); }
   for (let k = 0; k < 6; k++) p.cylZ(TXA + 2 + k * 3.6, TCY + (k % 2 ? 1.4 : -1.4), 0.03, 0.22, 0.6, 6, 'k');
-  p.text(TOP(TXA, TCY + 4.2, 0.05), 'SAHEL MOTORS · TEST TRACK', (TXB - TXA) / 2, 0, 0.8, 'paint', 'middle', 0.01);
+  p.text(TOP(TXA, TCY + 4.2, 0.05), 'NEWHAVEN MOTORS · TEST TRACK', (TXB - TXA) / 2, 0, 0.8, 'paint', 'middle', 0.01);
   // the line and the gantry over it, its timing board lit
   const lx = TXB + 4; for (let k = 0; k < 6; k++) p.fill2(G, lx, TCY + TR - 3 + k, 0.5, 0.5, k % 2 ? 'kob' : 'body', 0.012);
   for (const y of [TCY + TR - 3.4, TCY + TR + 3.4]) p.box(lx - 0.15, y - 0.15, 0, 0.3, 0.3, 5.2, 'k');
@@ -215,7 +215,7 @@ function testTrack(p: Part) {
   p.draw(TOP(0, 0, 1.0), fence, 'line', 0);
 }
 
-// ---- the level crossing where Najd Av comes up over the main line ----
+// ---- the level crossing where Highland Av comes up over the main line ----
 // its posts: the arms each carries ([length, heading]), and whether it has the lamps and crossbuck
 export const CROSSING = { x:(RX0 + RX1) / 2, posts:[{ x:RX0 - 0.2, y:-5.2, arms:[[7.4, 0], [3.0, Math.PI]], lamps:true }, { x:RX1 + 0.2, y:2.4, arms:[[7.0, Math.PI]], lamps:true },
   { x:RX0 - 0.2, y:2.6, arms:[[3.0, Math.PI]], lamps:false }] };
@@ -257,7 +257,7 @@ export function buildMotorsSite() {
   p.extrude([[D - 7, SY - 1.4, 0], [D, SY - 1.4, 0], [D, SY - 1.4, WDECK]], [0, 2.8, 0], 'n');
   for (let u = 0.6; u < 7; u += 0.6) p.seg('detail', W(D - 7 + u, SY - 1.4, WDECK * u / 7 + 0.01), W(D - 7 + u, SY + 1.4, WDECK * u / 7 + 0.01));
   for (const y of [SY - 1.55, SY + 1.4]) p.box(D - 7, y, 0, 7, 0.15, WDECK + 0.5, 'k');
-  p.fill2(G, 403, -9.6, D - 403, 5.0, 'road', 0.004).text(TOP(404.5, SY + 0.8, 0.03), 'SAHEL MOTORS', 0, 0, 0.55, 'paint', 'start', 0.01);
+  p.fill2(G, 403, -9.6, D - 403, 5.0, 'road', 0.004).text(TOP(404.5, SY + 0.8, 0.03), 'NEWHAVEN MOTORS', 0, 0, 0.55, 'paint', 'start', 0.01);
   // the buffer stop at the far end: a beam on two posts, buffers, its lamp
   const BX = MOTORS.sidingX[1];
   for (const y of [SY - 0.9, SY + 0.9]) p.box(BX - 0.2, y - 0.2, 0, 0.4, 0.4, 1.2, 'k');
@@ -299,8 +299,8 @@ export function buildMotorsSite() {
   // the sign by the crossing, which the city sees: a tall pylon, the name, the mark
   const SX = RX1 + 3.5, SYg = -4.5;
   p.box(SX - 1.3, SYg - 0.35, 0, 2.6, 0.7, 14, 'k').fill2(FRONT(SX - 1.1, SYg + 0.36, 13.6), 0, 0, 2.2, 9.4, 'window', 0.02);
-  p.text(FRONT(SX - 1.1, SYg + 0.36, 13.6), 'SAHEL', 1.1, 1.4, 0.62, 'paint', 'middle', 0.03).text(FRONT(SX - 1.1, SYg + 0.36, 13.6), 'MOTORS', 1.1, 2.4, 0.56, 'paint', 'middle', 0.03);
-  p.text(FRONT(SX - 1.1, SYg + 0.36, 13.6), 'سهل', 1.1, 4.4, 0.9, 'paint', 'middle', 0.03);
+  p.text(FRONT(SX - 1.1, SYg + 0.36, 13.6), 'NEWHAVEN', 1.1, 1.4, 0.42, 'paint', 'middle', 0.03).text(FRONT(SX - 1.1, SYg + 0.36, 13.6), 'MOTORS', 1.1, 2.4, 0.56, 'paint', 'middle', 0.03);
+  p.text(FRONT(SX - 1.1, SYg + 0.36, 13.6), 'CARS', 1.1, 4.4, 0.62, 'paint', 'middle', 0.03);
   { const M = FRONT(SX - 1.1, SYg + 0.36, 13.6), ring: number[] = []; for (let i = 0; i < 20; i++) { const a = i / 20 * Math.PI * 2, b = (i + 1) / 20 * Math.PI * 2; ring.push(1.1 + 0.75 * Math.cos(a), 7.0 + 0.75 * Math.sin(a), 1.1 + 0.75 * Math.cos(b), 7.0 + 0.75 * Math.sin(b)); }
     p.draw(M, ring, 'line', 0.03); }
   // flags along the plaza by the road, lamps along the drive and the access road, palms on the plaza

@@ -5,9 +5,9 @@ import { rand } from '../kernel/math';
 import { CURB, PORT, SEA_Z } from '../layout';
 import { BOX, boxInto } from '../models/port';
 import { beam } from '../models/works';
-import { cityLamp, datePalm } from './sahel';
+import { cityLamp, datePalm } from './newhaven';
 
-// ---- Sahel Container Terminal: the ground and everything on it that stays put ----
+// ---- Newhaven Container Terminal: the ground and everything on it that stays put ----
 // A deck of land made out over the beach, its quay wall to the south with fenders and bollards along it, the cranes'
 // rails, the apron's lanes; the yard's three blocks marked out for their stacks; reefer racks and the empties' stack;
 // the gate at the top of the ramp from Port Av, the control tower, the workshop, the tugs' pontoon; out in the water
@@ -39,7 +39,7 @@ export function buildPortGround() {
   for (const y of [RL, RW]) for (const d of [-0.08, 0.08]) p.draw(G, [X0 + 4, y + d, X1 - 3, y + d], 'line', 0.01);
   for (let x = X0 + 4; x < X1 - 4; x += 3) p.draw(G, [x, RW - 1.3, x + 1.6, RW - 1.3], 'detail', 0.01);
   for (const y of [LANE - PASS - 1.6, LANE - PASS / 2, LANE + 1.8]) for (let x = LX0; x < LX1; x += 4) p.draw(G, [x, y, x + 2.2, y], 'line', 0.012);
-  p.text(G, 'SAHEL CONTAINER TERMINAL · BERTH 1', (X0 + X1) / 2, RW - 2.6, 1.6, 'paint', 'middle', 0.012);
+  p.text(G, 'NEWHAVEN CONTAINER TERMINAL · BERTH 1', (X0 + X1) / 2, RW - 2.6, 1.6, 'paint', 'middle', 0.012);
   for (const [x, w] of [[688, 22], [714, 22], [854, 22], [880, 22]]) { p.box(x, 313, PZ, w, 7.2, 0.7, 'n'); p.draw(TOP(x, 313, PZ + 0.71), [0, 3.6, w, 3.6], 'line', 0.01); }
   for (let x = 742; x < 852; x += 6) p.box(x, 314.2, PZ, 4.2, 2.6, 2.0, 'k');   // lashing cages
   // bay numbers along the cope where the ship lies
@@ -85,7 +85,7 @@ export function buildPortGround() {
   const cz = PZ + 6.2;
   for (const x of [gx0, gx0 + 7, gx0 + 14, gx0 + 21, gx1]) for (const y of [ry1 + 1, ry1 + 8]) p.box(x - 0.25, y - 0.25, PZ, 0.5, 0.5, cz - PZ, 'n');
   p.box(gx0 - 1, ry1, cz, gx1 - gx0 + 2, 10, 0.8, 'n').box(gx0 - 1, ry1 + 9.6, cz + 0.8, gx1 - gx0 + 2, 0.4, 1.4, 'n');
-  p.text(FRONT(gx0 - 1, ry1 + 10.01, cz + 2.2), 'SAHEL CONTAINER TERMINAL · ميناء سهل', (gx1 - gx0 + 2) / 2, 0.8, 0.62, 'ink', 'middle', 0.02);
+  p.text(FRONT(gx0 - 1, ry1 + 10.01, cz + 2.2), 'NEWHAVEN CONTAINER TERMINAL', (gx1 - gx0 + 2) / 2, 0.8, 0.62, 'ink', 'middle', 0.02);
   for (let k = 0; k < 4; k++) { const x = gx0 + 3.5 + k * 7;
     p.box(x + 2.0, ry1 + 4, PZ, 1.4, 2.2, 2.6, 'n').fill2(FRONT(x + 2.05, ry1 + 6.21, PZ + 2.3), 0, 0, 1.3, 1.0, 'window', 0.02);
     p.box(x - 1.5, ry1 + 3.2, PZ + 0.9, 3.4, 0.12, 0.12, 'k');

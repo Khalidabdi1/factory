@@ -9,7 +9,7 @@ import { COAST_BRIDGE, EAST } from '../land';
 
 // The woods round both towns. West of the old town a strip of mixed wood runs from the foot of the hills to the
 // promenade, with Riverside Rd, Coast Rd and the railway cut through it and a footpath out from Mill Park's gate.
-// Between the towns lies the green belt, and east of Sahel a last strip of wood before the edge of the plate. On the
+// Between the towns lies the green belt, and east of Newhaven a last strip of wood before the edge of the plate. On the
 // hills above both towns, pines climb the lower slopes as far as the snow line.
 
 type Rect = [number, number, number, number];
@@ -27,7 +27,7 @@ const CLEAR: Rect[] = [
   [EX0 - 4, WORLD.x1 + 10, CITY.blvd[0] - 4, CITY.blvd[1] + 4], [EX0 - 4, WORLD.x1 + 10, CITY.north[0] - 4, CITY.north[1] + 4],
 ];
 export const inClearing = (x: number, y: number) => CLEAR.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);
-// cleared since: Line 1's viaduct out east over the strip of wood beyond Sahel. A tree here is still worked out (so the
+// cleared since: Line 1's viaduct out east over the strip of wood beyond Newhaven. A tree here is still worked out (so the
 // rest of the wood comes out as it always has) but drawn into a part that is thrown away.
 const FELLED: Rect[] = [[952, 1004, 196, 214]];
 const felled = (x: number, y: number) => FELLED.some(([x0, x1, y0, y1]) => x > x0 && x < x1 && y > y0 && y < y1);

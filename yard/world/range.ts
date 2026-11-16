@@ -7,8 +7,8 @@ import { MOTORS, WORKS, WORLD } from '../layout';
 import { EAST, hillNatural } from '../land';
 
 // The hills behind the towns: a height field, faceted and gridded, snow on the tops and pines low down. Car Works and
-// Sahel Motors stand on terraces cut into them: flat inside, the slopes easing back up over a couple of grid cells
-// around. East of Car Works the foot of the hills is levelled for the siding to Sahel Motors.
+// Newhaven Motors stand on terraces cut into them: flat inside, the slopes easing back up over a couple of grid cells
+// around. East of Car Works the foot of the hills is levelled for the siding to Newhaven Motors.
 const TERRACES = [WORKS.terrace, MOTORS.terrace];
 const k = v => v <= 0 ? 0 : v >= 1 ? 1 : ease(v);
 const cut = ([X0, X1, Y0], x, y) => Math.max(k((X0 - x) / 22), k((x - X1) / 22), k((Y0 - y) / 24));

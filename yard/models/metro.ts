@@ -3,8 +3,8 @@ import { FRONT, W } from '../kernel/iso';
 import { Part, v3 } from '../kernel/part';
 import { METRO } from '../layout';
 
-// ---- Sahel Metro's cars (local: +x forward, origin at the car's front end, +y to the right, z up from the rail top) ----
-// A driverless car after Riyadh's: a smooth white body (it takes the two-tone colour's place in the dark theme), a band
+// ---- Newhaven Metro's cars (local: +x forward, origin at the car's front end, +y to the right, z up from the rail top) ----
+// A driverless car: a smooth white body (it takes the two-tone colour's place in the dark theme), a band
 // of windows that light up after dusk, the line's stripe low along the side and round the nose, three sliding doors a
 // side. An end car has its cab at the front: a raked windscreen with the destination above it, headlamps below.
 const L = METRO.car, Y = 1.4;

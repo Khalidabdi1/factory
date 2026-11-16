@@ -165,7 +165,7 @@ export function buildCircuit() {
     const R0 = [-Math.sin(a.h), Math.cos(a.h)], R1 = [-Math.sin(b.h), Math.cos(b.h)];
     p.poly('road', [W(a.x - R0[0] * w, a.y - R0[1] * w, 0.032), W(b.x - R1[0] * w, b.y - R1[1] * w, 0.032), W(b.x + R1[0] * w, b.y + R1[1] * w, 0.032), W(a.x + R0[0] * w, a.y + R0[1] * w, 0.032)]); }
   for (let x = 2016; x < 2258; x += 4) p.draw(G, [x, 135.7, x + 2, 135.7], 'line', 0.05);
-  for (let i = 0; i < PITS.n; i++) { const gx = garageX(i); p.rect2(G, gx - 3, PITS.box - 1.4, 6, 2.8, 'line', 0.05).text(G, ['SAHEL', 'HARROW', 'KESTREL', 'FAIRHAVEN', 'MOORLAND'][i >> 1], gx, 132.0, 0.55, 'paint', 'middle', 0.05); }
+  for (let i = 0; i < PITS.n; i++) { const gx = garageX(i); p.rect2(G, gx - 3, PITS.box - 1.4, 6, 2.8, 'line', 0.05).text(G, ['NEWHAVEN', 'HARROW', 'KESTREL', 'FAIRHAVEN', 'MOORLAND'][i >> 1], gx, 132.0, 0.55, 'paint', 'middle', 0.05); }
   p.draw(G, [2014, 132, 2014, 140], 'line', 0.05).draw(G, [2262, 132, 2262, 140], 'line', 0.05).text(G, 'PIT 80', 2019, 139.4, 1.2, 'paint', 'start', 0.05);
   // the pit wall, with each team's stand on it: a desk under a roof, screens, stools
   p.box(2016, PITS.wall, 0, 244, 0.5, 1.05);
@@ -199,7 +199,7 @@ export function buildCircuit() {
   const yellow = flag.build('yellowFlag'); yellow.visible = false; g.add(yellow);
   // the paddock behind the garages: the teams' transporters, the medical centre and its helicopter pad in the infield
   for (let k = 0; k < 5; k++) { const x = 1997 + k * 6.4; p.box(x, 104, 0.6, 2.6, 13.4, 3.4, k % 2 ? 'k' : 'n').box(x + 0.1, 118.2, 0.5, 2.4, 3.2, 2.8, k % 2 ? 'n' : 'k');
-    p.text(SIDE(x + 2.62, 117.2, 3.6), ['SAHEL', 'HARROW', 'KESTREL', 'FAIRHAVEN', 'MOORLAND'][k], 6.6, 1.6, 0.9, 'ink', 'middle', 0.04);
+    p.text(SIDE(x + 2.62, 117.2, 3.6), ['NEWHAVEN', 'HARROW', 'KESTREL', 'FAIRHAVEN', 'MOORLAND'][k], 6.6, 1.6, 0.9, 'ink', 'middle', 0.04);
     for (const yy of [106, 115, 119.6]) for (const s of [-0.12, 2.5]) p.cylY(x + s + 0.06, yy, 0.5, 0.5, 0.22, 10, 'k'); }
   p.box(2152, 36, 0, 14, 9, 4.2).box(2151.6, 35.6, 4.2, 14.8, 9.8, 0.3, 'n');
   const MC = FRONT(2152, 45, 4.2); p.text(MC, 'MEDICAL CENTRE', 7, 1.4, 0.9, 'ink', 'middle', 0.04).draw(MC, [2, 2.2, 2, 3.6, 1.3, 2.9, 2.7, 2.9], 'line', 0.04);
@@ -271,7 +271,7 @@ function footbridge(p: Part) {
     p.seg('line', W(x + sx, y0, z + 1.8), W(x + sx, y1, z + 1.8)); }
   p.box(x - 1.5, y0 - 0.2, z + 1.8, 3.0, y1 - y0 + 0.4, 0.15, 'k');
   for (const y of [y0 + 1, y1 - 1]) for (const sx of [-1.2, 0.9]) p.box(x + sx, y, 0, 0.3, 0.3, z - 0.5);
-  const S = SIDE(x + 1.42, (y0 + y1) / 2 + 9, z - 0.5); p.fill2(S, 0, 0, 18, 1.7, 'kob', 0.02).text(S, 'SAHEL MOTORS', 9, 1.35, 1.2, 'paint', 'middle', 0.03);
+  const S = SIDE(x + 1.42, (y0 + y1) / 2 + 9, z - 0.5); p.fill2(S, 0, 0, 18, 1.7, 'kob', 0.02).text(S, 'NEWHAVEN MOTORS', 9, 1.35, 1.2, 'paint', 'middle', 0.03);
   // stairs down at each end, alongside the bridge
   for (const [ya, dir] of [[y0, -1], [y1, 1]] as [number, number][]) { const n = 14;
     for (let k = 0; k < n; k++) p.box(x + 1.4, ya + dir * (k * 0.9) - (dir < 0 ? 0.9 : 0), 0, 1.6, 0.9, z - 0.5 - k * (z - 0.5) / n); }

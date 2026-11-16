@@ -39,7 +39,7 @@ export class Body {
     this.group = g; this.groups = [g]; scene.add(g);
   }
   where() {
-    if (this.motors) return { shop:'Sahel Motors', status:this.motors.carStatus(this) };
+    if (this.motors) return { shop:'Newhaven Motors', status:this.motors.carStatus(this) };
     if (this.onTrain) return { shop:this.onTrain.id, status:`on ${this.onTrain.id} · ${this.onTrain.status()}` };
     if (this.loading) return { shop:'the lot', status:`driving onto ${this.loading.train?.id ?? 'the train'}` };
     if (this.parked) return { shop:'the lot', status:'on the lot · waiting for the train' };
@@ -76,7 +76,7 @@ const exitPts = k => { const x = spaceX(k); return [[ST[N - 1][0] + HALF, LY], [
 // ---- the lot: the cars on it are drawn as one part, but for a car someone is following, which stays its own car to
 // click until they let it go ----
 export const lot = { cars:[], kept:new Set(), group:null, entity:null, spaceX, holder:null,
-  // FRT-7 and the Sahel Motors shuttle share the lot and the way out of it: one loads at a time
+  // FRT-7 and the Newhaven Motors shuttle share the lot and the way out of it: one loads at a time
   claim(t) { if (this.holder && this.holder !== t) return false; this.holder = t; return true; },
   release(t) { if (this.holder === t) this.holder = null; },
   // a space is taken from the moment a car sets off for it

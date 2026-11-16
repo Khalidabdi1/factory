@@ -9,19 +9,19 @@ import { DOOR_US, Frame, buildStation, buildViaducts, crossV, levels, stationPla
 import { clock, hourAt, kmh, night, sim } from './core';
 import { FAR, Person } from './person';
 import { Walker, nextPortal, portal } from './people';
-import { Citizen, cportal, nextCity } from './sahel';
+import { Citizen, cportal, nextCity } from './newhaven';
 
-// ---- Sahel Metro: the trains, the stations, and the people who ride it ----
+// ---- Newhaven Metro: the trains, the stations, and the people who ride it ----
 type Line = typeof METRO.lines[number];
 type V3 = [number, number, number];
 const LEN = METRO.cars * (METRO.car + METRO.gap) - METRO.gap, PITCH = METRO.car + METRO.gap;
 const VMAX = 15, VOPEN = 22, ACC = 0.9, DEC = 1.1;
 const stopU = (st: any, dir: number) => dir > 0 ? st.u0 + 1.8 + LEN : st.u0 + 1.8;
-const STYLE: Record<string, string> = { najdi:'walls pierced with Najdi triangles that glow at night', fins:'glass behind a screen of fins, a pleated roof', louvre:'glass behind louvres, a shallow vault for a roof',
-  central:'a row of white lobes after KAFD station: lenses of diamond lattice, braided ribbons, lit after dark' };
+const STYLE: Record<string, string> = { highlandi:'walls pierced with Highlandi triangles that glow at night', fins:'glass behind a screen of fins, a pleated roof', louvre:'glass behind louvres, a shallow vault for a roof',
+  central:'a row of white lobes: lenses of diamond lattice, braided ribbons, lit after dark' };
 
 // ---- stations ----
-// One per stop; Sahel Central is one station on both lines. For each line it serves, an island: where its escalator
+// One per stop; Newhaven Central is one station on both lines. For each line it serves, an island: where its escalator
 // climbs into it (an up lane and a down lane), where to wait, its benches, and the riders waiting there.
 type Island = { line: Line, st: any, F: Frame, zc: number, zf: number, footU: number, topU: number, waits: number[][], seats: any[], waiting: Rider[] };
 type Entry = { ground: V3, foot: V3, top: V3, land: V3 };
@@ -219,7 +219,7 @@ for (const l of METRO.lines) l.stations.forEach((s, i) => { (ROUTE[s.id] ??= {})
 function hopsFor(from: string, to: string): Hop[] {
   const common = METRO.lines.find(l => ROUTE[from][l.id] !== undefined && ROUTE[to][l.id] !== undefined);
   if (common) return [{ line:common, dir:ROUTE[to][common.id] > ROUTE[from][common.id] ? 1 : -1, from, to }];
-  const la = METRO.lines.find(l => ROUTE[from][l.id] !== undefined)!, lb = METRO.lines.find(l => ROUTE[to][l.id] !== undefined)!, X = 'Sahel Central';
+  const la = METRO.lines.find(l => ROUTE[from][l.id] !== undefined)!, lb = METRO.lines.find(l => ROUTE[to][l.id] !== undefined)!, X = 'Newhaven Central';
   return [...hopsFor(from, X).map(g => ({ ...g, line:la })), ...hopsFor(X, to).map(g => ({ ...g, line:lb }))];
 }
 export const RIDERS = () => sim.people.filter((p: any) => p instanceof Rider);
@@ -263,7 +263,7 @@ export class Rider extends Person {
     this.walk([gate, e.land, e.top], 'out through the gates').walk([e.foot], 'down to the street', true)
       .then((p: Rider) => { p.lz = undefined; }).walk([[e.ground[0], e.ground[1]]]).then((p: Rider) => p.outside(st, e));
   }
-  // back on the street: a walker in the old town, one of Sahel's people in Sahel
+  // back on the street: a walker in the old town, one of Newhaven's people in Newhaven
   outside(st: MetroStation, e: Entry) {
     const from = { kind:'metro', name:`${st.id} station`, p:[e.ground[0], e.ground[1]], w:1 }, o = { id:this.id, look:this.look };
     // out at Millbrook the village takes them (or, without one, they walk off down the valley)
@@ -287,8 +287,8 @@ function nearest<T>(list: T[], p: number[], get: (q: T) => number[]) { return li
 hooks.metroVisit = (p: any, otherwise: () => void) => {
   if (RIDERS().length >= riderCap || p.dog || p.jog) { otherwise(); return; }   // no dogs on the metro; joggers run on
   const st = Object.values(STATIONS).reduce((b, s) => { const d = (q: MetroStation) => Math.min(...q.entries.map(e => Math.hypot(e.ground[0] - p.x, e.ground[1] - p.y))); return d(s) < d(b) ? s : b; });
-  const dests: [string, number][] = st.id === 'Market St' ? [['Sahel Central', 5], ['Port', 2.5], ['Motor District', 2], ['Millbrook', 1]]
-    : st.id === 'Millbrook' ? [['Sahel Central', 5], ['Market St', 3], ['Port', 2], ['Motor District', 1.5]]
+  const dests: [string, number][] = st.id === 'Market St' ? [['Newhaven Central', 5], ['Port', 2.5], ['Motor District', 2], ['Millbrook', 1]]
+    : st.id === 'Millbrook' ? [['Newhaven Central', 5], ['Market St', 3], ['Port', 2], ['Motor District', 1.5]]
     : [['Market St', 5], ...Object.keys(STATIONS).filter(k => k !== st.id && k !== 'Market St').map(k => [k, k === 'Millbrook' ? 1 : 2] as [string, number])];
   let r = rng() * dests.reduce((s, d) => s + d[1], 0), to = dests[0][0]; for (const [k, w] of dests) if ((r -= w) <= 0) { to = k; break; }
   const rider = new Rider({ id:p.id, look:p.look, x:p.x, y:p.y, h:p.h, hops:hopsFor(st.id, to), origin:st.id, t0:sim.t });
@@ -299,12 +299,12 @@ export function buildMetro() {
   const vg = buildViaducts(); scene.add(vg);
   // the viaducts answer a click with their line
   const lineEnt = (line: Line) => ({ kind:'line', id:`${line.name} · ${line.colour}`, groups:[vg], line, pick:[0, 0, 0],
-    info() { return { kind:'Metro line · Sahel Metro', title:`${line.name} · ${line.colour}`, status:`${TRAINS.filter(t => t.line === line).length} trains running`,
+    info() { return { kind:'Metro line · Newhaven Metro', title:`${line.name} · ${line.colour}`, status:`${TRAINS.filter(t => t.line === line).length} trains running`,
       rows:[['Stations', line.stations.map(s => s.id).join(' · ')], ['Length', `${(line.to - line.from).toLocaleString('en')} m ${(line as any).ext ? 'on viaducts, over the Raven Gorge arch, through two tunnels' : 'on viaduct'}`],
         ['Trains', '4 cars, driverless'], ['Track', 'slab track, third rail']] }; },
     readout() { return `${line.name} · ${line.colour}`.toLowerCase(); } });
   const ents = METRO.lines.map(lineEnt);
-  vg.userData.entity = { kind:'line', id:'Sahel Metro', groups:[vg], resolve:(pt: THREE.Vector3) => Math.abs(pt.z - 205) < 9 ? ents[0] : ents[1], info:() => ents[0].info(), readout:() => 'sahel metro' };
+  vg.userData.entity = { kind:'line', id:'Newhaven Metro', groups:[vg], resolve:(pt: THREE.Vector3) => Math.abs(pt.z - 205) < 9 ? ents[0] : ents[1], info:() => ents[0].info(), readout:() => 'newhaven metro' };
   // the stations (those out in the country are built last of all, after the rest of the town, so the town's own
   // random numbers come out as they always have)
   const country: [Line, any][] = [];
@@ -328,9 +328,9 @@ export function buildMetro() {
     S.peek.hides = (x: number, y: number, p: any) => p?.lz !== undefined;
   };
   for (const line of METRO.lines) for (const st of line.stations) if ((st as any).country) country.push([line, st]); else station(line, st);
-  // their street doors are places to walk to, in the old town and in Sahel
+  // their street doors are places to walk to, in the old town and in Newhaven
   for (const e of STATIONS['Market St'].entries) portal('metro', 'Market St station', [e.ground[0], e.ground[1]], { w:3 });
-  for (const id of ['Sahel Central', 'Port', 'Motor District']) for (const e of STATIONS[id].entries) cportal('metro', `${id} station`, [e.ground[0], e.ground[1]], id === 'Sahel Central' ? 0.55 : 0.6);
+  for (const id of ['Newhaven Central', 'Port', 'Motor District']) for (const e of STATIONS[id].entries) cportal('metro', `${id} station`, [e.ground[0], e.ground[1]], id === 'Newhaven Central' ? 0.55 : 0.6);
   // the trains: two on Line 1, one at each end of it; one on Line 2
   const [L1, L2] = METRO.lines;
   const a = new MetroTrain(L1, stopU(L1.stations[0], 1), 1, 40); a.side = -1; a.xover = L1.xovers[0];

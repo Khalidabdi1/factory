@@ -17,7 +17,7 @@ import { buildHeli, buildHelipad } from '../models/heli';
 
 // ---- crime ----
 // Now and then a crew of two to four drives into town in a dark car: to Harbour Bank (by day they walk in, by night
-// they force the door), to Corner Market while it is open, or by night to the container terminal over in Sahel. The
+// they force the door), to Corner Market while it is open, or by night to the container terminal over in Newhaven. The
 // driver waits at the kerb with the engine running while the others go in. Once the alarm is raised all three police
 // cars come, two officers in each, and POL-AIR lifts off the station roof. How it ends was settled before they set out:
 //   surrender  the police surround the place; after a stand-off the crew come out one by one, hands up
@@ -222,7 +222,7 @@ const JOBS = {
     approach:() => pullIn([[452, 270.5], [676, 270.5], [683, 267], [676, 263.5], [660, 263.5]], 2.2),
     lane:[660, 263.5, Math.PI], focus:[664, 312], way:portWay,
     work(c, k) {
-      c.go([[c.x, c.y], [c.x, 275.6]], 'crossing the Corniche').walk([[CUT + 1.4 * (k - 1), 278.8]], 'at the terminal fence').face(S).wait(6, k ? 'keeping watch' : 'cutting the fence');
+      c.go([[c.x, c.y], [c.x, 275.6]], 'crossing the Esplanade').walk([[CUT + 1.4 * (k - 1), 278.8]], 'at the terminal fence').face(S).wait(6, k ? 'keeping watch' : 'cutting the fence');
       c.walk(portWay([c.x, c.y], JOBS.port.holds[k].at), 'climbing through the fence');
       if (!k) c.face(N).wait(rand(4, 6), 'breaking a reefer\'s seal').then(() => incident.alarm('seen on the terminal\'s cameras')).wait(rand(6, 9), 'emptying the reefer')
         .then(p => { p.carrying = 'crate'; p.bag = 'a crate of medicines'; incident.loot = true; });

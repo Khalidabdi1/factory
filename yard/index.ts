@@ -33,7 +33,7 @@ import { buildFireService } from './sim/fire';
 import { buildWorks } from './sim/works';
 import { buildTrain } from './sim/train';
 import { buildWoods } from './world/woods';
-import { THROUGH, buildSahel } from './sim/sahel';
+import { THROUGH, buildNewhaven } from './sim/newhaven';
 import { buildMetro } from './sim/metro';
 import { buildBrt } from './sim/brt';
 import { buildMotors } from './sim/motors';
@@ -247,15 +247,15 @@ const worksSys = buildWorks();
 const trainSys = buildTrain();
 // the woods round both towns, and the pines up the hills
 const woodsG = buildWoods(); woodsG.traverse(o => { o.raycast = noop; }); scene.add(woodsG);
-// Sahel, the new city east of the green belt: its streets, its towers, its traffic and people
-const sahelSys = buildSahel();
-// Sahel Metro: its viaducts, its five stations and their insides, its driverless trains
+// Newhaven, the new city east of the green belt: its streets, its towers, its traffic and people
+const newhavenSys = buildNewhaven();
+// Newhaven Metro: its viaducts, its five stations and their insides, its driverless trains
 const metroSys = buildMetro();
-// the Metrobus along Sahel Blvd's busway, and its stations on the median
+// the Metrobus along Newhaven Blvd's busway, and its stations on the median
 const brtSys = buildBrt();
-// Sahel Motors: the car shuttle from Car Works, the car towers, the showroom, the test track, the level crossing
+// Newhaven Motors: the car shuttle from Car Works, the car towers, the showroom, the test track, the level crossing
 const motorsSys = buildMotors();
-// Sahel Container Terminal: the quay and its cranes, the yard, the tractors, the ship and her tugs, the breakwater
+// Newhaven Container Terminal: the quay and its cranes, the yard, the tractors, the ship and her tugs, the breakwater
 const portSys = buildPort();
 // the east country: Harrow Ridge, Raven Gorge, High Moor, Millbrook; Line 1's way out there and the Vale Road
 const eastSys = buildEastSys(metroSys);
@@ -296,7 +296,7 @@ sim.step = dt => {
   sim.peds = sim.people.filter(p => onRoad(p.x, p.y));
   for (const p of sim.pallets) p.update(dt);
   for (const b of BOATS) b.update(dt);
-  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt); sahelSys.update(dt); metroSys.update(dt); motorsSys.update(dt); portSys.update(dt); eastSys.update(dt); villageSys.update(dt); obsSys.update(dt); sbSys.update(dt); millSys.update(dt); f1Sys.update(dt); joustSys.update(dt);
+  gate.update(dt); whGate.update(dt); incident.update(dt); fireSys.update(dt); worksSys.update(dt); trainSys.update(dt); newhavenSys.update(dt); metroSys.update(dt); motorsSys.update(dt); portSys.update(dt); eastSys.update(dt); villageSys.update(dt); obsSys.update(dt); sbSys.update(dt); millSys.update(dt); f1Sys.update(dt); joustSys.update(dt);
   for (const b of BAYS) glow(b.lamp, sim.trucks.some(t => t.bay === b && t.at?.name === 'bay'));
   for (const d of DOCKS) glow(d.lamp, sim.trucks.some(t => t.dock === d && t.at?.name === 'dock'));
   glow(lightG, sim.t % 1.6 < 0.18);
@@ -310,4 +310,4 @@ sim.step = dt => {
 for (let t = 0; t < WARMUP; t += STEP) sim.step(STEP);
 resetStats();
 
-initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys, f1Sys, joustSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });
+initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, newhavenSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys, f1Sys, joustSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes });

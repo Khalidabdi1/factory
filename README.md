@@ -3,8 +3,8 @@
 A live isometric town drawn with WebGL in the hairline style of [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill).
 
 Goods go from a factory to a warehouse along the main road of a small seaside town, and on to a shop by the sea. East of
-the town, past a green belt of woods, lies Sahel, a new city of towers, with a metro, a Metrobus, a car showroom and a
-container port. Beyond Sahel the land rises into mountains, and the metro runs out through them to Millbrook, a valley
+the town, past a green belt of woods, lies Newhaven, a new city of towers, with a metro, a Metrobus, a car showroom and a
+container port. Beyond Newhaven the land rises into mountains, and the metro runs out through them to Millbrook, a valley
 of farms. An observatory stands on Beacon Hill, and on a spit out over the sea below the valley, Starships are built and
 launched:
 - Behind both towns are hills; in front of them, the sea. Woods ring them round.
@@ -36,7 +36,7 @@ To build the site, run `npm run build`. It writes plain HTML and JS to `out/`, s
 | `yard/theme.ts` | Tokens → materials, and the day/night blend |
 | `yard/models/`, `yard/world/` | Vehicles, people, boats, and the static town |
 | `yard/land.ts` | The east country's land: the hills, the gorge and the moor, and the corridors cut through them for the line and the roads |
-| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police and the robbers, the fire station, the pier, fishing, weather, Car Works and the train; Sahel's traffic and people, the metro, the Metrobus, Sahel Motors, the port and the container truck; the east country, Millbrook, the observatory, Starbase, Knoll Mill, the Grand Prix and the tourney |
+| `yard/sim/` | The simulation: clock, traffic, trucks, forklifts, people, homes, the shop and its courier, the police and the robbers, the fire station, the pier, fishing, weather, Car Works and the train; Newhaven's traffic and people, the metro, the Metrobus, Newhaven Motors, the port and the container truck; the east country, Millbrook, the observatory, Starbase, Knoll Mill, the Grand Prix and the tourney |
 | `yard/view.ts` | Camera, selection, card, routes, peeking into buildings, the frame loop, keys |
 | `yard/index.ts` | Builds everything in a fixed order and starts the view |
 
@@ -53,12 +53,12 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Car Works** | A car factory on a terrace cut into the hills behind the warehouse, its lot of finished cars in front. Inside, one line runs through a press shop, a body shop of welding robots, a paint shop, assembly and the end-of-line tests. |
 | **Railway** | One track along the foot of the hills, out of a tunnel under Harrow Ridge, with a loop through the Plant 01 yard and its loading platform |
 | **Coast** | Coast Rd, the promenade, the beach, the town pier, Sunset Pier with its rides, and a breakwater with a lighthouse. A sailboat, a motorboat and the fishing boat Kestrel are out at sea. |
-| **Woods** | A strip of woods west of the old town, a green belt between the two towns with footpaths through it, and another strip east of Sahel; pines up the hills |
-| **Sahel** | The new city: four avenues (Gate, Najd, Tower and Port Av), North St, Sahel Blvd with a busway down its middle, Souq St and the Corniche. Skyscrapers in the Financial District (Sahel Tower, Sahel Arch, the Globe and more), City Hall behind its colonnade, Souq Sahel mall, the library, flats and hotels, Wadi Park, and Sahel Marina with its yachts. |
-| **Sahel Metro** | Two lines on viaducts, after Riyadh's: Line 1 from Market St in the old town through Sahel Central and Port and on out to Millbrook, Line 2 from Motor District down to Sahel Central. Sahel Central, after the King Abdullah Financial District station, is a long row of white lobes woven with ribbons and eyes of lattice that glow at night. |
-| **Sahel Motors** | Car Works' showroom on a terrace at the foot of the hills: twin glass car towers, a glass hall with cars on show, a test track, and a level crossing over the main line down to Najd Av |
-| **Port** | Sahel Container Terminal, east of the marina: a quay with three ship-to-shore cranes, a yard of stacked boxes with three gantry cranes, a gate, a control tower, reefer racks, and a breakwater with a light at each end |
-| **East** | The country beyond Sahel. Harrow Ridge, which the Vale Road climbs in hairpins; Raven Gorge, with the Raven Beck and alders and willows on its floor, crossed by Line 1 on a concrete arch and by the road on a suspension bridge; the plateau of High Moor with Beacon Hill standing on it; Long Edge; and Millbrook Vale, the valley at the end of the line. Snow on the high peaks behind. |
+| **Woods** | A strip of woods west of the old town, a green belt between the two towns with footpaths through it, and another strip east of Newhaven; pines up the hills |
+| **Newhaven** | The new city: four avenues (Gate, Highland, Tower and Port Av), North St, Newhaven Blvd with a busway down its middle, Exchange St and the Esplanade. Skyscrapers in the Financial District (Newhaven Tower, Newhaven Arch, the Globe and more), City Hall behind its colonnade, Newhaven Market Hall mall, the library, flats and hotels, Stonebrook Park, and Newhaven Marina with its yachts. |
+| **Newhaven Metro** | Two lines on viaducts: Line 1 from Market St in the old town through Newhaven Central and Port and on out to Millbrook, Line 2 from Motor District down to Newhaven Central. Newhaven Central, after the King Abdullah Financial District station, is a long row of white lobes woven with ribbons and eyes of lattice that glow at night. |
+| **Newhaven Motors** | Car Works' showroom on a terrace at the foot of the hills: twin glass car towers, a glass hall with cars on show, a test track, and a level crossing over the main line down to Highland Av |
+| **Port** | Newhaven Container Terminal, east of the marina: a quay with three ship-to-shore cranes, a yard of stacked boxes with three gantry cranes, a gate, a control tower, reefer racks, and a breakwater with a light at each end |
+| **East** | The country beyond Newhaven. Harrow Ridge, which the Vale Road climbs in hairpins; Raven Gorge, with the Raven Beck and alders and willows on its floor, crossed by Line 1 on a concrete arch and by the road on a suspension bridge; the plateau of High Moor with Beacon Hill standing on it; Long Edge; and Millbrook Vale, the valley at the end of the line. Snow on the high peaks behind. |
 | **Sky** | Beacon Hill Observatory, on the levelled top of Beacon Hill above High Moor. Observatory Road winds up round the hill from the Vale Road. On top: the Beacon Telescope in its big dome, a public dome and a survey camera's dome, a solar tower, the visitor centre with its planetarium, the astronomers' residence, a weather mast and an all-sky camera. The Moor Dish, a radio telescope, stands on the moor below. |
 | **Starbase** | Gull Spit Starbase, a Starship factory and launch site on land made out over the sea below Millbrook. At its west end the Starfactory, the Engine Shop, and the two Mega Bays (the second glass-walled) where boosters and ships are stacked; along the road the Rocket Garden, then the tank farm, and at the tip the launch tower with its chopsticks, the launch mount over its flame trench, and the deluge tanks. |
 | **Village** | Millbrook, an English farming village round Line 1's terminus. Cottages with front gardens behind picket fences, a green with an old oak, a pump and a farmers' market, the Plough Inn and Millbrook Stores. Across the road, the farm: wheat, a hay meadow with its bales and a windpump, allotments, the long field, the millpond and its watermill, a red barn with two silos, pens for the sheep, cows, pigs, hens and horses, and an apple orchard with its store. |
@@ -66,7 +66,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
 | **Circuit** | Gull Bay Circuit, a Grand Prix track on the plain east of Millbrook, between the mountains and the Vale Road: 1.5 km and fifteen turns, from Paddock Bend and the Knoll Hairpin through the Esses to the Harbour Hairpin and the Last Corner. Run-offs of asphalt and gravel with tyre walls, kerbs at every apex, a pit lane and a pit building of ten garages with Race Control's tower and the podium, the main grandstand on the road, the Hillside and Infield stands, a footbridge, the start gantry, floodlight masts, marshal posts, the paddock, a medical centre with its helicopter pad, and a car park across the road. The plate was widened east to make room. |
 | **Tiltyard** | On the common east of the Plough: a palisaded ground with the lists in it, a sand field with the tilt down its middle hung with striped cloth, the royal stand under a striped canopy with the lord's and lady's chairs, the herald's score board (the cheque), four striped pavilions, racks of lances at both ends, a quintain and banners. |
 
-![Sahel by day: Sahel Central's woven lattice among the Financial District's towers, Sahel Motors and its car towers at the foot of the hills, the metro's viaducts, and the container terminal on the waterfront](docs/sahel.png)
+![Newhaven by day: Newhaven Central's woven lattice among the Financial District's towers, Newhaven Motors and its car towers at the foot of the hills, the metro's viaducts, and the container terminal on the waterfront](docs/newhaven.png)
 
 ## What moves
 
@@ -92,7 +92,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
    - There are fewer people out at night, and fewer shoppers.
 9. **Homes:** every house and villa can be looked inside. Its rooms are furnished, and whoever is home is on the sofa, at the table or in bed, depending on the hour. Delivered parcels wait inside the door.
 10. **Robberies:**
-    - Now and then a crew of two to four drives into town in a dark car. They rob Harbour Bank (walking in by day, forcing the door by night), hold up Corner Market while it is open, or break into a refrigerated container at the terminal in Sahel by night. The driver waits at the kerb with the engine running.
+    - Now and then a crew of two to four drives into town in a dark car. They rob Harbour Bank (walking in by day, forcing the door by night), hold up Corner Market while it is open, or break into a refrigerated container at the terminal in Newhaven by night. The driver waits at the kerb with the engine running.
     - When the alarm goes off, staff and customers get out of the bank. At the shop, the staff at the till put their hands up and shoppers run out. All three police cars come with their lights flashing, two officers in each, and POL-AIR, the police helicopter, lifts off the station roof and circles overhead. By night its searchlight follows the action.
     - Each robbery ends one of four ways:
       - The police surround the place, and after a stand-off the crew come out one by one with their hands up.
@@ -100,7 +100,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
       - The crew run for the car as the sirens come, and it races off through the traffic with the police behind it and the helicopter above. It may run into a roadblock, be abandoned while the crew scatter on foot and are chased down, or get clean away.
       - The driver loses his nerve and leaves without them, and the crew try to escape on foot.
     - While it lasts, the bank or the shop stands open so you can see inside. Click the place, a suspect, the getaway car, an officer or POL-AIR for their cards. The police station's card keeps the last few calls.
-11. **Freight by box:** CTR-01, a container truck, runs a triangle. At a Plant 01 bay the forklifts load five pallets into its forty-foot box. It drives out along Riverside Rd, through Sahel and down Port Av, up the ramp and through the terminal's gate. Inside it joins the tractors' circuit, and the gantry over block C lifts its box into the stack, to go out on a ship, and sets an import box on. Back along the coast, it unloads five pallets of imported goods into Warehouse 01's racks, then takes the empty box back to the plant. Its card shows the box, what is in it and the pallets exported and imported so far; the box has a card of its own.
+11. **Freight by box:** CTR-01, a container truck, runs a triangle. At a Plant 01 bay the forklifts load five pallets into its forty-foot box. It drives out along Riverside Rd, through Newhaven and down Port Av, up the ramp and through the terminal's gate. Inside it joins the tractors' circuit, and the gantry over block C lifts its box into the stack, to go out on a ship, and sets an import box on. Back along the coast, it unloads five pallets of imported goods into Warehouse 01's racks, then takes the empty box back to the plant. Its card shows the box, what is in it and the pallets exported and imported so far; the box has a card of its own.
 12. **Sunset Pier:** a pleasure pier with a Ferris wheel, a carousel and a small coaster. Visitors queue, ride and wander. The rides open 10:00–23:00 and close in the rain.
 13. **Fishing:** Kestrel leaves the town pier in the morning, fishes on the bay and lands her catch, which shows on her card. An angler fishes from the end of the town pier.
 14. **Weather:** showers come through the day, and some mornings there is sea fog. People put up umbrellas and leave the beach, the park and the piers, the boats come in, and the caption says so.
@@ -125,20 +125,20 @@ The engine runs once per page load. React draws the plate, and the engine drives
     - They make up the hose, the household goes back in, and ENG-1 drives home and backs into its bay while the traffic waits.
     - The house's card shows the fire and has a Track ENG-1 button. The station's card shows the watch and the last call.
 
-18. **Sahel's streets:** cars come through from the old town along Riverside Rd and down Sahel Blvd, and loop round the city's blocks. People walk between the towers, the flats, the mall, the park, the beach and the marina, and to City Hall in office hours.
-19. **Sahel Metro:**
+18. **Newhaven's streets:** cars come through from the old town along Riverside Rd and down Newhaven Blvd, and loop round the city's blocks. People walk between the towers, the flats, the mall, the park, the beach and the marina, and to City Hall in office hours.
+19. **Newhaven Metro:**
     - Driverless four-car trains run both lines, stop behind platform screen doors, and turn back at the ends over crossovers.
-    - People ride up the escalators, through the gates, wait on the island and board, and change lines at Sahel Central. Follow one and the camera goes with them onto the train.
+    - People ride up the escalators, through the gates, wait on the island and board, and change lines at Newhaven Central. Follow one and the camera goes with them onto the train.
     - Zoom in close over a station, or click it, and it opens: the concourse, the gates, the islands, the escalators and the trains.
-20. **The Metrobus (Line M1):** four articulated buses run the busway down Sahel Blvd between glass stations on the median, waiting for anyone on a crossing.
-21. **Sahel Motors:**
+20. **The Metrobus (Line M1):** four articulated buses run the busway down Newhaven Blvd between glass stations on the median, waiting for anyone on a crossing.
+21. **Newhaven Motors:**
     - CS-1, a car shuttle, takes finished cars from Car Works' lot (it and FRT-7 take turns there), runs them along its siding, and stands while a ramp rises behind it. The cars back off and drive to the twin towers, where a lift carries each up to a bay. Click a car in a tower for its bay and its price.
     - People come up from the metro, look at the cars on show, take one round the test track, and sit down with a consultant. Some buy: their car comes down its tower and round to the handover bay, and they drive it away over the level crossing, whose barriers come down for FRT-7, and off to the old town.
 22. **The port:**
     - A ship comes in from the west past the old town's pier, and two tugs push her alongside. The cranes lower their booms and take boxes off onto terminal tractors, which run them round to the yard, where the gantries stack them. Then the other way: boxes out of the yard and onto the ship.
     - When she is done the booms go up, the tugs pull her off and she sails on east. Every crane, gantry, tractor, tug and box has a card.
 
-    ![Sahel Container Terminal: a feeder alongside under three ship-to-shore cranes, STS 2 selected waiting to set a box on a tractor, the yard's gantries behind, the tugs at their pontoon and the breakwater's lights](docs/port.png)
+    ![Newhaven Container Terminal: a feeder alongside under three ship-to-shore cranes, STS 2 selected waiting to set a box on a tractor, the yard's gantries behind, the tugs at their pontoon and the breakwater's lights](docs/port.png)
 23. **Out east:**
     - Line 1's trains run on from Port over the woods, into Harrow Ridge, out of its cliff onto the arch over Raven Gorge, across High Moor in a cutting, through Long Edge and down a viaduct to Millbrook, where they turn back. They go faster on the open line.
     - Through traffic from the old town takes the Vale Road: up the hairpins, over the suspension bridge, through the tunnel, round the curving viaduct into the valley and on east. Coast Rd runs on along the shore, over a low bridge at the gorge's mouth.
@@ -146,7 +146,7 @@ The engine runs once per page load. React draws the plate, and the engine drives
     ![The east country by day: the Vale Road climbing Harrow Ridge in hairpins and crossing Raven Gorge on its suspension bridge, Line 1 on its arch beside it, Beacon Hill Observatory selected on its levelled summit with Observatory Road winding up to it, Gull Spit Starbase in front and Millbrook to the right](docs/east.png)
 24. **Millbrook:**
     - Farm hands come out of the barn at first light to hoe the vegetables, weed the allotments, turn the hay, feed the animals and pick apples, carrying the crates to the apple store. They go in for dinner at midday and at dusk.
-    - Villagers walk between their cottages, the green, the market, the store and the Plough, which fills up in the evening. Visitors come off the metro for the market and the inn, and villagers take the train into Sahel.
+    - Villagers walk between their cottages, the green, the market, the store and the Plough, which fills up in the evening. Visitors come off the metro for the market and the inn, and villagers take the train into Newhaven.
     - The shepherd and his collie take the flock up onto the slope above the farm in the morning and bring it down at dusk. The stable hand leads the horses to their trough in a line. The cows, pigs and hens keep to their paddock, sty and run, and the hens go in at dusk.
     - The tractor ploughs the long field a lane at a time, leaving furrows behind it, and is back by the barn by late afternoon. The mill wheel turns all day, and the windpump turns faster in the rain.
 25. **Beacon Hill Observatory:**
@@ -201,7 +201,7 @@ Each stage only runs as fast as the next one lets it:
 
 | Action | Mouse / touch | Keys |
 | --- | --- | --- |
-| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Sahel · Metro · Motors · Port · East · Village · Sky · Starbase · Circuit, top right | `1`–`9`, `P`, `E`, `V`, `O`, `S`, `R` |
+| Go to a place | Factory · Warehouse · Shop · Town · Coast · Car Works · Newhaven · Metro · Motors · Port · East · Village · Sky · Starbase · Circuit, top right | `1`–`9`, `P`, `E`, `V`, `O`, `S`, `R` |
 | Whole map | ⌂ button | `0` |
 | Skip ahead six hours | clock button | `N` |
 | Pan | drag | arrow keys |
@@ -218,7 +218,7 @@ When something that moves is selected, the map draws its route as a dashed line 
 - Trucks and the bus show their whole loop.
 - Cars, forklifts and people show the way ahead.
 
-The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, Sahel Motors' showroom, the observatory's main dome, Starbase's Starfactory, Engine Shop and Mega Bays, Knoll Mill, the pit building at Gull Bay, and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in. The stations and the showroom also open when you zoom in close over them.
+The warehouse, the shop, the bank, the fire station, Car Works, the metro stations, Newhaven Motors' showroom, the observatory's main dome, Starbase's Starfactory, Engine Shop and Mega Bays, Knoll Mill, the pit building at Gull Bay, and the homes are closed buildings. Select one, or anything inside it, and it opens up as a section drawing so you can see in. The stations and the showroom also open when you zoom in close over them.
 
 ## How the skill carries over to WebGL
 

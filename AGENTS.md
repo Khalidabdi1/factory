@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Factory Yard: project guide
 
-A live isometric seaside town drawn with three.js/WebGL in the hairline style of [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill). Goods go factory → warehouse along the main road of a small town, then down to a shop on the seafront, with hills behind and the sea in front. East of it, past a green belt, is Sahel: a new city with a metro, a Metrobus, Sahel Motors and a container port. A day passes in 6 minutes. There is no dashboard: you click anything and a card shows its live details. The README describes what the user sees; this file covers how the code works.
+A live isometric seaside town drawn with three.js/WebGL in the hairline style of [ai-iso-skill](https://github.com/MrBongoC/ai-iso-skill). Goods go factory → warehouse along the main road of a small town, then down to a shop on the seafront, with hills behind and the sea in front. East of it, past a green belt, is Newhaven: a new city with a metro, a Metrobus, Newhaven Motors and a container port. A day passes in 6 minutes. There is no dashboard: you click anything and a card shows its live details. The README describes what the user sees; this file covers how the code works.
 
 ## Commands
 
@@ -42,20 +42,20 @@ Next 16 (App Router, Turbopack), React 19, TypeScript, and `three@0.186.1` from 
 | `yard/theme.ts` | Token → material mapping, the `NIGHT` palette, `applyTheme()`, and `shade(n)`, the day/night blend. |
 | `yard/layout.ts` | World constants and the coordinate table (where everything is), plus `ROADS` / `BLOCKS`, `onRoad`, `zAt`. |
 | `yard/models/`, `yard/world/` | Builders for moving models and for the static town. |
-| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `fire` (the fire station, ENG-1, its watch, chimney fires), `works` (Car Works' line and lot), `train` (FRT-7), `boats`; for Sahel: `sahel` (its traffic, pavements, `Citizen`s, building cards), `metro`, `brt` (the Metrobus), `motors` (Sahel Motors and CS-1), `port` (the container terminal); `windmill` (Knoll Mill and its miller), `f1` (Gull Bay Circuit's weekend), `joust` (the Millbrook tourney). |
+| `yard/sim/` | `core` (clock, stats, `Pallet`, conveyor), `roads` (road rules), `cars`, `trucks` (holds), `forklifts`, `person`, `people` (shop, staff, shoppers, gate guard, walkers, bus riders), `police`, `fire` (the fire station, ENG-1, its watch, chimney fires), `works` (Car Works' line and lot), `train` (FRT-7), `boats`; for Newhaven: `newhaven` (its traffic, pavements, `Citizen`s, building cards), `metro`, `brt` (the Metrobus), `motors` (Newhaven Motors and CS-1), `port` (the container terminal); `windmill` (Knoll Mill and its miller), `f1` (Gull Bay Circuit's weekend), `joust` (the Millbrook tourney). |
 
 The React component and the engine share a contract: the engine finds the plate's elements **by id**: `clock`, `stage`, `view`, `card`, `cardRows`, `note`, `readout`, `tagSel`, and the rest. React never re-renders the plate. Per-frame UI updates are imperative.
 
 ## Coordinates and drawing
 
 - **Coordinates.** Scene code uses the skill's frame: +x east (down-right on screen), +y south toward the sea (down-left), +z up. `W(x, y, z)` maps that to three.js's y-up world. The orthographic camera looks down (-1,-1,-1), so only south faces (`FRONT`) and east faces (`SIDE`) are seen. Put doors, signs and windows that matter on those faces.
-- **Sizes.** 1 unit = 1 m. The world is `WORLD`: x −60–2420 and y −84–420 (the east country past x 1000, `EAST` in `land.ts`). The old town is x 0–440; the green belt of woods x 440–520; Sahel (`CITY`) x 520–960; woods again to the east edge. The hills are at y < −4, the main road (Riverside Rd, Sahel Blvd in Sahel) at y 124–138, Market St (Souq St) at y 198–212, Coast Rd (the Corniche) at y 260–274, the beach at y 279–296 and the sea from y 296. Sahel Motors stands on a terrace north of the railway (`MOTORS`), the port on land made out over the sea (`PORT`, y 279–340). The full table is at the top of `yard/layout.ts`.
+- **Sizes.** 1 unit = 1 m. The world is `WORLD`: x −60–2420 and y −84–420 (the east country past x 1000, `EAST` in `land.ts`). The old town is x 0–440; the green belt of woods x 440–520; Newhaven (`CITY`) x 520–960; woods again to the east edge. The hills are at y < −4, the main road (Riverside Rd, Newhaven Blvd in Newhaven) at y 124–138, Market St (Exchange St) at y 198–212, Coast Rd (the Esplanade) at y 260–274, the beach at y 279–296 and the sea from y 296. Newhaven Motors stands on a terrace north of the railway (`MOTORS`), the port on land made out over the sea (`PORT`, y 279–340). The full table is at the top of `yard/layout.ts`.
 - **The `Part` builder.** It collects faces and lines into a few draw calls. Shapes: `box(x,y,z,w,d,h,tone)`, `extrude`, `cylZ`, `cylY`, `geo`. Flat detail: `draw(M, segs)`, `rect2`, `fill2` and `text`, drawn in a face's local 2D units through `TOP`, `FRONT`, `SIDE` or `plane()`. Finish with `build(name)`.
 - **Tones.** `n` is the normal body/deck. `k` is two-tone, for goods and uniforms. `l` (lamps) and `w` (windows) light up at night by themselves. `g` is glass, `gs` grass, `s` sand.
 - **Lines.** Every line is a 1 CSS px `LineSegments2`. Faces are flat, unlit and opaque.
 - **Colour.** Never hard-code colours in scene code; use tokens. `--live` is reserved for live state: the selection, the route, busy lamps, beacons, police lights, alarms and the lighthouse beam. `glow(group, on)` swaps a part's faces to the live fill.
-- **Draw calls.** Keep the whole-plate home view at or below about 1.9k (`renderer.info.render.calls`), and a place's own view well under that (Sahel about 1.3k, the port about 550). Merge static things into one `Part`; things there are many of (pallets, parked cars, a tower's cars, the yard's boxes) use the single-fill tones or one shared part. Give moving pieces their own group only when they animate. Far zoom (`TINY`) swaps people for a one-part "lite" model; at `FAR` people go, cars and trains are lite, small text (`setTextFar`) and the port's ropes are left out, and tractors are one block each.
-- **Lit tones.** `w`/`window` and `l`/`lamp` light up after dark; `screen` is a pierced screen's holes, dark by day and lit at night (Sahel Central's lattice). A lit band too thin to see under its own outline is drawn with `{ lines:false }`.
+- **Draw calls.** Keep the whole-plate home view at or below about 1.9k (`renderer.info.render.calls`), and a place's own view well under that (Newhaven about 1.3k, the port about 550). Merge static things into one `Part`; things there are many of (pallets, parked cars, a tower's cars, the yard's boxes) use the single-fill tones or one shared part. Give moving pieces their own group only when they animate. Far zoom (`TINY`) swaps people for a one-part "lite" model; at `FAR` people go, cars and trains are lite, small text (`setTextFar`) and the port's ropes are left out, and tractors are one block each.
+- **Lit tones.** `w`/`window` and `l`/`lamp` light up after dark; `screen` is a pierced screen's holes, dark by day and lit at night (Newhaven Central's lattice). A lit band too thin to see under its own outline is drawn with `{ lines:false }`.
 
 ## Simulation rules
 
@@ -161,17 +161,17 @@ Done:
 
 The roadmap agreed in October 2026 is done. The full plan is in the owner's `~/.claude/plans/` file for this work.
 
-## Sahel (October 2026, after the roadmap)
+## Newhaven (October 2026, after the roadmap)
 
 - Phase 13: the plate widened to `WORLD`; woods round both towns (`yard/world/woods.ts`), hills along the whole north edge with terraces (`range.ts`).
-- Phase 14: Sahel (`yard/world/sahel.ts`, `towers.ts`; `yard/sim/sahel.ts`). Its pavements are their own graph (`CPED`), its people `Citizen`s choosing places with `nextCity` (weights by the hour and the rain). Through traffic runs between the towns via the roundabout's east arm.
-- Phase 15: Sahel Metro (`METRO` in `layout.ts`; `world/metro.ts`, `world/central.ts`, `sim/metro.ts`). A line's frame is (u along, v across, z); island platforms with screen doors; riders get their own height (`lz`) on escalators and platforms and are hidden only up there when a station is shut (`peek.hides`). Stations open when the camera comes in close (`peek.near`). A selection that turns into something else (a rider boarding) is kept with `hooks.handOff`.
-  - Sahel Central follows Riyadh's KAFD station: `section(x)` and `shellAt(x, θ)` give the shell, its ribbons are paired waves along x (`WAVES`, `phase`), and `lattice(x, q)` says where the net is open. Line 2's platform there is u 168–226.
+- Phase 14: Newhaven (`yard/world/newhaven.ts`, `towers.ts`; `yard/sim/newhaven.ts`). Its pavements are their own graph (`CPED`), its people `Citizen`s choosing places with `nextCity` (weights by the hour and the rain). Through traffic runs between the towns via the roundabout's east arm.
+- Phase 15: Newhaven Metro (`METRO` in `layout.ts`; `world/metro.ts`, `world/central.ts`, `sim/metro.ts`). A line's frame is (u along, v across, z); island platforms with screen doors; riders get their own height (`lz`) on escalators and platforms and are hidden only up there when a station is shut (`peek.hides`). Stations open when the camera comes in close (`peek.near`). A selection that turns into something else (a rider boarding) is kept with `hooks.handOff`.
+  - Newhaven Central follows Zaha Hadid's financial-district metro station: `section(x)` and `shellAt(x, θ)` give the shell, its ribbons are paired waves along x (`WAVES`, `phase`), and `lattice(x, q)` says where the net is open. Line 2's platform there is u 168–226.
 - Phase 16: the Metrobus (`sim/brt.ts`, `world/brt.ts`, `models/brt.ts`): articulated buses on one closed path round the busways, pushed into `sim.trucks`.
-- Phase 17: Sahel Motors (`world/motors.ts`, `models/motors.ts`, `sim/motors.ts`). CS-1 and FRT-7 share Car Works' lot through `lot.claim`/`lot.release`. Cars moved about by the staff are `Jockey`s (legs forward or back); one moves on the apron at a time (`apron`). A tower's lift runs a queue of store and fetch jobs; stored cars are drawn into one part per tower and resolved to the car on a click. Customers are `Citizen`s handed to `hooks.motorsVisit`; sold cars leave as `NewCar`s over the level crossing (`hooks.levelShut` holds pedestrians and `crossClear`).
+- Phase 17: Newhaven Motors (`world/motors.ts`, `models/motors.ts`, `sim/motors.ts`). CS-1 and FRT-7 share Car Works' lot through `lot.claim`/`lot.release`. Cars moved about by the staff are `Jockey`s (legs forward or back); one moves on the apron at a time (`apron`). A tower's lift runs a queue of store and fetch jobs; stored cars are drawn into one part per tower and resolved to the car on a click. Customers are `Citizen`s handed to `hooks.motorsVisit`; sold cars leave as `NewCar`s over the level crossing (`hooks.levelShut` holds pedestrians and `crossClear`).
 - Phase 18: the port (`world/port.ts`, `models/port.ts`, `sim/port.ts`). Each ship-to-shore crane is paired with a yard gantry and two tractors; the tractors share one circuit (`LOOP`) and pass in a second lane. Exports go out to a tractor only once its crane is loading, so no tractor waits under a crane with one while the crane waits for an empty tractor. Boxes are `Cbox`es, drawn into the ship's cargo part and one part for the whole yard unless they move or are selected.
-- Keys `7`–`9` and `P` and the nav buttons frame Sahel, the metro, Motors and the port; `0` is still the whole map.
-- Phase 19: the README covers all of it; `docs/sahel.png` and `docs/port.png` are captured from the static build like the other figures.
+- Keys `7`–`9` and `P` and the nav buttons frame Newhaven, the metro, Motors and the port; `0` is still the whole map.
+- Phase 19: the README covers all of it; `docs/newhaven.png` and `docs/port.png` are captured from the static build like the other figures.
 
 ## The east country (agreed October 2026, second round)
 
@@ -190,9 +190,9 @@ the port; 24 Car Works' inside in detail; 25 an astronomy centre; 26 a Starship 
     `l1Rise(u)` (its deck climbs at about 1 in 20). `Frame.box/long/end/uv` go through `at()`, so a station on an
     x-aligned straight of the path works as in town. Cars on it are posed at their height and pitched. Millbrook
     (`MILLBROOK`) is the terminus; the open line runs at 22 m/s. `world/east.ts` draws the land, the gorge, the woods
-    beyond Sahel, Line 1's runs (viaduct piers on the land, the arch over the gorge, portals with hoods), the Vale Road
+    beyond Newhaven, Line 1's runs (viaduct piers on the land, the arch over the gorge, portals with hoods), the Vale Road
     (`ROAD_PTS`, three hairpins, the suspension bridge, a tunnel, a curving viaduct) and the coast road's bridge.
-  - `withHeights(path, zOf)` gives a `Path` its `zs(s)`; `Car.place` stands on it. Sahel's `THROUGH` paths run the Vale
+  - `withHeights(path, zOf)` gives a `Path` its `zs(s)`; `Car.place` stands on it. Newhaven's `THROUGH` paths run the Vale
     Road's lanes (`offsetLine`), `COAST` and the customers' paths `coastZ`. FRT-7's route starts inside Harrow Ridge
     (`RAIL_EAST`); its track is drawn from `RAIL_PORTAL`.
   - `fitZoom` frames the whole plate; `baseZoom` the two towns, and the closest zoom, `hooks.track` and the debug
@@ -299,7 +299,7 @@ circuit built; 30 the race weekend run on it; 31 docs and figures. Nothing is pu
   windpump's fan now follows the same wind.
 - Phase 29: the plate widened east to x 2420 (`EAST.x1`; `EAST.old` is the old edge, where the east country's tree and beach
   loops still stop so their `rand()` order is unchanged). The low hills at the east edge moved out to x 2352–2420, the hill
-  band got more peaks, and the Vale Road runs on straight to the new edge (Sahel's through traffic follows it). Gull Bay
+  band got more peaks, and the Vale Road runs on straight to the new edge (Newhaven's through traffic follows it). Gull Bay
   Circuit (`world/circuit.ts`) stands on the plain between: `TRACK` is a closed `Path` through `V`'s corners, each with a
   fillet of its own radius; `KAPPA` and `VPROF` are its curvature and fastest speed every metre (cornering, braking and
   accelerating limits, passed round the lap three times). The track is drawn from samples every 2 m: asphalt, edge lines,
@@ -324,3 +324,7 @@ circuit built; 30 the race weekend run on it; 31 docs and figures. Nothing is pu
   charge → strike (outcomes drawn with `rng()`) → turn round the tilt's end; a knight keeps the tilt on his left. The
   herald and two squires are `Person`s (looks `herald`, `squire`); villagers come to watch through the `joust` spots,
   weighted by `hooks.joustOn()`. Debug `yard.joust()`.
+- Renames (at the owner's request, no Arabic names anywhere): Sahel is Newhaven (`sim/newhaven.ts`, `world/newhaven.ts`,
+  look `newhaven`), Najd Av is Highland Av, Souq St is Exchange St (`CITY.exchange`), the Corniche is the Esplanade
+  (`CITY.esplanade`), Wadi Park is Stonebrook Park; the towers, ships and ports of call took English or other names, and
+  the people of the town and the city English ones. Newhaven's people dress like everyone else's.

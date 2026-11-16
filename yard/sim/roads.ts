@@ -72,7 +72,7 @@ export const compass = h => { const c = Math.cos(h), s = Math.sin(h); return c >
 export function streetAt(x, y) {
   if (Math.hypot(x - RAB.x, y - RAB.y) < 16) return 'the roundabout';
   if (x > 1936 && x < 2340 && y > 0 && y < 170) return 'Gull Bay Circuit';
-  if (x > 436) return sahelStreet(x, y);
+  if (x > 436) return newhavenStreet(x, y);
   if (y > 138 && y < 142.7 && x > 345 && x < 384) return 'the parking on Riverside Rd';
   if (y > 117 && y < 140) return x > 136 && x < 198 && y < 124 ? 'the truck park' : 'Riverside Rd';
   if (y > 196 && y < 214 && x > 50) return 'Market St';
@@ -90,17 +90,17 @@ export function streetAt(x, y) {
   if (y < 118) return x < 200 ? 'the Plant 01 yard' : x < 358 ? 'the Warehouse 01 yard' : 'Riverside Rd';
   return 'town';
 }
-// east of the roundabout: the green belt, and Sahel's streets
-function sahelStreet(x, y) {
-  const { av, names, north, blvd, souq, corniche, lanes } = CITY, a = av.findIndex(c => Math.abs(x - c) < 7.5);
+// east of the roundabout: the green belt, and Newhaven's streets
+function newhavenStreet(x, y) {
+  const { av, names, north, blvd, exchange, esplanade, lanes } = CITY, a = av.findIndex(c => Math.abs(x - c) < 7.5);
   if (y >= 274) return y < 279 ? 'the promenade' : y < 296 ? 'the beach' : 'the sea';
-  if (y > corniche[0] - 0.5) return x < 520 ? 'Coast Rd' : 'the Corniche';
+  if (y > esplanade[0] - 0.5) return x < 520 ? 'Coast Rd' : 'the Esplanade';
   if (y < -4) return 'the hills';
   if (x < 520) return y > 123 && y < 139 ? 'Riverside Rd' : 'the green belt';
-  if (y > blvd[0] && y < blvd[1]) return Math.abs(y - lanes.bW) < 2.2 || Math.abs(y - lanes.bE) < 2.2 ? 'the busway, Sahel Blvd' : 'Sahel Blvd';
+  if (y > blvd[0] && y < blvd[1]) return Math.abs(y - lanes.bW) < 2.2 || Math.abs(y - lanes.bE) < 2.2 ? 'the busway, Newhaven Blvd' : 'Newhaven Blvd';
   if (a >= 0 && y > north[0]) return names[a];
   if (y > north[0] && y < north[1]) return 'North St';
-  if (y > souq[0] && y < souq[1]) return 'Souq St';
+  if (y > exchange[0] && y < exchange[1]) return 'Exchange St';
   if (y < 4) return 'the railway';
-  return 'Sahel';
+  return 'Newhaven';
 }

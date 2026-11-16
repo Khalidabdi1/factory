@@ -1,7 +1,7 @@
 import { Path } from './kernel/path';
 import { ease } from './kernel/math';
 
-// ---- the land east of Sahel ----
+// ---- the land east of Newhaven ----
 // Past the woods east of the city the ground rises to Harrow Ridge, a ridge running down from the mountains almost to
 // the coast. Beyond it the Raven Beck has cut a gorge from the mountains to the sea; east of the gorge lies the plateau of
 // High Moor, Beacon Hill standing up out of it, then a second ridge, and below that Millbrook Vale, a valley of farms
@@ -25,7 +25,7 @@ const ss = (a: number, b: number, v: number) => { const t = (v - a) / (b - a); r
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 // the hills along the north edge of the plate: a ridge of peaks, its foot at y −4 (the old town's Grey Peaks, the lower
-// Sahel hills behind the city, and the mountains east of it, higher again)
+// Newhaven hills behind the city, and the mountains east of it, higher again)
 const PEAKS = [[-42, 26], [30, 30], [95, 44], [160, 33], [228, 48], [300, 38], [362, 46], [425, 34], [496, 28], [574, 24], [652, 32], [738, 27], [818, 36], [898, 30], [978, 38],
   [1062, 44], [1132, 52], [1210, 58], [1296, 50], [1364, 62], [1446, 66], [1522, 56], [1604, 64], [1684, 70], [1766, 60], [1842, 68], [1904, 58],
   [1982, 64], [2062, 72], [2140, 60], [2222, 68], [2300, 62], [2378, 74], [2450, 60]];
@@ -111,7 +111,7 @@ export const L1_DECK = 10.5;
 export const LINE_EAST = new Corridor('Line 1', L1X.path, s => L1_DECK + l1Rise(L1X.u0 + s), { tunnel:7, above:2.5, flat:8.5, bed:0.1, from:60, to:MILLBROOK.to + 14 - L1X.u0 });
 
 // ---- the Vale Road ----
-// On from the end of Sahel Blvd: four hairpins up Harrow Ridge's west face, over the saddle and straight onto a
+// On from the end of Newhaven Blvd: four hairpins up Harrow Ridge's west face, over the saddle and straight onto a
 // suspension bridge across the gorge, along the plateau past the turning for Beacon Hill, through the second ridge,
 // round and down a curving viaduct into Millbrook Vale, through the village and off east. Points are (x, y, height).
 export const ROAD_PTS: [number, number, number][] = [[1000, 131, 0], [1040, 131, 0], [1076, 126, 1.0], [1084, 44, 6.6],

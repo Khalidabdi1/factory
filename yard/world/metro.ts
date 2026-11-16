@@ -7,8 +7,8 @@ import { DOORS, DOOR_W, FLOOR } from '../models/metro';
 import { beam } from '../models/works';
 import { ring } from './ground';
 
-// ---- Sahel Metro, built: the viaducts, and the stations along them ----
-// The viaduct is a concrete box girder on Y-armed piers, after Riyadh's: two slab tracks with a third rail outside
+// ---- Newhaven Metro, built: the viaducts, and the stations along them ----
+// The viaduct is a concrete box girder on Y-armed piers: two slab tracks with a third rail outside
 // each, a walkway and a parapet along each edge. Round a station the tracks spread apart for the island platform
 // between them, and the deck widens with them.
 type Line = typeof METRO.lines[number];
@@ -188,7 +188,7 @@ export function screenDoors(F: Frame, u0: number, s: number, zf: number, fixed: 
 }
 
 // ---- a station on the open line: an island platform under a long hall, a concourse hung under the tracks, glass
-// escalator tubes up to it from either side of the line. Three dresses: 'najdi' (a wall of the old town's colour pierced
+// escalator tubes up to it from either side of the line. Three dresses: 'highlandi' (a wall of the old town's colour pierced
 // with rows of triangles that glow after dark, stepped crenellations), 'fins' (glass behind a screen of fins under a
 // pleated roof), 'louvre' (glass behind horizontal louvres under a barrel roof).
 export function buildStation(line: Line, st: Station, plan: Plan) {
@@ -218,7 +218,7 @@ export function buildStation(line: Line, st: Station, plan: Plan) {
     for (const s of [-1, 1]) { F.box(sh, ua, ub, s * WIDE - 1.7, s * WIDE + 1.7, zf + 3.6, zt - zf - 3.6);
       F.poly(sh, 'glass', [F.at(ua + (u === U1 ? -0.6 : 0.6), s * WIDE - 1.7, zd), F.at(ua + (u === U1 ? -0.6 : 0.6), s * WIDE + 1.7, zd), F.at(ua + (u === U1 ? -0.6 : 0.6), s * WIDE + 1.7, zf + 3.6), F.at(ua + (u === U1 ? -0.6 : 0.6), s * WIDE - 1.7, zf + 3.6)]); } }
   const LF = F.long(vis * HW, U0, U1, zt), EF = F.end(U1, HW, zt), wallH = zt - zd;
-  if (st.style === 'najdi') {
+  if (st.style === 'highlandi') {
     // rows of small triangles through the wall, a band of them high up and one low, alternately up and down
     for (const [M, w] of [[LF.M, LF.w], [EF.M, EF.w]] as [THREE.Matrix4, number][]) {
       for (const [v0, rows] of [[1.0, 3], [wallH - 3.2, 1]] as [number, number][]) for (let r = 0; r < rows; r++) for (let x = 1.2 + (r % 2) * 0.55; x < w - 1.2; x += 1.1) {
@@ -255,7 +255,7 @@ export function buildStation(line: Line, st: Station, plan: Plan) {
     sh.draw(LF.M, [0, 0.4, LF.w, 0.4], 'line', 0.04);
   }
   // the name along the wall, the sign at the end
-  sh.text(LF.M, st.id.toUpperCase(), LF.w / 2, st.style === 'najdi' ? 2.9 : 1.9, 1.5, 'ink', 'middle', 0.07);
+  sh.text(LF.M, st.id.toUpperCase(), LF.w / 2, st.style === 'highlandi' ? 2.9 : 1.9, 1.5, 'ink', 'middle', 0.07);
   roundel(sh, EF.M, EF.w / 2, 1.8, 1.0, 0.07);
   // the concourse, glazed, hung under the tracks; the escalator tubes up to it
   F.box(sh, c0, c1, -10.5, 10.5, zc - 0.6, zu - zc + 0.6);

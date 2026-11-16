@@ -80,7 +80,7 @@ function hawthorn(p: Part, x: number, y: number, s: number, z: number) {
   p.geo(crown, new THREE.Matrix4().compose(W(x, y, z + 4.0 * s), yaw(rand(0, 3)), v3(2.8 * s, 0.6 * s, 2.4 * s)));
 }
 function trees(p: Part) {
-  // the last of the woods east of Sahel, to the foot of Harrow Ridge
+  // the last of the woods east of Newhaven, to the foot of Harrow Ridge
   for (let gx = 1003; gx < 1060; gx += 6.4) for (let gy = -1; gy < 254; gy += 6.4) {
     const x = gx + rand(-2.4, 2.4), y = gy + rand(-2.4, 2.4), s = rand(0.78, 1.2), k = rand(0, 1);
     if (kept(x, y) || k < 0.1 || landZ(x, y) > 3) continue;

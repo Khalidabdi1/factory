@@ -9,7 +9,7 @@ import { BOX, RTG, SHIP, STS, TRAILER, boxInto, buildBox, buildRTG, buildSTS, bu
 import { LIGHTS, bayX, buildPortGround, rowY } from '../world/port';
 import { clock, kmh, night, sim } from './core';
 
-// ---- Sahel Container Terminal ----
+// ---- Newhaven Container Terminal ----
 // A ship comes in from the west, the tugs push her alongside, the cranes lower their booms and work her: each takes
 // boxes off its bays and sets them on a tractor, which runs round to its block in the yard, where the gantry stacks
 // them; then the other way, boxes out of the yard and onto the ship. When the work is done the booms go up, the tugs
@@ -20,9 +20,9 @@ const ROWS_S = 9, TIERS_S = 4, TIERS_Y = 4;
 const sRowY = (r: number) => -10.4 + r * 2.6;                 // a ship's row, across her (local y)
 const sBayX = (k: number) => SH.bay0 + k * SH.pitch;           // a ship's bay, along her (local x)
 const OWNERS = ['SHLU', 'MSKU', 'CMAU', 'HLXU', 'ONEU', 'EGHU', 'TGHU', 'SEGU', 'MEDU', 'OOLU'];
-const PORTS = ['Jeddah', 'Jebel Ali', 'Salalah', 'Colombo', 'Port Klang', 'Singapore', 'Mumbai', 'Sohar', 'Dammam', 'Aqaba', 'Port Said', 'Djibouti', 'Mombasa', 'Karachi'];
+const PORTS = ['Rotterdam', 'Antwerp', 'Hamburg', 'Colombo', 'Port Klang', 'Singapore', 'Felixstowe', 'Le Havre', 'Valencia', 'Genoa', 'Piraeus', 'Busan', 'Mombasa', 'Shanghai'];
 const GOODS = ['machine parts', 'tyres', 'textiles', 'furniture', 'electronics', 'dates', 'paper', 'floor tiles', 'car parts', 'white goods', 'coffee', 'rice', 'solar panels', 'nothing (empty)'];
-const SHIPS: [string, string][] = [['SAHEL STAR', 'SAHEL'], ['NAJD PEARL', 'JEDDAH'], ['RED SEA TRADER', 'MAJURO'], ['GULF HORIZON', 'MONROVIA']];
+const SHIPS: [string, string][] = [['NEWHAVEN STAR', 'NEWHAVEN'], ['HIGHLAND PEARL', 'LIVERPOOL'], ['NORTH SEA TRADER', 'MAJURO'], ['ATLANTIC HORIZON', 'MONROVIA']];
 const pickOf = <T>(a: T[]) => a[Math.floor(rng() * a.length)];
 const step = (cur: number, to: number, v: number, dt: number) => cur + clamp(to - cur, -v * dt, v * dt) * Math.min(1, 0.25 + Math.abs(to - cur) * 0.6);
 
@@ -33,7 +33,7 @@ class Cbox {
   constructor(o: any = {}) {
     const n = String(Math.floor(rng() * 900000) + 100000);
     Object.assign(this, { kind:'container', id:`${pickOf(OWNERS)} ${n} ${Math.floor(rng() * 10)}`, seq:boxSeq++, tone:rng() < 0.45 ? 'k' : 'n', goods:pickOf(GOODS),
-      from:pickOf(PORTS), to:'Sahel', tonnes:Math.round(rand(4, 28)), where:null, group:null, groups:[], pick:[0, 0, H / 2] }, o);
+      from:pickOf(PORTS), to:'Newhaven', tonnes:Math.round(rand(4, 28)), where:null, group:null, groups:[], pick:[0, 0, H / 2] }, o);
     if (this.goods.startsWith('nothing')) this.tonnes = 4;
   }
   // a model of its own (while it moves, or while someone looks at it in a stack)
@@ -86,7 +86,7 @@ const BLOCKS: Block[] = PORT.blocks.map(([x0, x1], b) => ({ kind:'block', id:`Bl
 }));
 
 // ---- the ship ----
-const ship: any = { kind:'ship', id:'SAHEL STAR', groups:[], pick:[0, 0, 12], g:null, x:SH.x, y:SH.y, v:0, state:'away', next:0, t:0, calls:0, call:0,
+const ship: any = { kind:'ship', id:'NEWHAVEN STAR', groups:[], pick:[0, 0, 12], g:null, x:SH.x, y:SH.y, v:0, state:'away', next:0, t:0, calls:0, call:0,
   bays:Array.from({ length:SH.bays }, () => Array.from({ length:ROWS_S }, () => [] as Cbox[])), kept:new Set<Cbox>(), moves:0, from:'', to:'',
   title() { return this.id.split(' ').map((w: string) => w[0] + w.slice(1).toLowerCase()).join(' '); },
   count() { return this.bays.flat().reduce((s: number, q: Cbox[]) => s + q.length, 0); },
@@ -96,8 +96,8 @@ const ship: any = { kind:'ship', id:'SAHEL STAR', groups:[], pick:[0, 0, 12], g:
     this.g = buildShip(name, flag); this.g.userData.entity = this; this.groups = [this.g]; scene.add(this.g);
     this.cargo = this.g.getObjectByName('cargo'); this.ropes = this.g.getObjectByName('moorings'); this.moves = 0;
     const prev = PORTS[(i * 5 + 2) % PORTS.length]; this.from = prev; this.to = PORTS[(i * 7 + 5) % PORTS.length];
-    // her cargo: most bays half to full, some boxes for Sahel, the rest going on
-    for (const bay of this.bays) for (const q of bay) { q.length = 0; const n = Math.floor(rand(1, TIERS_S + 0.99)); for (let t = 0; t < n; t++) q.push(new Cbox({ from:prev, to:rng() < 0.5 ? 'Sahel' : this.to })); }
+    // her cargo: most bays half to full, some boxes for Newhaven, the rest going on
+    for (const bay of this.bays) for (const q of bay) { q.length = 0; const n = Math.floor(rand(1, TIERS_S + 0.99)); for (let t = 0; t < n; t++) q.push(new Cbox({ from:prev, to:rng() < 0.5 ? 'Newhaven' : this.to })); }
     this.restack();
   },
   restack() { this.bays.forEach((bay: Cbox[][], k: number) => bay.forEach((q: Cbox[], r: number) => q.forEach((c, t) => { c.where = { at:'ship', k, r, tier:t }; }))); this.draw(); },
@@ -154,7 +154,7 @@ class Tug {
   [k: string]: any;
   constructor(i: number) {
     const [x, y] = PORT.tugs[i];
-    Object.assign(this, { kind:'tug', id:`SAHEL ${i + 1}`, i, home:[x, y + 3], x, y:y + 3, h:Math.PI, v:0, job:'moored', line:null, pick:[0, 0, 4] });
+    Object.assign(this, { kind:'tug', id:`NEWHAVEN ${i + 1}`, i, home:[x, y + 3], x, y:y + 3, h:Math.PI, v:0, job:'moored', line:null, pick:[0, 0, 4] });
     this.g = buildTug(this.id); this.g.userData.entity = this; this.groups = [this.g]; scene.add(this.g);
     const lp = new Part(); lp.seg('line', W(0, 0, 0), W(1, 0, 0)); this.line = lp.build('towline'); this.line.visible = false; scene.add(this.line);
   }
@@ -441,14 +441,14 @@ const TRACTORS: Tractor[] = [];
 
 // ---- the terminal itself, and the lights out in the water ----
 const lamps: THREE.Object3D[] = [];
-export const port: any = { kind:'terminal', id:'Sahel Container Terminal', groups:[], pick:[800, 300, 6], ship, cranes:PORT_CRANES, yard:YARD, tractors:TRACTORS, tugs:TUGS, blocks:BLOCKS,
+export const port: any = { kind:'terminal', id:'Newhaven Container Terminal', groups:[], pick:[800, 300, 6], ship, cranes:PORT_CRANES, yard:YARD, tractors:TRACTORS, tugs:TUGS, blocks:BLOCKS,
   status() { return ship.state === 'working' ? `the ${ship.title()} alongside · ${PORT_CRANES.filter(c => c.mode !== 'done').length} cranes working` : ship.state === 'away' ? `berth empty · next ship ${clock(ship.next)}` : ship.status(); },
   info() {
     const n = BLOCKS.reduce((s, b) => s + b.count(), 0), cap = BLOCKS.length * PORT.bays * PORT.rows * TIERS_Y;
     return { kind:'Container terminal · one berth, three cranes', title:this.id, status:hooks.crimeAt('port') ?? this.status(), bar:{ v:n, max:cap, label:`yard ${n * 2} TEU of ${cap * 2}` },
       rows:[['Berth 1', ship.state === 'away' ? 'empty' : ship.title()], ['Moves this call', String(ship.moves)], ['Ships worked', String(ship.calls)], ['Quay', `${PORT.x1 - PORT.x0} m · 14 m alongside`], ['Gate', 'Port Av']] };
   },
-  readout() { return `sahel container terminal · ${this.status()}`; },
+  readout() { return `newhaven container terminal · ${this.status()}`; },
   entities() { return [this, ship, ...PORT_CRANES, ...YARD, ...TRACTORS.filter(t => !t.road), ...TUGS, ...BLOCKS, ...PORT_CRANES.map(c => c.box), ...YARD.map(g => g.box), ...TRACTORS.map(t => t.box), ...BLOCKS.flatMap(b => [...b.kept]), ...ship.kept].filter(Boolean); },
   vehicles() { return [ship, ...TUGS, ...TRACTORS.filter(t => !t.road)].filter(v => v !== ship || ship.state !== 'away'); },
   // road trucks: a box of their own; room to come on at the gate (no tractor coming along the road past it); a shadow

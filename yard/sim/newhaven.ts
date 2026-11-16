@@ -10,10 +10,10 @@ import { hourAt, kmh, night, sim } from './core';
 import { Car } from './cars';
 import { Person } from './person';
 import { roadVehicles, streetAt } from './roads';
-import { buildSahelGround } from '../world/sahel';
-import { BUILDINGS, PARK_SEATS, buildSahelBuildings } from '../world/towers';
+import { buildNewhavenGround } from '../world/newhaven';
+import { BUILDINGS, PARK_SEATS, buildNewhavenBuildings } from '../world/towers';
 
-// ---- Sahel: traffic, its people, and what a click on one of its buildings says ----
+// ---- Newhaven: traffic, its people, and what a click on one of its buildings says ----
 const L = CITY.lanes, X0 = WORLD.x0 - 8, X1 = WORLD.x1 + 8;
 
 // Through traffic between the towns: in from the west along Riverside Rd, round the roundabout, out along its east arm
@@ -32,19 +32,19 @@ export const THROUGH = {
 const giveWayAtRoundabout = [{ s:THROUGH.w.project(441, 127.5), clear:(v: any) => !boxBusy(v, 423, 441, 129, 146) }];
 export const throughWest = () => new Car({ path:THROUGH.w, yields:giveWayAtRoundabout, role:'through' });
 
-// Sahel's own traffic: loops of right turns round its blocks, giving way where they join the boulevard or the Corniche
+// Newhaven's own traffic: loops of right turns round its blocks, giving way where they join the boulevard or the Esplanade
 type Loop = { name: string, pts: number[][], n: number, yields: [number, number, number[]][], path?: Path, ys?: any[] };
 const LOOPS: Loop[] = [
   { name:'round the Financial District', pts:[[820, 16.5], [876.5, 16.5], [876.5, L.gW], [763.5, L.gW], [763.5, 16.5], [820, 16.5]], n:2, yields:[[876.5, 109, [876, 932, 113, 124]]] },
   { name:'round the Arch', pts:[[700, 16.5], [756.5, 16.5], [756.5, L.gW], [643.5, L.gW], [643.5, 16.5], [700, 16.5]], n:2, yields:[[756.5, 109, [756, 812, 113, 124]]] },
-  { name:'round Souq Sahel', pts:[[700, L.gE], [756.5, L.gE], [756.5, 201.5], [643.5, 201.5], [643.5, L.gE], [700, L.gE]], n:2, yields:[[643.5, 153, [592, 646, 138, 149]]] },
+  { name:'round Newhaven Market Hall', pts:[[700, L.gE], [756.5, L.gE], [756.5, 201.5], [643.5, 201.5], [643.5, L.gE], [700, L.gE]], n:2, yields:[[643.5, 153, [592, 646, 138, 149]]] },
   { name:'round City Hall', pts:[[590, L.gE], [636.5, L.gE], [636.5, 201.5], [543.5, 201.5], [543.5, L.gE], [590, L.gE]], n:2, yields:[[543.5, 153, [500, 546, 129, 149]]] },
   { name:'round the Grand', pts:[[820, L.gE], [876.5, L.gE], [876.5, 201.5], [763.5, 201.5], [763.5, L.gE], [820, L.gE]], n:2, yields:[[763.5, 153, [712, 766, 138, 149]]] },
-  { name:'round Wadi Park', pts:[[700, 208.5], [756.5, 208.5], [756.5, 263.5], [643.5, 263.5], [643.5, 208.5], [700, 208.5]], n:2, yields:[[756.5, 255, [756, 806, 258, 267]]] },
+  { name:'round Stonebrook Park', pts:[[700, 208.5], [756.5, 208.5], [756.5, 263.5], [643.5, 263.5], [643.5, 208.5], [700, 208.5]], n:2, yields:[[756.5, 255, [756, 806, 258, 267]]] },
 ];
 for (const lp of LOOPS) { const path = new Path(lp.pts, 6, true); lp.path = path; lp.ys = lp.yields.map(([x, y, b]) => ({ s:path.project(x, y), clear:(v: any) => !boxBusy(v, b[0], b[1], b[2], b[3]) })); }
 
-// ---- Sahel's pavements: a ring round every block, crossings at the corners, the promenade, the marina's piers ----
+// ---- Newhaven's pavements: a ring round every block, crossings at the corners, the promenade, the marina's piers ----
 const BL: number[][] = [[547, 633, 20, 115], [647, 753, 20, 115], [767, 873, 20, 115], [887, 960, 2, 115], [547, 633, 147, 198], [647, 753, 147, 198], [767, 873, 147, 198],
   [887, 960, 147, 260], [547, 633, 212, 260], [647, 753, 212, 260], [767, 873, 212, 260], [520, 533, 2, 115], [520, 533, 147, 260]];
 const IN = 1.6, PROM = 276.5;
@@ -60,7 +60,7 @@ const CPED = (() => {
     if (B[0] - A[1] > 8 && B[0] - A[1] < 18) for (const y of new Set([a[2], a[3], b[2], b[3]])) if (within(y, a[2], a[3]) && within(y, b[2], b[3])) { crossings.push([[a[1], y], [b[0], y]]); sides[i].ys.add(y); sides[j].ys.add(y); }
     if (B[2] - A[3] > 8 && B[2] - A[3] < 36) for (const x of new Set([a[0], a[1], b[0], b[1]])) if (within(x, a[0], a[1]) && within(x, b[0], b[1])) { crossings.push([[x, a[3]], [x, b[2]]]); sides[i].xs.add(x); sides[j].xs.add(x); }
   }));
-  // over the Corniche to the promenade from each corner of the blocks along it
+  // over the Esplanade to the promenade from each corner of the blocks along it
   const promXs = new Set([520 + 4, MARINA.jetty[0] + 2.5, 958]);
   sides.forEach((s, i) => { if (BL[i][3] === 260) for (const x of [s.b[0], s.b[1]]) { crossings.push([[x, s.b[3]], [x, PROM]]); promXs.add(x); s.xs.add(x); } });
   for (const s of sides) {
@@ -69,13 +69,13 @@ const CPED = (() => {
     for (const x of [x0, x1]) for (let k = 1; k < ys.length; k++) link([x, ys[k - 1]], [x, ys[k]]);
   }
   for (const [a, b] of crossings) link(a, b);
-  // up Najd Av's west side from the corner of City Hall's block, over North St and the main line to Sahel Motors
+  // up Highland Av's west side from the corner of City Hall's block, over North St and the main line to Newhaven Motors
   link([631.4, 21.6], [631.4, 4.4]); link([631.4, 4.4], [MOTORS.walk, -6]); link([MOTORS.walk, -6], [MOTORS.walk, MOTORS.door]);
   const px = [...promXs].sort((p, q) => p - q); for (let k = 1; k < px.length; k++) link([px[k - 1], PROM], [px[k], PROM]);
   // the jetty and its fingers
   const jx = MARINA.jetty[0] + 2.5; let prev = [jx, PROM];
   for (const fy of MARINA.fingers) { link(prev, [jx, fy]); link([jx, fy], [575, fy]); link([jx, fy], [625, fy]); prev = [jx, fy]; }
-  return new Site({ name:'Sahel pavements', nodes, segs });
+  return new Site({ name:'Newhaven pavements', nodes, segs });
 })();
 export const cityRoute = (a: number[], b: number[]) => dedupe([a, ...CPED.route(CPED.at(a[0], a[1]), CPED.at(b[0], b[1])), b]);
 
@@ -92,8 +92,8 @@ for (const b of BUILDINGS) {
   const [x0, x1, , y1] = b.box;
   cportal(k, b.id, k === 'park' ? [(x0 + x1) / 2, (b.box[2] + y1) / 2] : [(x0 + x1) / 2, y1 + 0.6], k === 'park' ? 2 : k === 'mall' ? 2 : 1);
 }
-for (const fy of MARINA.fingers) for (const x of [578, 622]) cportal('marina', 'Sahel Marina', [x, fy], 0.6);
-cportal('motors', 'Sahel Motors', [MOTORS.walk, MOTORS.door], 1);
+for (const fy of MARINA.fingers) for (const x of [578, 622]) cportal('marina', 'Newhaven Marina', [x, fy], 0.6);
+cportal('motors', 'Newhaven Motors', [MOTORS.walk, MOTORS.door], 1);
 for (const x of [530, 552, 574]) cportal('beach', 'the beach', [x, 287], 0.7);
 const OUTDOORS = ['park', 'beach', 'marina'];
 export function nextCity(from: Portal | null, avoid?: string) {
@@ -107,14 +107,14 @@ export function nextCity(from: Portal | null, avoid?: string) {
 }
 const startCity = () => { const pool = CITY_PORTALS.filter(q => ['edge', 'home', 'office', 'hotel'].includes(q.kind)); return pool[Math.floor(rng() * pool.length)]; };
 const SEATS = PARK_SEATS.map(([x, y, h]) => ({ at:[x, y], h, z:0.45, by:null as any }));
-const NAMES_SAHEL = ['A. Ashby', 'N. Quayle', 'S. Ottley', 'F. Shepherd', 'M. Dorsey', 'L. Hadfield', 'R. Nash', 'K. Gamble', 'H. Sayer', 'Y. Zeller',
+const NAMES_NEWHAVEN = ['A. Ashby', 'N. Quayle', 'S. Ottley', 'F. Shepherd', 'M. Dorsey', 'L. Hadfield', 'R. Nash', 'K. Gamble', 'H. Sayer', 'Y. Zeller',
   'D. Farrow', 'J. Manson', 'O. Kemp', 'T. Hamlin', 'W. Morrow', 'Z. Barker', 'B. Young', 'I. Rand', 'G. Kirby', 'E. Selby', 'P. Mendes', 'C. Lindqvist', 'V. Anand', 'U. Obi'];
 let citizenSeq = 0;
 export const CITIZENS = () => sim.people.filter((p: any) => p instanceof Citizen);
 export class Citizen extends Person {
   [k: string]: any;
   constructor(from: Portal, to: Portal, o: any = {}) {
-    super({ look:'sahel', id:NAMES_SAHEL[citizenSeq++ % NAMES_SAHEL.length], x:from.p[0], y:from.p[1], speed:rand(1.1, 1.45), from, ...o });
+    super({ look:'newhaven', id:NAMES_NEWHAVEN[citizenSeq++ % NAMES_NEWHAVEN.length], x:from.p[0], y:from.p[1], speed:rand(1.1, 1.45), from, ...o });
     this.trip(to);
   }
   trip(to: Portal) { this.to = to; this.go(cityRoute([this.x, this.y], to.p), `walking to ${to.name}`).then((p: Citizen) => p.arrive()); }
@@ -129,17 +129,17 @@ export class Citizen extends Person {
     if (seat) { seat.by = this; this.walk([seat.at]).face(seat.h).then((p: Citizen) => p.sitOn(seat)); }
     else if (t.kind === 'beach') this.face(Math.PI / 2).then((p: Citizen) => p.sitOn({ ground:true }));
     else this.face(t.kind === 'marina' ? (t.p[0] < 600 ? Math.PI : 0) : Math.PI / 2);
-    this.wait(rand(14, 36), { park:'in Wadi Park', beach:'on the beach', marina:'looking at the yachts' }[t.kind as string] ?? 'out')
+    this.wait(rand(14, 36), { park:'in Stonebrook Park', beach:'on the beach', marina:'looking at the yachts' }[t.kind as string] ?? 'out')
       .then((p: Citizen) => { p.standUp(); p.trip(nextCity(t, t.kind)); });
   }
   info() {
-    return { kind:'Pedestrian · Sahel', title:this.id, status:this.status(), rows:[['From', this.from?.name ?? '—'], ['Going to', this.to.name], ['Street', streetAt(this.x, this.y)], ['Pace', kmh(this.speed)]] };
+    return { kind:'Pedestrian · Newhaven', title:this.id, status:this.status(), rows:[['From', this.from?.name ?? '—'], ['Going to', this.to.name], ['Street', streetAt(this.x, this.y)], ['Pace', kmh(this.speed)]] };
   }
   route() { const r: any = super.route(); if (r) r.stop = this.to.name; return r; }
 }
 
 // ---- what a click on a building says ----
-const DISTRICT = (x: number, y: number) => y < CITY.blvd[0] ? 'the Financial District' : y < CITY.souq[1] ? 'the Souq quarter' : y < CITY.corniche[0] ? 'Wadi' : 'the waterfront';
+const DISTRICT = (x: number, y: number) => y < CITY.blvd[0] ? 'the Financial District' : y < CITY.exchange[1] ? 'the Exchange quarter' : y < CITY.esplanade[0] ? 'Stonebrook' : 'the waterfront';
 function statusOf(b: any) {
   const h = hourAt(sim.t), lit = night() > 0.5;
   if (b.status) return b.status;
@@ -155,21 +155,21 @@ function statusOf(b: any) {
 function buildingEntity(b: any) {
   const [x0, x1, y0, y1, h] = b.box;
   return { kind:'building', id:b.id, groups:[], pick:[(x0 + x1) / 2, y1, h / 2], bbox:new THREE.Box3(W(x0, y0, 0), W(x1, y1, h + CURB)), b,
-    info() { return { kind:`${b.kind} · Sahel`, title:b.id, status:statusOf(b), rows:[...b.rows, ['District', DISTRICT((x0 + x1) / 2, (y0 + y1) / 2)]] }; },
+    info() { return { kind:`${b.kind} · Newhaven`, title:b.id, status:statusOf(b), rows:[...b.rows, ['District', DISTRICT((x0 + x1) / 2, (y0 + y1) / 2)]] }; },
     readout() { return `${b.id} · ${statusOf(b)}`.toLowerCase(); } };
 }
 
-export function buildSahel() {
-  const ground = buildSahelGround(); ground.traverse(o => { o.raycast = noop; }); scene.add(ground);
-  const bg = buildSahelBuildings(); scene.add(bg);
+export function buildNewhaven() {
+  const ground = buildNewhavenGround(); ground.traverse(o => { o.raycast = noop; }); scene.add(ground);
+  const bg = buildNewhavenBuildings(); scene.add(bg);
   const ents = BUILDINGS.map(buildingEntity);
   // one part for every building: a click is resolved to the building whose footprint is nearest the point hit
-  const city = { kind:'building', id:'Sahel', groups:[bg], pick:[740, 130, 10],
+  const city = { kind:'building', id:'Newhaven', groups:[bg], pick:[740, 130, 10],
     resolve(pt: THREE.Vector3) { let best: any = null, bd = 6;
       for (const e of ents) { const [x0, x1, y0, y1] = e.b.box, d = Math.hypot(Math.max(x0 - pt.x, 0, pt.x - x1), Math.max(y0 - pt.z, 0, pt.z - y1)); if (d < bd) { bd = d; best = e; } }
       return best ?? this; },
-    info() { return { kind:'City', title:'Sahel', status:night() > 0.5 ? 'lit up for the night' : 'busy', rows:[['Founded', '2019'], ['Towers', String(BUILDINGS.filter(b => b.box[4] > 45).length)], ['Tallest', 'Sahel Tower, 159 m']] }; },
-    readout() { return 'sahel'; } };
+    info() { return { kind:'City', title:'Newhaven', status:night() > 0.5 ? 'lit up for the night' : 'busy', rows:[['Founded', '2019'], ['Towers', String(BUILDINGS.filter(b => b.box[4] > 45).length)], ['Tallest', 'Newhaven Tower, 159 m']] }; },
+    readout() { return 'newhaven'; } };
   bg.userData.entity = city;
   // traffic: the loops, a car or two on each
   for (const lp of LOOPS) for (let k = 0; k < lp.n; k++) new Car({ role:'local', loop:lp, path:lp.path, yields:lp.ys, s:(k + rng() * 0.4) * lp.path!.length / lp.n, vmax:rand(9, 12) });

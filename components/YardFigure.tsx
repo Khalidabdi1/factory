@@ -23,9 +23,9 @@ export default function YardFigure() {
           <button data-view="3" title="Town (4)">Town</button>
           <button data-view="4" title="Coast (5)">Coast</button>
           <button data-view="5" title="Car Works (6)">Car Works</button>
-          <button data-view="6" title="Sahel (7)">Sahel</button>
+          <button data-view="6" title="Newhaven (7)">Newhaven</button>
           <button data-view="7" title="Metro (8)">Metro</button>
-          <button data-view="8" title="Sahel Motors (9)">Motors</button>
+          <button data-view="8" title="Newhaven Motors (9)">Motors</button>
           <button data-view="9" title="Port (P)">Port</button>
           <button data-view="10" title="The east country (E)">East</button>
           <button data-view="11" title="Millbrook (V)">Village</button>

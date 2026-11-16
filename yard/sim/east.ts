@@ -10,7 +10,7 @@ import { weather } from './weather';
 // out there with the line.
 type Place = { id: string, kind: string, rows: [string, string][], status: () => string };
 const PLACES: Record<string, Place> = {
-  woods:{ id:'Sahel Woods', kind:'Woods', rows:[['Trees', 'oak, pine, poplar'], ['Paths', 'none yet'], ['Beyond', 'Harrow Ridge']], status:() => night() > 0.5 ? 'dark under the trees' : 'still' },
+  woods:{ id:'Newhaven Woods', kind:'Woods', rows:[['Trees', 'oak, pine, poplar'], ['Paths', 'none yet'], ['Beyond', 'Harrow Ridge']], status:() => night() > 0.5 ? 'dark under the trees' : 'still' },
   harrow:{ id:'Harrow Ridge', kind:'Ridge', rows:[['Highest point', '412 m'], ['West face', 'the Vale Road climbs it in four hairpins'], ['Under it', 'Line 1, 120 m of tunnel; the freight line'],
     ['East face', 'a cliff over Raven Gorge']], status:() => weather.fog() > 0.3 ? 'in cloud' : 'clear to the top' },
   gorge:{ id:'Raven Gorge', kind:'Gorge', rows:[['Depth', 'about 30 m below the rims'], ['Stream', 'runs all year, down to the sea'], ['Crossings', 'the Line 1 arch, the Vale Road suspension bridge, the coast road at its mouth'],
@@ -20,7 +20,7 @@ const PLACES: Record<string, Place> = {
   ridge2:{ id:'Long Edge', kind:'Ridge', rows:[['Highest point', '420 m'], ['Through it', 'Line 1 and the Vale Road, in tunnels'], ['East face', 'falls into Millbrook Vale']], status:() => 'quiet' },
   vale:{ id:'Millbrook Vale', kind:'Valley', rows:[['Floor', 'farmland, opening south to the sea'], ['Village', 'Millbrook'], ['Line 1', 'the end of the line'], ['Road', 'the Vale Road, on to the east']], status:() => night() > 0.5 ? 'a few lights' : 'farmed' },
   north:{ id:'the High Range', kind:'Mountains', rows:[['Highest point', '2,210 m'], ['Snow', 'on the tops all year']], status:() => 'snow on the tops' },
-  coast:{ id:'the east coast', kind:'Coast', rows:[['Shore', 'sand, from Sahel to the east edge'], ['Road', 'the coast road']], status:() => 'surf on the sand' },
+  coast:{ id:'the east coast', kind:'Coast', rows:[['Shore', 'sand, from Newhaven to the east edge'], ['Road', 'the coast road']], status:() => 'surf on the sand' },
 };
 const placeAt = (x: number, y: number) => {
   const z = landZ(x, y);
@@ -50,7 +50,7 @@ export function buildEastSys(metroSys: any) {
   const road = { kind:'line', id:'Vale Road', groups:[e.road], pick:[1190, 98, 30],
     info() {
       const n = sim.cars.filter(onRoadEast).length;
-      return { kind:'Road · two lanes', title:'Vale Road', status:`${n} ${n === 1 ? 'car' : 'cars'} on it`, rows:[['From', 'the end of Sahel Blvd'], ['To', 'Millbrook and on east'],
+      return { kind:'Road · two lanes', title:'Vale Road', status:`${n} ${n === 1 ? 'car' : 'cars'} on it`, rows:[['From', 'the end of Newhaven Blvd'], ['To', 'Millbrook and on east'],
         ['Length', `${(ROAD_EAST.path.length / 1000).toFixed(1)} km`], ['Hairpins', 'three, up Harrow Ridge\'s west face'], ['Over Raven Gorge', 'a suspension bridge, 60 m between its pylons'],
         ['Tunnel', `${lengthOf(ROAD_EAST, 'tunnel')} m, under Long Edge`], ['Into Millbrook', 'a curving viaduct down the valley side']] };
     },

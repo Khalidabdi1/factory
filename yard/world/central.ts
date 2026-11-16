@@ -4,10 +4,10 @@ import { Part, v3 } from '../kernel/part';
 import { CURB, METRO } from '../layout';
 import { beam } from '../models/works';
 import { Frame, buffer, escalator, levels, roundel, screenDoors, trackV, tracks } from './metro';
-import { datePalm } from './sahel';
+import { datePalm } from './newhaven';
 
-// ---- Sahel Central, where the lines cross ----
-// After the station Zaha Hadid's office built for Riyadh's financial district (KAFD): a long run of white lobes, low
+// ---- Newhaven Central, where the lines cross ----
+// After Zaha Hadid's financial-district metro station: a long run of white lobes, low
 // at the west end and rising to the east, each a pillow of shell with lenses of diamond lattice let into its sides and
 // its roof. Smooth ribbons run between the lenses and braid together in the valleys between the lobes; the eaves lift
 // over a recessed glass base into tall eyes at the lobes' middles and swoop down between them. Line 1 runs through it
@@ -42,7 +42,7 @@ const sm = (v: number) => { v = Math.min(1, Math.max(0, v)); return v * v * (3 -
 export function section(x: number) {
   const f = phase(x), s2 = Math.sin(f) ** 2, c2 = Math.cos(f) ** 2, l2 = Math.exp(-(((x - 658) / 11.5) ** 2));
   let H = 19 + 13 * sm((x - X0) / (X1 - X0)) ** 0.85 + 1.5 * c2 + 2.5 * l2;
-  const e = 3.2 + 4.3 * s2 + 3.2 * Math.exp(-(((x - 640) / 9) ** 4));        // (and lifted over Najd Av)
+  const e = 3.2 + 4.3 * s2 + 3.2 * Math.exp(-(((x - 640) / 9) ** 4));        // (and lifted over Highland Av)
   const ys = 225.6 + 1.6 * s2 + 9 * l2, yn = 185 - 1.6 * s2 - l2;               // (and out over the end of Line 2)
   const end = Math.min(1, (x - X0) / 8, (X1 - x) / 8), r = Math.sqrt(Math.max(0, 1 - (1 - end) ** 2));
   H = e + (H - e) * (0.88 + 0.12 * r);
@@ -157,9 +157,9 @@ function mouth(p: Part, axis: 'x' | 'y', u0: number, u1: number, c: number, zb: 
 
 // ---- the levels inside, the islands, escalators, gates; the trees that hold the shell up ----
 export function buildCentral() {
-  const g = new THREE.Group(); g.name = 'Sahel Central';
+  const g = new THREE.Group(); g.name = 'Newhaven Central';
   const F1 = new Frame(L1), F2 = new Frame(L2), z1 = levels(L1), z2 = levels(L2), ISL = METRO.island;
-  // ---- always there: the tree columns, piers in Souq St's middle, the skybridge to Souq Sahel, the signs ----
+  // ---- always there: the tree columns, piers in Exchange St's middle, the skybridge to Newhaven Market Hall, the signs ----
   const b = new Part();
   const treeCol = (x: number, y: number, zTop: number) => {
     b.cylZ(x, y, CURB, 0.75, 7.5, 10);
@@ -168,10 +168,10 @@ export function buildCentral() {
   for (const [x, y] of [[626, 194], [690, 194], [626, 216], [690, 216]]) treeCol(x, y, 40);
   for (const [x, y] of [[650, 170], [666, 170], [650, 224], [666, 224]]) { b.box(x - 0.8, y - 0.8, CURB, 1.6, 1.6, z2.zu - CURB - 0.2); }
   for (const x of [618, 698]) F1.box(b, x - 0.8, x + 0.8, -1.1, 1.1, 0, z1.zu - 0.2);
-  b.box(700, 178, CZ + 0.4, 9, 4, 2.8, 'g').box(700, 178, CZ + 3.2, 9, 4, 0.25);   // the skybridge into Souq Sahel's upper floor
+  b.box(700, 178, CZ + 0.4, 9, 4, 2.8, 'g').box(700, 178, CZ + 3.2, 9, 4, 0.25);   // the skybridge into Newhaven Market Hall's upper floor
   for (const c of CENTRAL.corners) { const [x, y] = c.ground; b.box(x + 3.2, y - 0.15, CURB, 0.3, 0.3, 3.6).box(x + 2.85, y - 0.1, CURB + 3.6, 1.0, 0.1, 1.0, 'k'); }
   for (const x of [611, 681]) { b.box(x - 0.4, 238.6, CURB, 0.8, 0.5, 4.6, 'n'); const sign = FRONT(x - 4, 239.12, 4.6);
-    b.box(x - 4, 238.6, CURB + 3.2, 8, 0.5, 1.4, 'n').text(sign, 'SAHEL CENTRAL', 4.6, 0.95, 0.62, 'ink', 'middle', 0.04); roundel(b, sign, 0.75, 0.7, 0.5, 0.04); }
+    b.box(x - 4, 238.6, CURB + 3.2, 8, 0.5, 1.4, 'n').text(sign, 'NEWHAVEN CENTRAL', 4.6, 0.95, 0.62, 'ink', 'middle', 0.04); roundel(b, sign, 0.75, 0.7, 0.5, 0.04); }
   for (let x = 604; x < 703; x += 7.2) if (x < 627 || x > 653) { if (Math.abs(x - 620) > 4 && Math.abs(x - 694) > 4) datePalm(b, x, 243.5, 0.9, CURB); }
   for (const [a, bb] of [[603, 627], [653, 703]]) b.box(a, 245.6, CURB, bb - a, 0.35, 0.5, 'n');
   g.add(b.build('centralBase'));

@@ -23,7 +23,7 @@ import { buildFog, buildRain } from './world/weatherfx';
 import { orders, placeOrder } from './sim/courier';
 import { EDGES, kerbStop, locate, trip } from './sim/roadnet';
 
-export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, sahelSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys, f1Sys, joustSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
+export function initView({ courier, fairSys, fishingSys, fireSys, worksSys, trainSys, newhavenSys, metroSys, brtSys, motorsSys, portSys, eastSys, villageSys, obsSys, sbSys, millSys, f1Sys, joustSys, renderer, whG, shopG, factory, warehouse, gate, cafe, townHall, lighthouse, range, flats, homes }) {
 let selected = null, hovered = null;
 // ---- camera & controls ----
 // (stood well back, so that a rocket three kilometres up is still in front of it)
@@ -95,7 +95,7 @@ function hit(cx, cy) {
   for (const h of ray.intersectObjects([...scene.children, ...sky.children], true).sort((a, b) => a.distance - b.distance)) {
     if (!h.object.isMesh || !shown(h.object) || (h.point.x < WORLD.x0 || h.point.x > WORLD.x1 || h.point.z < WORLD.y0 || h.point.z > WORLD.y1) && !inSky(h.object)) continue;
     let o = h.object; while (o && !o.userData.entity) o = o.parent;
-    // the nearest visible surface decides; a part drawn for many things (Sahel's buildings) says which one was hit
+    // the nearest visible surface decides; a part drawn for many things (Newhaven's buildings) says which one was hit
     return o ? o.userData.entity.resolve?.(h.point) ?? o.userData.entity : null;
   }
   return null;
@@ -323,7 +323,7 @@ window.__yardReady = true;
 
 // ---- debug hook for automated checks (?debug) ----
 if (DEBUG) {
-  const all = () => [...joustSys.entities(), ...f1Sys.entities(), ...millSys.entities(), ...sbSys.entities(), ...obsSys.entities(), ...villageSys.entities(), ...eastSys.places, eastSys.road, ...sahelSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
+  const all = () => [...joustSys.entities(), ...f1Sys.entities(), ...millSys.entities(), ...sbSys.entities(), ...obsSys.entities(), ...villageSys.entities(), ...eastSys.places, eastSys.road, ...newhavenSys.buildings, ...Object.values(metroSys.stations), ...metroSys.trains, ...brtSys.stations, ...motorsSys.entities(), ...portSys.entities(), factory, conveyor, gate, warehouse, whGate, shop, bank, policeStation, fireSys.station, worksSys.works, worksSys.lot.entity, ...worksSys.line.bodies.filter(Boolean), ...worksSys.line.driving, ...worksSys.lot.kept, trainSys, cafe, townHall, lighthouse, range, ...flats, ...homes,
     fairSys.pier, ...fairSys.rides, fishingSys.kestrel, ...(incident.heli ? [incident.heli] : []), ...sim.forklifts, ...sim.trucks, ...sim.cars, ...sim.people, ...BOATS, ...sim.pallets];
   const find = id => all().find(e => e.id === id);
   window.yard = {

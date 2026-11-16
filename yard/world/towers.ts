@@ -6,9 +6,9 @@ import { rand } from '../kernel/math';
 import { CURB } from '../layout';
 import { beam } from '../models/works';
 import { crown, ring, tree, yaw } from './ground';
-import { cityLamp, datePalm, parkedCar } from './sahel';
+import { cityLamp, datePalm, parkedCar } from './newhaven';
 
-// Sahel's buildings. The skyline climbs towards the hills: the towers of the Financial District stand north of the
+// Newhaven's buildings. The skyline climbs towards the hills: the towers of the Financial District stand north of the
 // boulevard; south of it buildings keep low along the streets and step up behind, so the busway, the metro and the
 // showroom up on its terrace are never hidden behind them. All of it is one part; a click finds the building under the
 // pointer from BUILDINGS.
@@ -61,9 +61,9 @@ function glassTower(p: Part, x: number, y: number, w: number, d: number, h: numb
     p.box(x + w * 0.3, y + d * 0.3, top + 9, w * 0.4, d * 0.4, 6); roof(p, x + w * 0.3, y + d * 0.3, w * 0.4, d * 0.4, top + 15, { plant:false, aerial:10 }); }
   else roof(p, x, y, w, d, top, { aerial:o.heli ? 0 : 6, heli:o.heli });
 }
-// Sahel Tower: the landmark. A chamfered square in plan, glass all the way up, its top cut into a crystal that leans
+// Newhaven Tower: the landmark. A chamfered square in plan, glass all the way up, its top cut into a crystal that leans
 // north-east to a point, lit at night; a glass lobby round its foot.
-function sahelTower(p: Part, x: number, y: number, s: number, h: number) {
+function newhavenTower(p: Part, x: number, y: number, s: number, h: number) {
   const c = 6, at = (u: number, v: number, z: number) => [x + u, y + v, z];
   const plan = [[c, 0], [s - c, 0], [s, c], [s, s - c], [s - c, s], [c, s], [0, s - c], [0, c]];
   p.extrude(plan.map(([u, v]) => at(u, v, Z)), [0, 0, h], 'n');
@@ -81,7 +81,7 @@ function sahelTower(p: Part, x: number, y: number, s: number, h: number) {
   p.box(x + s / 2 - 8, y - 9, Z + 6, 16, 5, 0.6, 'k');
 }
 // The arch: a tower whose top opens in an upturned parabola, two horns and a skybridge across the opening near the top
-// (after a tower in Riyadh with the same trick)
+// (after a real tower with the same trick)
 function archTower(p: Part, x: number, y: number, w: number, d: number, h: number, open: number) {
   const z0 = Z + open, cx = x + w / 2, H = Z + h;
   p.box(x, y, Z, w, d, open);
@@ -96,7 +96,7 @@ function archTower(p: Part, x: number, y: number, w: number, d: number, h: numbe
   for (const sg of [-1, 1]) p.box(cx + sg * ow(H) - (sg > 0 ? 1.2 : 0), y + d / 2 - 0.3, H, 1.2, 0.6, 3, 'l');   // a lamp on each horn
 }
 // The globe: a tapering glass shaft, its four corner columns running on up to a point, a lit globe held between them
-// (after a tower in Riyadh with the same trick)
+// (after a real tower with the same trick)
 function globeTower(p: Part, cx: number, cy: number, s: number, h: number) {
   const top = Z + h * 0.62, hb = s / 2, ht = s * 0.3, apex = Z + h;
   const pts: THREE.Vector3[] = []; for (const [hw, z] of [[hb, Z], [ht, top]]) for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) pts.push(W(cx + a * hw, cy + b * hw, z));
@@ -146,7 +146,7 @@ function cityHall(p: Part, x: number, y: number) {
   p.box(px, py, Z, pw, pd, ph);
   for (let k = 0; k < 2; k++) p.box(px + 6, py + pd + k * 0.6, Z, pw - 12, 0.6, ph - (k + 1) * 0.3);
   // the hall, set back behind the colonnade: tall slit windows, some lit after dark, a band of little triangles under
-  // the roof (an old Najd motif), glass doors in the middle of the south front
+  // the roof (an old Highland motif), glass doors in the middle of the south front
   const hx = px + 3, hy = py + 2, hw = pw - 6, hd = pd - 6;
   p.box(hx, hy, z0, hw, hd, hh);
   for (const [M, fw] of faces(hx, hy, hw, hd, z0, hh)) {
@@ -163,9 +163,9 @@ function cityHall(p: Part, x: number, y: number) {
   const rx = px - 1.5, ry = py - 1.5, rw = pw + 3, rd = pd + 3, rz = z0 + hh;
   p.box(rx, ry, rz, rw, rd, 1.1);
   p.box(rx, ry + rd - 0.1, rz - 0.12, rw, 0.12, 0.12, 'l', { lines:false }).box(rx + rw - 0.1, ry, rz - 0.12, 0.12, rd, 0.12, 'l', { lines:false });
-  p.text(FRONT(rx, ry + rd, rz + 1.1), 'SAHEL CITY HALL', rw / 2, 0.85, 0.62, 'ink', 'middle', 0.05);
+  p.text(FRONT(rx, ry + rd, rz + 1.1), 'NEWHAVEN CITY HALL', rw / 2, 0.85, 0.62, 'ink', 'middle', 0.05);
   roof(p, rx, ry, rw, rd, rz + 1.1);
-  // the forecourt down to Souq St: paving, a long pool with a rim, benches beside it, a palm at each corner
+  // the forecourt down to Exchange St: paving, a long pool with a rim, benches beside it, a palm at each corner
   const T = TOP(0, 0, Z), fy0 = py + pd + 1.2, fy1 = y + 42, fx0 = x, fx1 = x + 42;
   p.fill2(T, fx0, fy0, fx1 - fx0, fy1 - fy0, 'deck', 0.02);
   const pave: number[] = []; for (let u = fx0 + 2.4; u < fx1; u += 2.4) pave.push(u, fy0, u, fy1); p.draw(T, pave, 'detail', 0.025);
@@ -176,7 +176,7 @@ function cityHall(p: Part, x: number, y: number) {
   for (const [a, b, t] of [[x + 5, qy - 3, 0.2], [x + 37, qy - 3, 0.5], [x + 5, qy + 3.5, 0.7], [x + 37, qy + 3.5, 0.9]]) datePalm(p, a, b, 0.95, Z, t);
 }
 
-// ---- Souq Sahel, the mall: two floors under a glass barrel vault, its name over the doors on Souq St ----
+// ---- Newhaven Market Hall, the mall: two floors under a glass barrel vault, its name over the doors on Exchange St ----
 function mall(p: Part, x: number, y: number, w: number, d: number) {
   const h = 12.5;
   p.box(x, y, Z, w, d, h);
@@ -187,7 +187,7 @@ function mall(p: Part, x: number, y: number, w: number, d: number) {
   p.geo(new THREE.CylinderGeometry(r, r, w - 10, 14, 1, true, 0, Math.PI), new THREE.Matrix4().compose(W(x + w / 2, vy, Z + h), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, Math.PI / 2)), v3(1, 1, 1)), 'g');
   // the screen and the name on the south front, entrances under canopies
   const F = FRONT(x, y + d, Z + h);
-  p.fill2(F, w / 2 - 9, 0.6, 18, 3.0, 'kob', 0.04).text(F, 'SOUQ SAHEL', w / 2, 2.85, 1.7, 'ink', 'middle', 0.05);
+  p.fill2(F, w / 2 - 9, 0.6, 18, 3.0, 'kob', 0.04).text(F, 'MARKET HALL', w / 2, 2.85, 1.7, 'ink', 'middle', 0.05);
   p.fill2(F, 3, 0.8, 9, 3.4, 'window', 0.05).rect2(F, 3, 0.8, 9, 3.4, 'line', 0.055);
   for (const u of [8, w - 14]) p.box(x + u, y + d, Z + 3.6, 7, 2.6, 0.35, 'k');
   roof(p, x, y, w * 0.4, d * 0.3, Z + h, { plant:true });
@@ -205,86 +205,86 @@ function plaza(p: Part, x0: number, y0: number, x1: number, y1: number, { founta
   for (let i = 0; i < palms; i++) { const a = i / palms * Math.PI * 2 + 0.3, rr = Math.min(x1 - x0, y1 - y0) * 0.36; datePalm(p, cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, rand(0.85, 1.05)); }
 }
 
-export function buildSahelBuildings() {
+export function buildNewhavenBuildings() {
   const p = new Part();
   // ---- the Financial District, north of the boulevard ----
-  // Najd Av west: a car park and offices by Motor District station
+  // Highland Av west: a car park and offices by Motor District station
   p.box(552, 28, Z, 38, 36, 12);
   for (let k = 1; k < 4; k++) p.box(551.6, 27.6, Z + k * 3 - 0.3, 38.8, 36.8, 0.3);
   for (const [M, fw] of faces(552, 28, 38, 36, Z, 12)) for (let k = 0; k < 4; k++) p.draw(M, [0, 12 - k * 3 - 1.2, fw, 12 - k * 3 - 1.2], 'detail', 0.04);
   for (let k = 0; k < 10; k++) parkedCar(p, 556 + (k % 5) * 6.5, 33 + Math.floor(k / 5) * 22, false, rand(0, 1) < 0.4 ? 'k' : 'n');
   p.text(FRONT(552, 64, Z + 12), 'P', 3, 3.2, 2.6, 'ink', 'middle', 0.05);
-  add('Najd Car Park', 'Car park · 4 levels', [552, 590, 28, 64, 12], [['Spaces', '410'], ['Open', 'all day and all night'], ['Street', 'North St']]);
+  add('Highland Car Park', 'Car park · 4 levels', [552, 590, 28, 64, 12], [['Spaces', '410'], ['Open', 'all day and all night'], ['Street', 'North St']]);
   midRise(p, 552, 74, 52, 34, 22);
-  add('Motor House', 'Offices', [552, 604, 74, 108, 22], [['Floors', '6'], ['Tenants', 'Sahel Motors, a bank, two consultancies'], ['Street', 'Sahel Blvd']]);
+  add('Motor House', 'Offices', [552, 604, 74, 108, 22], [['Floors', '6'], ['Tenants', 'Newhaven Motors, a bank, two consultancies'], ['Street', 'Newhaven Blvd']]);
   plaza(p, 596, 26, 624, 66, { fountain:false, palms:4 });
-  // Najd Av east: two office blocks, a plaza with a sculpture, the arch tower
+  // Highland Av east: two office blocks, a plaza with a sculpture, the arch tower
   midRise(p, 672, 26, 32, 34, 22); midRise(p, 712, 26, 36, 36, 26);
-  add('Najd Court', 'Offices', [672, 704, 26, 60, 22], [['Floors', '6'], ['Street', 'North St']]);
-  add('Al Rawda House', 'Offices', [712, 748, 26, 62, 26], [['Floors', '7'], ['Street', 'North St']]);
+  add('Highland Court', 'Offices', [672, 704, 26, 60, 22], [['Floors', '6'], ['Street', 'North St']]);
+  add('Rosewood House', 'Offices', [712, 748, 26, 62, 26], [['Floors', '7'], ['Street', 'North St']]);
   plaza(p, 670, 66, 688, 110, { palms:4 });
   archTower(p, 692, 82, 34, 22, 94, 62);
-  add('Sahel Arch', 'Offices · 24 floors', [692, 726, 82, 104, 94], [['Height', '94 m'], ['The opening', 'from floor 17 to the top'], ['Skybridge', 'a lit walk 85 m up'], ['Street', 'Tower Av']]);
+  add('Newhaven Arch', 'Offices · 24 floors', [692, 726, 82, 104, 94], [['Height', '94 m'], ['The opening', 'from floor 17 to the top'], ['Skybridge', 'a lit walk 85 m up'], ['Street', 'Tower Av']]);
   // Tower Av to Port Av: the twisting tower, the globe, two glass towers
   twistTower(p, 790, 46, 22, 26, 0.038);
-  add('Al Dawama', 'Flats · 26 floors', [775, 805, 31, 61, 98], [['Height', '98 m'], ['Turn', '57° from bottom to top'], ['Flats', '208'], ['Street', 'North St']]);
+  add('The Twist', 'Flats · 26 floors', [775, 805, 31, 61, 98], [['Height', '98 m'], ['Turn', '57° from bottom to top'], ['Flats', '208'], ['Street', 'North St']]);
   globeTower(p, 840, 50, 30, 104);
   add('The Globe', 'Offices · 18 floors and a globe', [825, 855, 35, 65, 115], [['Height', '115 m with the spire'], ['The globe', 'a restaurant, 79 m up'], ['Street', 'Tower Av']]);
   glassTower(p, 776, 78, 30, 28, 62, { crown:'slant', lit:0.3 });
-  add('Tower Av One', 'Offices · 16 floors', [776, 806, 78, 106, 78], [['Height', '78 m'], ['Street', 'Sahel Blvd']]);
+  add('Tower Av One', 'Offices · 16 floors', [776, 806, 78, 106, 78], [['Height', '78 m'], ['Street', 'Newhaven Blvd']]);
   glassTower(p, 818, 82, 48, 24, 46, { crown:'fins', base:8, lit:0.34 });
-  add('Corniche Capital', 'Offices · 12 floors', [816, 868, 80, 108, 52], [['Height', '52 m'], ['Street', 'Sahel Blvd']]);
-  // Port Av east: Sahel Tower, a tower with a lit halo, flats
-  sahelTower(p, 906, 62, 32, 112);
-  add('Sahel Tower', 'Offices · 30 floors', [902, 942, 58, 98, 159], [['Height', '150 m to the crown, 159 m to the tip'], ['Crown', 'a crystal of glass, lit after dark'], ['Lobby', 'on Sahel Blvd'],
-    ['Observation deck', 'floor 29'], ['Street', 'Sahel Blvd']], 'the tallest in Sahel');
+  add('Esplanade Capital', 'Offices · 12 floors', [816, 868, 80, 108, 52], [['Height', '52 m'], ['Street', 'Newhaven Blvd']]);
+  // Port Av east: Newhaven Tower, a tower with a lit halo, flats
+  newhavenTower(p, 906, 62, 32, 112);
+  add('Newhaven Tower', 'Offices · 30 floors', [902, 942, 58, 98, 159], [['Height', '150 m to the crown, 159 m to the tip'], ['Crown', 'a crystal of glass, lit after dark'], ['Lobby', 'on Newhaven Blvd'],
+    ['Observation deck', 'floor 29'], ['Street', 'Newhaven Blvd']], 'the tallest in Newhaven');
   glassTower(p, 896, 12, 28, 30, 70, { crown:'halo', heli:true, lit:0.3 });
-  add('Al Faris Tower', 'Hotel · 19 floors', [894, 926, 10, 44, 76], [['Height', '76 m'], ['Rooms', '280'], ['Roof', 'a helipad inside a lit halo'], ['Street', 'Port Av']]);
+  add('Ridgeway Tower', 'Hotel · 19 floors', [894, 926, 10, 44, 76], [['Height', '76 m'], ['Rooms', '280'], ['Roof', 'a helipad inside a lit halo'], ['Street', 'Port Av']]);
   flatsTower(p, 936, 14, 18, 36, 54);
   add('North Gate Flats', 'Flats · 17 floors', [936, 954, 14, 50, 54], [['Flats', '102'], ['Street', 'Port Av']]);
-  // ---- between the boulevard and Souq St ----
+  // ---- between the boulevard and Exchange St ----
   cityHall(p, 550, 150);
-  add('Sahel City Hall', 'City hall', [550, 592, 150, 192, 15], [['Inside', 'the council chamber, and counters for permits, licences and records'], ['Hours', '08:00–16:00'],
-    ['The roof', 'one flat slab held out over a colonnade, for shade'], ['Street', 'Souq St']]);
+  add('Newhaven City Hall', 'City hall', [550, 592, 150, 192, 15], [['Inside', 'the council chamber, and counters for permits, licences and records'], ['Hours', '08:00–16:00'],
+    ['The roof', 'one flat slab held out over a colonnade, for shade'], ['Street', 'Exchange St']]);
   mall(p, 708, 152, 44, 42);
-  add('Souq Sahel', 'Shopping centre', [708, 752, 152, 194, 19], [['Shops', '140 on two floors'], ['Hours', '10:00–23:00'], ['Under the vault', 'a food court'], ['Street', 'Souq St']]);
+  add('Newhaven Market Hall', 'Shopping centre', [708, 752, 152, 194, 19], [['Shops', '140 on two floors'], ['Hours', '10:00–23:00'], ['Under the vault', 'a food court'], ['Street', 'Exchange St']]);
   midRise(p, 772, 152, 96, 18, 11);
   flatsTower(p, 788, 174, 64, 20, 33);
-  add('Sahel Grand', 'Hotel · 10 floors', [772, 868, 152, 194, 33], [['Rooms', '320'], ['Below', 'shops along the boulevard'], ['Street', 'Tower Av']]);
+  add('Newhaven Grand', 'Hotel · 10 floors', [772, 868, 152, 194, 33], [['Rooms', '320'], ['Below', 'shops along the boulevard'], ['Street', 'Tower Av']]);
   midRise(p, 892, 152, 62, 22, 12); glassTower(p, 920, 176, 34, 18, 26, { lit:0.35 });
   add('Port Av Exchange', 'Offices', [892, 954, 152, 194, 28], [['Floors', '7'], ['Street', 'Port Av']]);
-  // ---- between Souq St and the Corniche ----
-  // Wadi Gardens: courtyard flats, a taller block behind
+  // ---- between Exchange St and the Esplanade ----
+  // Stonebrook Gardens: courtyard flats, a taller block behind
   for (const [x, y, w, d] of [[552, 218, 22, 14], [578, 218, 18, 14]]) midRise(p, x, y, w, d, 13, 3.2);
   flatsTower(p, 552, 238, 44, 16, 34);
-  add('Wadi Gardens', 'Flats', [552, 598, 218, 254, 34], [['Flats', '180'], ['Street', 'Gate Av']]);
-  // Wadi Park: lawns, a dry river of stones, palms, a pergola and a kiosk
+  add('Stonebrook Gardens', 'Flats', [552, 598, 218, 254, 34], [['Flats', '180'], ['Street', 'Gate Av']]);
+  // Stonebrook Park: lawns, a stony brook, palms, a pergola and a kiosk
   buildPark(p, 708, 216, 750, 256);
-  add('Wadi Park', 'Park', [708, 753, 214, 258, 4], [['Open', 'dawn to midnight'], ['The wadi', 'a dry riverbed that runs after rain'], ['Street', 'Souq St']]);
-  // Sahel Library, a box held out over its plaza, and flats stepping up behind
+  add('Stonebrook Park', 'Park', [708, 753, 214, 258, 4], [['Open', 'dawn to midnight'], ['The brook', 'a stony bed that runs after rain'], ['Street', 'Exchange St']]);
+  // Newhaven Library, a box held out over its plaza, and flats stepping up behind
   p.box(776, 230, Z, 18, 20, 5).box(772, 224, Z + 5, 42, 24, 10);
   for (const [M, fw] of faces(772, 224, 42, 24, Z + 5, 10)) { const segs: number[] = []; for (let u = 1.2; u < fw; u += 1.2) segs.push(u, 0, u, 10); p.fill2(M, 0, 2, fw, 6, 'window', 0.03).draw(M, segs, 'detail', 0.04); }
   p.text(FRONT(772, 248, Z + 15), 'LIBRARY', 21, 1.4, 1.1, 'ink', 'middle', 0.05);
   plaza(p, 798, 228, 822, 256, { fountain:false, palms:3 });
-  add('Sahel Library', 'Library', [772, 814, 224, 250, 15], [['Books', '400,000'], ['Hours', '08:00–22:00'], ['The building', 'a reading room held out over the plaza'], ['Street', 'Tower Av']]);
+  add('Newhaven Library', 'Library', [772, 814, 224, 250, 15], [['Books', '400,000'], ['Hours', '08:00–22:00'], ['The building', 'a reading room held out over the plaza'], ['Street', 'Tower Av']]);
   midRise(p, 828, 218, 40, 14, 12, 3.2); flatsTower(p, 828, 236, 40, 18, 30);
-  add('Corniche Heights', 'Flats', [828, 868, 218, 254, 30], [['Flats', '120'], ['Street', 'Port Av']]);
-  // Port Av to the edge: the Corniche Hotel
+  add('Esplanade Heights', 'Flats', [828, 868, 218, 254, 30], [['Flats', '120'], ['Street', 'Port Av']]);
+  // Port Av to the edge: the Esplanade Hotel
   flatsTower(p, 900, 232, 54, 22, 24, 3.4);
-  add('Corniche Hotel', 'Hotel · 7 floors', [900, 954, 232, 254, 24], [['Rooms', '160'], ['Looks out over', 'the port'], ['Street', 'Corniche']]);
+  add('Esplanade Hotel', 'Hotel · 7 floors', [900, 954, 232, 254, 24], [['Rooms', '160'], ['Looks out over', 'the port'], ['Street', 'Esplanade']]);
   // trees round the edges of the blocks that have room
   for (const [x, y] of [[560, 112], [576, 112], [658, 112], [744, 112], [870, 112], [770, 112], [892, 196], [952, 196], [552, 200], [600, 120],
     [770, 196], [866, 196], [552, 256], [632, 256], [770, 256], [870, 256], [892, 222], [956, 222]]) datePalm(p, x, y, rand(0.85, 1.05));
   for (const [x, y] of [[602, 230], [612, 248], [622, 232]]) tree(p, x, y, 1.0, Z);
-  return p.build('sahelBuildings');
+  return p.build('newhavenBuildings');
 }
 
-// Wadi Park: lawns either side of a winding dry riverbed of stones, palms, a pergola over benches, a kiosk
+// Stonebrook Park: lawns either side of a winding stony brook, palms, a pergola over benches, a kiosk
 export const PARK_SEATS: [number, number, number][] = [];
 function buildPark(p: Part, x0: number, y0: number, x1: number, y1: number) {
   const T = TOP(0, 0, Z);
   p.fill2(T, x0, y0, x1 - x0, y1 - y0, 'grass', 0.015);
-  // the wadi: a band that winds west to east, stones along it
+  // the brook: a band that winds west to east, stones along it
   const bank = (k: number) => { const pts = []; for (let x = x0; x <= x1 + 0.01; x += 2.5) pts.push([x, (y0 + y1) / 2 + Math.sin((x - x0) * 0.09) * 6 + k]); return pts; };
   const a = bank(-2.2), b = bank(2.2);
   for (let i = 1; i < a.length; i++) p.poly('sand', [W(a[i - 1][0], a[i - 1][1], Z + 0.03), W(a[i][0], a[i][1], Z + 0.03), W(b[i][0], b[i][1], Z + 0.03), W(b[i - 1][0], b[i - 1][1], Z + 0.03)]);

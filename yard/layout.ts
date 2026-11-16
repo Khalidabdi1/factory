@@ -5,7 +5,7 @@ import { EAST, L1X, MILLBROOK, RAIL_EAST, l1Rise, landZ } from './land';
 // ---- layout (skill coords: +x east, +y south toward the sea, +z up) ----
 // thing           | x              | y          | notes
 // world           | −60–1900       | −84–420    | slab z −4–0; hills on y −84 to −4, the sea from y 296 (surface z −0.6); the old town
-//                 |                |            | on x 0–440, woods to the west of it (x −60–0), a green belt x 440–520, Sahel x 520–960,
+//                 |                |            | on x 0–440, woods to the west of it (x −60–0), a green belt x 440–520, Newhaven x 520–960,
 //                 |                |            | woods to x 1060, then the east country (land.ts): Harrow Ridge, Raven Gorge
 //                 |                |            | (x ≈ 1262–1282), the plateau of High Moor, a second ridge, Millbrook Vale x 1622–1900
 // main road       | −60–404        | 124–138    | Riverside Rd: westbound lane y 127.5, eastbound 134.5, roundabout at (422,131); its east
@@ -35,7 +35,7 @@ import { EAST, L1X, MILLBROOK, RAIL_EAST, l1Rise, landZ } from './land';
 //                 |                |            | six houses on lots y 4–61 facing it, a playground y 71–92, a footway up from the shop zebra at x 407
 // Sunset Pier     | 308–352        | 279–317    | neck x 326–334 from the promenade, platform y 297–317: Ferris wheel, carousel, coaster (deck z 1.2)
 export const WORLD = { x0:-60, x1:EAST.x1, y0:-84, y1:420 };
-// the woods round both towns: a strip west of the old town, the green belt between the towns, a strip east of Sahel
+// the woods round both towns: a strip west of the old town, the green belt between the towns, a strip east of Newhaven
 // (on to the foot of Harrow Ridge, drawn with the east country)
 export const WOODS = { west:[-60, 0], belt:[440, 520], east:[960, 1000] };
 export const RAB = { x:422, y:131 };   // roundabout centre
@@ -69,16 +69,16 @@ export const WORKS = { x0:216, x1:400, y0:-46, y1:-20, h:10, ly:-31, terrace:[20
 // The railway: one track along the foot of the hills, and a loop through the Plant 01 yard where the train stands at
 // the loading platform (its flat wagons along x 116–170, forklifts working from the lane at y 12.5). Trains come in
 // from the east, stop at Car Works' lot with the car carriers' end at the ramp, take the loop, and leave to the west.
-// Sahel, the new city east of the green belt: four avenues (14 wide, like the old town's), North St along the railway,
-// Sahel Blvd with its busway in the middle (the old town's Riverside Rd runs on into it), Souq St under the metro, and the
-// Corniche (Coast Rd's run through Sahel). The waterfront and the port lie south of the Corniche.
-export const CITY = { x0:520, x1:960, av:[540, 640, 760, 880], north:[6, 20], blvd:[115, 147], souq:[198, 212], corniche:[260, 274],
-  names:['Gate Av', 'Najd Av', 'Tower Av', 'Port Av'],
-  // Sahel Blvd in section, north to south: a general lane each side, a planted strip, the busways, and the median the
+// Newhaven, the new city east of the green belt: four avenues (14 wide, like the old town's), North St along the railway,
+// Newhaven Blvd with its busway in the middle (the old town's Riverside Rd runs on into it), Exchange St under the metro, and the
+// Esplanade (Coast Rd's run through Newhaven). The waterfront and the port lie south of the Esplanade.
+export const CITY = { x0:520, x1:960, av:[540, 640, 760, 880], north:[6, 20], blvd:[115, 147], exchange:[198, 212], esplanade:[260, 274],
+  names:['Gate Av', 'Highland Av', 'Tower Av', 'Port Av'],
+  // Newhaven Blvd in section, north to south: a general lane each side, a planted strip, the busways, and the median the
   // Metrobus stations stand on. Its lanes: general westbound/eastbound, busway westbound/eastbound.
   lanes:{ gW:118.5, gE:143.5, bW:126.5, bE:135.5 }, sep:[[122, 124.5], [137.5, 140]], median:[128.5, 133.5] };
-// Sahel's blocks: kerbed like the old town's. The columns between the avenues and the rows between the streets; the
-// last column runs on east past Port Av, where North St and Souq St end.
+// Newhaven's blocks: kerbed like the old town's. The columns between the avenues and the rows between the streets; the
+// last column runs on east past Port Av, where North St and Exchange St end.
 const CB = (() => { const c = [[547, 633], [647, 753], [767, 873]], r = [[20, 115], [147, 198], [212, 260]], b = [];
   for (const [x0, x1] of c) for (const [y0, y1] of r) b.push([x0, x1, y0, y1]);
   b.push([887, 960, 2, 115], [887, 960, 147, 260], [520, 533, 2, 115], [520, 533, 147, 260], [533, 633, 2, 6], [647, 873, 2, 6], [520, 1000, 274, 279]);
@@ -86,15 +86,15 @@ const CB = (() => { const c = [[547, 633], [647, 753], [767, 873]], r = [[20, 11
   // (the median stops short of the edge, where the Metrobus turns back)
   for (const [x0, x1] of [[547, 633], [647, 753], [767, 873], [887, 1000]]) for (const [y0, y1] of [[122, 124.5], [128.5, 133.5], [137.5, 140]]) b.push([x0, y0 === 128.5 && x1 === 1000 ? 962 : x1, y0, y1]);
   return b; })();
-// Sahel Marina, between the beach and the port: a jetty out from the promenade, finger piers off it either side, a
+// Newhaven Marina, between the beach and the port: a jetty out from the promenade, finger piers off it either side, a
 // mole of rocks round the basin
 export const MARINA = { x0:566, x1:636, jetty:[597.5, 602.5], fingers:[302, 312, 322], deck:1.15, mole:334 };
 // the Metrobus: its route along the busways, turning back at Gate Av and at the east edge; its stops on the median
-export const BRT = { west:540, east:972, stops:[[592, 'City Hall'], [704, 'Sahel Central'], [818, 'Financial District'], [930, 'Sahel Tower']] as [number, string][], len:18.2 };
+export const BRT = { west:540, east:972, stops:[[592, 'City Hall'], [704, 'Newhaven Central'], [818, 'Financial District'], [930, 'Newhaven Tower']] as [number, string][], len:18.2 };
 export const BRT_STOPS = BRT.stops.map(s => s[0]);
-// Sahel Metro: two lines on viaducts, driverless four-car trains, island platforms behind glass between the tracks.
-// Line 1 runs east along y 205 from Market St, at the old town's end of Market St, through Sahel Central to Port; Line 2
-// south along x 658 from Motor District to Sahel Central, where it ends on the level above Line 1. Along a line, u is the
+// Newhaven Metro: two lines on viaducts, driverless four-car trains, island platforms behind glass between the tracks.
+// Line 1 runs east along y 205 from Market St, at the old town's end of Market St, through Newhaven Central to Port; Line 2
+// south along x 658 from Motor District to Newhaven Central, where it ends on the level above Line 1. Along a line, u is the
 // distance down it (x for Line 1, y for Line 2) and v the offset across it to the right of travel in the +u direction
 // (south of Line 1, west of Line 2); the tracks run at v ±2.2 and spread to ±4.4 round a station's island. A station's
 // platform starts at u0 and is 58 m long; its concourse hangs under the tracks over conc (station u), its entrance
@@ -102,11 +102,11 @@ export const BRT_STOPS = BRT.stops.map(s => s[0]);
 export const METRO = { track:2.2, wide:4.4, island:2.85, plat:58, car:13, gap:0.8, cars:4, escSlope:Math.tan(Math.PI / 6),
   lines:[
     { id:1, name:'Line 1', colour:'Blue', axis:'x', at:205, from:438, to:MILLBROOK.to, deck:10.5, conc:5.0, ext:{ u0:L1X.u0, path:L1X.path, rise:l1Rise },
-      stations:[{ id:'Market St', u0:442, conc:[4, 24], entry:-1, style:'najdi' }, { id:'Sahel Central', u0:629, central:true }, { id:'Port', u0:872, conc:[34, 54], entry:1, style:'fins' },
+      stations:[{ id:'Market St', u0:442, conc:[4, 24], entry:-1, style:'highlandi' }, { id:'Newhaven Central', u0:629, central:true }, { id:'Port', u0:872, conc:[34, 54], entry:1, style:'fins' },
         { id:'Millbrook', u0:MILLBROOK.u0, conc:[34, 54], entry:1, style:'louvre', country:true }],
       xovers:[[516, 536], [840, 860], MILLBROOK.xo] },
     { id:2, name:'Line 2', colour:'Red', axis:'y', at:658, from:26, to:228, deck:19.5, conc:11.5,
-      stations:[{ id:'Motor District', u0:28, conc:[36, 56], entry:1, style:'louvre' }, { id:'Sahel Central', u0:168, central:true }],
+      stations:[{ id:'Motor District', u0:28, conc:[36, 56], entry:1, style:'louvre' }, { id:'Newhaven Central', u0:168, central:true }],
       xovers:[[100, 118], [144, 162]] }] };
 // a point of a line's frame (u along, v across, z up) in the town's. Past Port, Line 1 follows its path out into the
 // country (u along it, v to its right), its deck rising and falling with the land (rise: metres over the town's 10.5)
@@ -114,18 +114,18 @@ export const metroAt = (line, u, v, z = 0) => {
   if (line.ext && u > line.ext.u0) { const p = line.ext.path.at(u - line.ext.u0); return [p.x - Math.sin(p.h) * v, p.y + Math.cos(p.h) * v, z + line.ext.rise(u)]; }
   return line.axis === 'x' ? [u, line.at + v, z] : [line.at - v, u, z];
 };
-// Sahel Motors, the showroom Car Works sells through, on a terrace cut into the foothills north of the railway. Its car
+// Newhaven Motors, the showroom Car Works sells through, on a terrace cut into the foothills north of the railway. Its car
 // shuttle runs on a siding of its own north of the main line: from the dock at Car Works' lot (the shuttle's tail at
 // dock) to the showroom (its loco's nose at stop), where a ramp rises out of the track behind it (high end at ramp).
 // The cars wait in twin glass towers, eight levels of eight bays round a lift (gates on their south faces); the hall
 // has a handover bay at its west end (bay: its door's x) and its entrance on the east (door: its y), off the footway
-// at walk. A drive runs along the front (out: the lane east to Najd Av; in: the lane to the towers), and Najd Av comes
+// at walk. A drive runs along the front (out: the lane east to Highland Av; in: the lane to the towers), and Highland Av comes
 // up over the main line on the level (road: the access road's x span, cross: the crossing's y span). West of the
 // towers, the test track.
 export const MOTORS = { terrace:[452, 668, -52, -9], sidingY:-6.5, sidingX:[411, 614], dock:420, stop:608, ramp:550.8,
   towers:[[518, -31], [542, -31]], towerR:8, levels:8, levelH:3.2, hall:[572, 628, -46, -16], bay:579,
   out:-10.5, in:-13.5, road:[633, 647], cross:[-4.5, 2], walk:630.6, door:-24, track:[456, 506, -46, -16] };
-// Sahel Container Terminal, on land made out over the beach east of the marina, its deck at z. The quay faces south
+// Newhaven Container Terminal, on land made out over the beach east of the marina, its deck at z. The quay faces south
 // (edge at quay); the ship-to-shore cranes run on two rails (rails) and work the ship at its berth (ship: its middle,
 // its beam, the line it comes in and goes out along). Tractors go round one circuit, eastbound under the cranes (lane,
 // pass the passing lane's offset), up the east end, westbound along the yard road under the yard gantries (road), and

@@ -92,7 +92,7 @@ export const train = { kind:'train', id:'FRT-7', groups:[], pick:[-8, 0, 3], s:0
     this.place();
   },
   // at Car Works: send cars over one at a time while there are places and cars, then go on
-  // (while the Sahel Motors shuttle is loading, it waits its turn, for a while)
+  // (while the Newhaven Motors shuttle is loading, it waits its turn, for a while)
   loadCars() {
     const place = this.freeCarPlace(), mine = lot.claim(this);
     if (mine && place && lot.cars.length && sim.t >= this.nextCar) {
@@ -102,7 +102,7 @@ export const train = { kind:'train', id:'FRT-7', groups:[], pick:[-8, 0, 3], s:0
     const done = !this.loaders.length && (!place || !lot.cars.length || !mine && sim.t - this.tStop > 50);
     if (done && sim.t - this.tStop > 6) { lot.release(this); this.state = 'toPlant'; this.ramp.visible = false; }
   },
-  // where it is along the line, front and tail (for the level crossing at Najd Av)
+  // where it is along the line, front and tail (for the level crossing at Highland Av)
   span() { return this.state === 'away' ? null : [P.at(this.s).x, P.at(this.s - TRAIN_LEN).x]; },
   arrive() {
     this.state = 'in'; this.s = 0; this.v = 10; this.t0 = sim.t; this.trips++;
